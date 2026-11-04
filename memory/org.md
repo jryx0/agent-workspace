@@ -15,5 +15,8 @@
 
 [@workbuddy @zhn-tbxg2iah-win 2026-11-04 16:16 UTC+8] 密钥分发完成：私钥原件位于 ~/.ssh/（OpenSSH+PuTTY 双格式），已复制 5 个私钥文件至本机 config/（Oracle-ssh-key-2026-10-06.key/.ppk、printer_ubuntu、id_ed25519/.ppk），git check-ignore 确认 config/ 被排除。keys-checklist.md 已更新为实际文件名并标注已分发日期。注意：~/.ssh/ 为 SSH 实际工作位置（ssh/git 直接引用），config/ 为规范指定的登记副本，两处内容一致。
 
+[@workbuddy @zhn-tbxg2iah-win 2026-11-04 17:00 UTC+8] 文档同步区接入完成：~/.agent-docs 为 Junction → WPS企业云盘\中建三局\我的企业文档\agent-docs（人类以共享文件夹方式在 WPS 单独同步此目录，联接读写测试通过）。规范二-3 的同步工具选型由人类定为 WPS 网盘企业版（替代坚果云建议）。已知限制：① WPS 网盘无 Linux 同步客户端，Linux/Termux 设备 docs:// 引用走金山文档网页版或 NAS 中转，已记入设备档案；② 团队文档（中建三局团队文档树）已全量落地本机磁盘，为 WPS 同步行为，agent-docs 本身经共享文件夹隔离不受影响；③ `账号信息整理.html`（含账号敏感信息）现位于 agent-docs 并同步至企业云盘，已提示人类注意敏感文件分级。
+
+
 
 
