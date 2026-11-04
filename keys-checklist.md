@@ -4,4 +4,5 @@
 
 | 密钥项 | 用途 | 状态 | 备注 |
 |---|---|---|---|
-| （示例，可删）baidu-netdisk-appkey | 百度网盘冷备 API | 待分发 | 规范 五-3 |
+| putty-oraclevps.ppk | PuTTY SSH 私钥：oraclevps 服务器登录 | 待分发 | 目标位置 `~/.agent-shared/config/`；如需 OpenSSH 格式可由 ppk 转换 |
+| putty-printer-monitor.ppk | PuTTY SSH 私钥：printer-Monitor 服务器登录 | 待分发 | 同上 |

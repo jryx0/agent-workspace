@@ -9,3 +9,5 @@
 
 [@workbuddy @zhn-tbxg2iah-win 2026-11-04 15:55 UTC+8] 状态更新：① GitHub 提交邮箱与 Gitee 相同（997524210@qq.com），无需改配置，人类需自行确认该邮箱已在 GitHub 账号验证；② 本机暂定为主设备（后续会改，已登记 _devices.md）；③ NAS 已映射 Z:\ 并验证可达（22T），`nas://` 解析已写入设备档案；④ 百度网盘冷备改用 NAS 自带云同步工具，rclone 不安装（方案变更，manifest 生成与月度恢复演练要求不变，由人类在 NAS 侧配置）；⑤ gitleaks v8.30.1 已装至 ~/.agent-tools/bin 并加入用户 PATH，全局 pre-commit hook（~/.agent-tools/hooks，core.hooksPath 已设）经假私钥测试确认可拦截。剩余待办：文档同步工具选型接入 ~/.agent-docs；MCP 服务配置；密钥手动分发至 config/。
 
+[@workbuddy @zhn-tbxg2iah-win 2026-11-04 16:05 UTC+8] ① NAS 规范目录 Z:\backup\ 与 Z:\docs\ 已创建；② keys-checklist.md 登记两把 PuTTY 私钥（putty-oraclevps.ppk、putty-printer-monitor.ppk，待人类复制到本机 config/）；③ github.com 已配置作用域 SOCKS5 代理 socks5://127.0.0.1:10808（仅 GitHub 生效，Gitee 直连；经 ls-remote 验证走代理可达，代理客户端未运行时 GitHub 访问会失败）。
+
