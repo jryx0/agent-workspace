@@ -1,9 +1,10 @@
-# 多设备多 Agent 协同工作架构与规范 (v1.8)
+# 多设备多 Agent 协同工作架构与规范 (v1.8.2)
 
 > **致所有 Agent：** 你现在接入了一个跨设备（Windows/Linux/iOS/Android/HarmonyOS）、多 Agent 协同的个人/团队工作空间。请严格遵循本规范进行文件读写、记忆存储、工具调用和任务交接。如果你是人类用户，请按此文档进行环境初始化。
 
 ## 变更记录
 
+- **v1.8.2 (2026-11-04)**：采纳 trae handoff 评审中 v1.8 尚未覆盖的 4 项——① 三-6 新增 worktree 适用场景（单人单任务直接 clone，仅多 agent 并发同一项目时启用）；② 八 启动自检 7 步标签化（`[Agent自动]`/`[Agent报告]`/`[人类执行]`），明确可自动完成与需人类处置的边界；③ 五-1 新增 commit message 规范（type 枚举 + agent 署名）；④ 移动端只读描述由 3 处收敛为 四-3 单一权威定义。另勘误：五-1 推送命令 `--all --tags` 同用（Git 2.55 已禁止）改为分步推送。
 - **v1.8.1 (2026-11-04)**：变更记录瘦身——v1.1–v1.7 详细条目移入 `memory/archive/2026-11-rules-changelog.md`（归档只读），各版本保留一行摘要；正文补全 v1.8 全部条款（此前因工作区误重置丢失，本次重新写入并逐条核验）。
 - **v1.8 (2026-11-04)**：① 项目代码根统一 `~/source`（三-2/三-6/七）；② 任务认领机制（三-5 ⑤）；③ 分支准出标准与提交归属（三-6）；④ gitleaks 全局 hook 链式委托（六-1）；⑤ agent 端口段分配（三-5 ④）；⑥ 人类操作优先原则（三-5 ⑥）。
 - **v1.7**：新增 三-6 Git Worktree 协作（`.wt/<agent名>/` 布局、`agent/*` 分支、用完即删）。
@@ -19,7 +20,7 @@
 ## 一、 架构总览与核心原则
 
 - **单一事实源 (SSOT)**：核心资产（规范/记忆/技能/环境清单）托管于 Gitee 私有仓库（**主库**），GitHub 私有仓库作为**备份库**（见 五-1）。本地工作区对应 `~/.agent-shared`。
-- **跨设备只同步文本资产**：规范、记忆、技能源码、环境清单、各类登记表。**跨设备不组网、不暴露远程服务**；移动端（iOS/HarmonyOS 无终端设备）作为只读消费者，通过 Git 仓库客户端 App 阅读记忆与交接文档。
+- **跨设备只同步文本资产**：规范、记忆、技能源码、环境清单、各类登记表。**跨设备不组网、不暴露远程服务**；移动端（iOS/HarmonyOS 无终端设备）为只读消费者，边界与例外见 四-3。
 - **存储分层**：本地热数据（Git，文本资产） + 文档实时同步区（`~/.agent-docs`，第三方工具） + NAS 温数据（大文件） + 百度网盘冷数据（定时备份）。
 - **物理隔离**：文本配置与状态（存于 `~/.agent-shared`）与 运行环境与工具（存于 `~/.agent-tools`）彻底分离。
 - **本机资产不出本机**：运行时、venv、MCP 进程、临时文件、密钥，均属于本机，任何情况下不进入 Git 仓库。
@@ -39,7 +40,7 @@
 | NAS 挂载点 | `/mnt/nas` | `/z`（映射盘符 `Z:\`） | `Z:\` |
 
 - Windows 上 `~` 由 Git Bash 解析为 `C:\Users\<user>\`，与规范约定一致；PowerShell 中等价写法为 `$HOME`。
-- 移动端（iOS 等）不落本地工作区，仅通过 Git 客户端 App 只读访问仓库内容。
+- 移动端（iOS 等）不落本地工作区，只读边界见 四-3。
 
 ### 0.5 设备命名规范 (v1.3 新增)
 - 格式：`<hostname>-<os>`，**全小写**，去掉空格与非 ASCII 字符；`os` 取枚举值：`win` / `linux` / `termux` / `harmony` / `ios`。全局唯一，冲突时在 hostname 后追加序号。
@@ -177,6 +178,7 @@
 - **项目代码并发**：多 agent 同时修改同一项目代码时，走 三-6 worktree + `agent/*` 分支协作，由人类合并。
 
 ### 6. Git Worktree 协作 (v1.7 新增)
+- **适用场景**（v1.8.2）：**单人单任务直接 clone 到 `repos.md` 登记路径，不启用 worktree**——worktree 的唯一目的是隔离同机多 agent 对同一项目的并发修改，无并发时启用它只增加清理负担。仅当两个及以上 agent 同时修改同一项目代码时，才按下述布局启用协作模式。
 - **范围**：仅 `repos.md` 登记的项目代码仓库；**`~/.agent-shared` 禁用 worktree**（append-only 记忆与压缩机制依赖单一历史，分支化会使其失效）。
 - **布局**：主 worktree `~/source/<项目名>`（跟踪 main，人类或共用者使用）；agent 专属 `~/source/<项目名>.wt/<agent名>/`，分支 `agent/<agent名>/<任务>`。
 - **流程**：领任务后（先按 三-5 ⑤ 认领登记）`git worktree add ~/source/<项目名>.wt/<agent名> -b agent/<agent名>/<任务> origin/main` → 开发/构建/测试 → **分支准出**：`git pull --rebase origin main` 且自测（至少构建+冒烟）通过，commit 携带 `Agent: <agent名>` trailer，并在该 worktree 内配置独立提交身份（`git config user.name zhn-<agent名>`）→ push 分支 → 人类合并 → `git worktree remove`。
@@ -218,13 +220,20 @@
 - **主库**：Gitee 私有仓库，remote 名 `origin`，是一切同步的**事实基准**。
 - **备份库**：GitHub 私有仓库，remote 名 `backup`，**只允许被推送覆盖，禁止在其上直接提交**。
 - **推送纪律**：每次推送必须依次执行
-  `git push origin --all --tags && git push backup --all --tags`
-  （封装为脚本或 git alias `git-sync`），**禁止只推一个远端**。拉取永远只从 `origin`。
+  `git push origin --all && git push origin --tags && git push backup --all && git push backup --tags`
+  （封装为脚本 `env/git-sync.sh` 或 git alias `git sync`），**禁止只推一个远端**。拉取永远只从 `origin`。
+  > 勘误（v1.8.2）：Git 2.55 起 `--all` 与 `--tags` 不可在同一命令混用（报 `fatal: --all and --tags cannot be used together`），必须分步推送。
 - **三重兜底**：夜间备份任务中额外执行 `git bundle create nas-backup.bundle --all`，将 bundle 文件放入 NAS `backup/`，随网盘冷备一起归档——即使两个托管平台同时不可用也可从 bundle 恢复。
 - **冲突裁决**：两平台内容不一致时，一律以 Gitee 为准重新覆盖 GitHub。
 - **禁止提交内容**：`venvs/`、`node_modules/`、`*.pyc`、`tmp/`、`config/`、任何密钥与大型二进制。
 - **依赖更新**：安装新包后，必须立刻更新 `env/requirements.txt` 并与代码改动在同一个 Commit 提交。
 - **提交前**：先 `git pull --rebase`，解决冲突并验证通过后再推送。
+- **commit message 规范**（v1.8.2）：
+  - 格式：`<type>: <简述> by <agent名>@<设备名>`，简述用中文、不超过 40 字。
+  - `type` 枚举：`docs`（规范/文档）| `feat`（新功能）| `fix`（修复）| `refactor`（重构）| `memory`（记忆）| `handoff`（交接）| `infra`（环境/工具/密钥）| `scripts`（脚本）。
+  - 示例：`docs: 规范升级 v1.8.2 — worktree 适用场景+自检标签化+commit 规范`、`fix: git-sync 兼容 Git 2.55 分步推送 by workbuddy@zhn-tbxg2iah-win`。
+  - 压缩提交特例：`memory: compact YYYY-MM by <agent名>@<设备名>`。
+  - 目的是让 `git log` 可按 type 过滤、按 agent 追溯；历史提交不追溯改写。
 
 ### 2. NAS 存储规则
 - 挂载点约定：Linux `/mnt/nas`，Windows `Z:\`。
@@ -286,14 +295,15 @@
 
 ## 八、 Agent 启动自检指令 (必读)
 
-当你（Agent）启动或接入新任务时，请按顺序执行以下自检：
-1. 检查 `~/.agent-shared/memory/` 记忆目录是否正常；核对 `keys-checklist.md` 中各项在本机 `config/` 是否存在（缺项即提醒人类）；**检查 `config/` 目录权限**——Linux/Termux 应为 `700`/文件 `600`，Windows 确认未共享给其他用户，权限过宽即提醒人类收紧。
-2. 检查本地 MCP 服务是否在线（尝试访问 `127.0.0.1:9101`）。如果不在线，提醒用户运行 `~/.agent-shared/env/start-mcp.sh`（Windows 为 `start-mcp.bat` 或对应计划任务）。
-3. `git pull --rebase` 同步最新状态；读取 `~/.agent-shared/handoff/` 下最新的交接文档，同步当前上下文（按 三-1 加载策略，只读最新一份、org.md 只读最近 200 行）。
-4. 检查 `memory/.compact-lock` 是否存在：存在则本会话**暂停写入记忆**（其他设备正在压缩），可正常读。
-5. 确认当前是否激活了位于 `~/.agent-tools/venvs/` 下的专属虚拟环境。
-6. 若本会话需要手动安装的定制 MCP，先查 `env/mcp-registry.md` 确认本机是否已安装及版本是否一致。
-7. 若本会话涉及重要文档，确认 `~/.agent-docs` 同步目录可达且同步状态正常（长期未同步/冲突文件堆积时，先提醒人类处理，禁止在未同步状态下直接编辑覆盖）。
+当你（Agent）启动或接入新任务时，请按顺序执行以下自检。标签含义：`[Agent自动]` = agent 自行判定并完成；`[Agent报告]` = agent 只能检查并上报状态，处置权在人类；`[人类执行]` = agent 无法完成，必须请人类操作。
+
+1. **[Agent自动]** 检查 `~/.agent-shared/memory/` 记忆目录是否正常；核对 `keys-checklist.md` 中各项在本机 `config/` 是否存在（缺项即提醒人类）；**检查 `config/` 目录权限**——Linux/Termux 应为 `700`/文件 `600`，Windows 确认未共享给其他用户，权限过宽即提醒人类收紧（缺项与权限整改属 `[人类执行]`）。
+2. **[Agent报告]** 检查本地 MCP 服务是否在线（尝试访问 `127.0.0.1:9101`）。如果不在线，提醒用户运行 `~/.agent-shared/env/start-mcp.sh`（Windows 为 `start-mcp.bat` 或对应计划任务）——启动服务涉及人类环境决策，MCP 未起时不得阻塞其他自检项。
+3. **[Agent自动]** `git pull --rebase` 同步最新状态；读取 `~/.agent-shared/handoff/` 下最新的交接文档，同步当前上下文（按 三-1 加载策略，只读最新一份、org.md 只读最近 200 行）。远端未配置或网络不可达时降级为 `[Agent报告]`，如实上报并继续。
+4. **[Agent自动]** 检查 `memory/.compact-lock` 是否存在：存在则本会话**暂停写入记忆**（其他设备正在压缩），可正常读。
+5. **[Agent自动]** 确认当前是否激活了位于 `~/.agent-tools/venvs/` 下的专属虚拟环境（查 `$VIRTUAL_ENV`）。
+6. **[Agent自动]** 若本会话需要手动安装的定制 MCP，先查 `env/mcp-registry.md` 确认本机是否已安装及版本是否一致。
+7. **[Agent报告]** 若本会话涉及重要文档，确认 `~/.agent-docs` 同步目录可达且同步状态正常（长期未同步/冲突文件堆积时，先提醒人类处理，禁止在未同步状态下直接编辑覆盖；同步冲突的处置一律由人类在客户端完成，见 三-5 ⑥）。
 
 ## 九、 人类用户的初始化清单 (供参考)
 
