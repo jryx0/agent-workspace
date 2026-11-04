@@ -1,0 +1,8 @@
+# 密钥防泄漏强制模板（v1.5，规范 六-1）
+# clone 后首先复制为仓库根目录 .gitignore 生效
+config/
+tmp/
+*venv*/
+node_modules/
+.env
+*.pyc

@@ -1,0 +1,5 @@
+# Agent 名登记表（规范 三-1 / v1.5）
+# 格式：agent名 | 所属设备 | 职责
+# 未登记的 agent 名在署名中视为无效；同名 agent 在不同设备视为不同实例，署名以 agent名@设备名 区分。
+agent名 | 所属设备 | 职责
+workbuddy | zhn-tbxg2iah-win | 通用助手；规范执行与初始化
