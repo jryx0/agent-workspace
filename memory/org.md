@@ -25,6 +25,8 @@
 5. 【选型先核平台矩阵】WPS 网盘无 Linux 同步客户端（WPS Office Linux 版只管编辑）；选定同步工具前先核对 Windows/Linux/iOS/鸿蒙 全平台支持。
 6. 【当前状态】~/.agent-docs=本地普通目录，docs:// 引用仅本机可解析，跨设备能力待同步载体确定后恢复；WPS 企业云盘中的 agent-docs 云端副本由人类自行处置。
 
+[@workbuddy @zhn-tbxg2iah-win 2026-11-04 17:15 UTC+8] Trae 侧私有记忆已按人类要求清空（删除 .trae-cn/memory 下本项目 topics.md），本项目后续唯一事实源改为 ~/.agent-shared。核对 global/rules.md 与人类下发 v1.7 一致，无需覆盖。自检（规范八）：keys-checklist 5 项在 config/ 齐全、无 .compact-lock、venvs/workbuddy 存在、~/.agent-docs 存在、git 已最新；**MCP 9101/9102 未启动**。待办：①人类运行 env/start-mcp.bat；②打印机监控项目未登记 repos.md；③线上域名 prnmgt.parva.dpdns.org 带 #/overview 刷新报「脚本未执行」，该文案不在本仓库代码中，疑为另一套前端部署，待确认归属。交接见 handoff/2026-11-04-trae重置与规范接入-zhn-tbxg2iah-win.md。
+
 
 
 
