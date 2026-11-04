@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/.agent-shared")"
 
 echo "[sync] 推送 origin (Gitee 主库) ..."
-git push origin --all --tags
+git push origin --all && git push origin --tags
 echo "[sync] 推送 backup (GitHub 备份库) ..."
-git push backup --all --tags
+git push backup --all && git push backup --tags
 echo "[sync] 双远端推送完成。"
