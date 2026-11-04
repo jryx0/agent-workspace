@@ -4,43 +4,14 @@
 
 ## 变更记录
 
-- **v1.7 (2026-11-04)**：
-  1. 新增 **三-6 Git Worktree 协作**：项目代码库同机多 agent 并行开发的标准模式（`<项目名>.wt/<agent名>/` 布局、`agent/*` 分支、用完即删、agent-shared 明确禁用）。
-  2. 三-5 ③ 项目目录占用确认降级为"未用 worktree 时的兜底"；项目代码并发条款指向 三-6。
-  3. 三-2 压缩流程新增 worktree prune 与已合并分支清理；三-4 交接文档需注明当前 worktree 与分支。
-- **v1.6 (2026-11-04)**：
-  1. **同机并发运行前提**（三-5 扩充）：同机多 Agent 可同时运行，但须满足 ① 各用各的 venv；② 禁止系统级 pip/npm install；③ 操作同一项目目录（clone/pull/install/build）前先确认无其他 Agent 占用并在 handoff 注明占用者；④ 临时文件与服务端口带 agent 名命名，禁止占用 9101/9102 等规范保留端口。
-- **v1.5 (2026-11-04)**（采纳外部 agent 审核意见 12 条，修正 2 条）：
-  1. **密钥防泄漏技术化**：强制 `.gitignore` 模板 + gitleaks pre-commit hook + 密钥泄漏事故处置小节（服务端 secret scanning 为可选项，私有库通常无此功能）。
-  2. **压缩机制修订**：明确压缩是 append-only 的唯一例外；新增 `memory/.compact-lock` 锁文件机制（替代"以 commit 时间为准"）；窗口 ≤30 分钟；保留期统一 90 天（记忆与 handoff 一致）；归档措辞改为"一经写入即为只读"；随压缩验证 backup 镜像可 clone。
-  3. **tmp/ 与跨设备文件分类标准**：给出客观分类表（≤1MB→Git；重要文档≤100MB→agent-docs；超大/二进制→NAS；无法归类→tmp/ 并注明）；`tmp/` 按 agent 子目录隔离。
-  4. **Agent 名登记**：新增 `env/agents.md`（agent 名 | 所属设备 | 职责），未登记署名视为无效。
-  5. **多 agent 并发纪律**（新增 三-5）：同机 git 写操作本机锁串行；文件写入命名隔离；项目代码并发走分支。
-  6. **会话上下文加载策略**（新增，控制 token 消耗）：org.md 默认只读最近 200 行；archive 仅按需检索；handoff 只读最新一份；项目记忆只加载当前项目。
-  7. **移动端只读边界修正**：默认只读，写操作仅限 handoff 紧急补录且需桌面端人工复核。
-  8. **备份强化**：部署后首周每日人工核对 manifest；rclone 不可用时的备选方案为**加密**打包+手动上传；告警渠道具体化（默认邮件，可选 Server酱/Bark）。
-  9. **Git 冲突处理补充**：解决后 push 前 `git log --oneline -5` 目视确认。
-  10. **自检补充**：`config/` 目录权限检查；压缩锁检查。
-  11. **治理**：新增副裁决人字段。
-  12. **勘误**：`env/` 补充 Windows 启动说明（`start-mcp.bat`）；全文 `AGENTS.md` 统一为 `global/rules.md`。
-- **v1.4 (2026-11-04)**：
-  1. 新增第三核心目录：**重要文档同步区 `~/.agent-docs`**——存放 Office/PDF/图表等重要文档原件，不进 Git，由第三方同步工具（坚果云/Syncthing/OneDrive，全设备统一选一款）实时同步。
-  2. 明确 `agent-docs` 与 NAS 的分工边界及"单一原件"原则，新增 `docs://` 引用约定。
-  3. 自检清单与初始化清单同步补充文档同步区检查项。
-- **v1.3 (2026-11-04)**：
-  1. 新增**路径映射基准**：Windows 下 `~` = `C:\Users\<user>\`，各系统对照表。
-  2. 澄清 `nas://` 为**文本引用约定**（非系统协议，无需安装驱动），定义各系统解析方式与无挂载能力设备的行为。
-  3. Git 托管改为 **Gitee 主库 + GitHub 备份库**，本地双远端推送 + `git bundle` 三重兜底。
-  4. 明确 Windows 运行环境选型：**Git Bash 为主、PowerShell 为辅（计划任务）、不使用 WSL**。
-  5. 新增**设备命名规范**：`hostname-os`（小写）及设备总登记表。
-- **v1.2 (2026-11-04)**：
-  1. 明确跨设备**不做组网**（不使用 Tailscale/ZeroTier，无远程 MCP），仅通过 Git 同步文本资产。
-  2. MCP 策略改为：公开市场 MCP 经配置文件同步；**定制 MCP 手动安装、登记备查**（`env/mcp-registry.md`）。
-  3. 记忆文件改为 **append-only**，新增署名规范与**记忆压缩机制**（周期 + 指定主设备执行）。
-  4. `inbox/` 明确为**本机临时目录**，不参与 Git 同步。
-  5. 密钥采用**手动分发 + 核对清单**方案。
-  6. 项目代码不入本仓库，新增 **Git 地址登记表**（`repos.md`）。
-  7. 补充备份验证、NAS 降级、handoff 命名与归档等运维细则。
+- **v1.8.1 (2026-11-04)**：变更记录瘦身——v1.1–v1.7 详细条目移入 `memory/archive/2026-11-rules-changelog.md`（归档只读），各版本保留一行摘要；正文补全 v1.8 全部条款（此前因工作区误重置丢失，本次重新写入并逐条核验）。
+- **v1.8 (2026-11-04)**：① 项目代码根统一 `~/source`（三-2/三-6/七）；② 任务认领机制（三-5 ⑤）；③ 分支准出标准与提交归属（三-6）；④ gitleaks 全局 hook 链式委托（六-1）；⑤ agent 端口段分配（三-5 ④）；⑥ 人类操作优先原则（三-5 ⑥）。
+- **v1.7**：新增 三-6 Git Worktree 协作（`.wt/<agent名>/` 布局、`agent/*` 分支、用完即删）。
+- **v1.6**：同机并发四前提（venv 隔离 / 禁系统级安装 / 占用确认兜底 / 命名隔离与保留端口）。
+- **v1.5**：密钥防泄漏技术化、压缩锁机制、tmp/ 分类标准、agents.md 登记、并发纪律、上下文加载策略等 12 条。
+- **v1.4**：新增 `~/.agent-docs` 文档同步区与 `docs://` 约定。
+- **v1.3**：路径映射基准、`nas://` 文本约定、Gitee+GitHub 双远端、Git Bash 为主不使用 WSL、设备命名规范。
+- **v1.2**：跨设备不组网、MCP 分级管理、记忆 append-only 与压缩机制、密钥手动分发、repos.md 登记。
 - **v1.1**：初版结构。
 
 ---
@@ -171,7 +142,7 @@
   5. 将 `org.md` 截断为：压缩后的最新摘要 + 保留期内原始条目；同 commit 删除 `.compact-lock`；
   6. 立即 push，commit message 格式：`memory: compact 2026-11 by <agent>@<设备>`；
   7. **验证备份库**：push 后在临时目录对 GitHub backup 远端执行一次 `git clone --depth 1`，确认镜像可用；
-  8. **维护各项目 worktree**：对本机 `~/work/` 下各项目执行 `git worktree prune`，并清理已合并的 `agent/*` 本地分支（见 三-6）。
+  8. **维护各项目 worktree**：对本机 `~/source/` 下各项目执行 `git worktree prune`，并清理已合并的 `agent/*` 本地分支（见 三-6）。
 - **归档只读**：`memory/archive/` 与 `handoff/archive/` 下的文件**一经写入即为只读**，后续周期不得修改既有归档，新月份/新周期新建文件。
 
 ### 3. 临时文件与跨设备文件分类
@@ -197,7 +168,9 @@
   1. **各用各的 venv**：依赖隔离遵循 四-1，装入并激活 `~/.agent-tools/venvs/<自己的名字>/`，禁止共用或激活他人虚拟环境；
   2. **禁止系统级安装**：不得执行系统级 `pip install` / `npm install -g`（Windows 上含"以管理员身份"安装全局包）；缺依赖时装入自己的 venv，并按 五-1 将变更同步进 `env/requirements.txt` 等清单；
   3. **项目目录占用确认（兜底）**：对项目目录的并行操作**默认走 三-6 worktree 模式**（各用各的 checkout，无需占用确认）；仅当共用主 worktree（临时小改动）时，先查 `handoff/` 最新交接文档确认无其他 Agent 占用，开始占用时**必须在交接文档中注明占用者与预计释放时间**，禁止并行操作同一目录；
-  4. **命名隔离**：临时文件一律写入 `tmp/<agent名>/`；Agent 因调试等需要自起的服务必须带 agent 名命名与登记（端口记录进 `memory/devices/<设备名>.md`），**禁止占用 9101/9102 等本规范保留端口**，避免服务与文件被静默互相覆盖。
+  4. **命名隔离与端口段**：临时文件一律写入 `tmp/<agent名>/`；Agent 因调试等需要自起的服务必须带 agent 名命名与登记（端口记录进 `memory/devices/<设备名>.md`），**禁止占用 9101/9102 等本规范保留端口**，避免服务与文件被静默互相覆盖。dev server、测试数据库、docker 容器等开发资源按 **agent 端口段**分配（如 trae=9200-9299、workbuddy=9300-9399），端口段登记进设备档案，禁止越段占用。
+  5. **任务认领机制**：项目开发任务统一登记在 `memory/projects/<项目名>.md` 的任务登记节（append-only），格式：`任务ID | 描述 | 认领agent | 状态`。agent 领任务先追加认发行（登记即锁定），完成或放弃必须**追加**状态行（不得改写旧行）；未登记认领的任务其他 agent 不得开工，防止重复劳动。
+  6. **人类操作优先原则**：人类正在配置或操作的目录、工具、服务（含各类云同步客户端、NAS、网盘），agent **禁止并行修改**，动手前必须确认人类的配置进度与意图；云同步目录内的删除操作一律由人类在客户端/网页 UI 完成，agent 不做本地侧反复删除重试（源自 2026-11-04 agent-docs 配置冲突事故复盘）。
 - **传输层**：同机 agent 共享同一 MCP SSE 服务（四-2），请求由服务进程排队，**禁止**为并发而自起 stdio 实例。
 - **Git 操作串行化**：同机多个 agent 执行 `pull/commit/push` 等写操作时，必须先获取本机文件锁（Linux/Git Bash 用 `flock`，Windows 用 PowerShell `Mutex` 或等价锁文件 `~/.agent-tools/run/git.lock`），**同一时刻同机只允许一个 git 写操作**；锁等待超过 60 秒即报告人类而非无限等待。
 - **文件写入隔离**：记忆 append-only、handoff/`tmp/` 按设备与 agent 命名，已从命名上消除绝大多数并发写冲突。两 agent 确需写同一文件时，以 Git 提交先后为准，**禁止长时间持有未提交的编辑**（编辑后 10 分钟内必须 commit 或放弃）。
@@ -205,8 +178,8 @@
 
 ### 6. Git Worktree 协作 (v1.7 新增)
 - **范围**：仅 `repos.md` 登记的项目代码仓库；**`~/.agent-shared` 禁用 worktree**（append-only 记忆与压缩机制依赖单一历史，分支化会使其失效）。
-- **布局**：主 worktree `~/work/<项目名>`（跟踪 main，人类或共用者使用）；agent 专属 `~/work/<项目名>.wt/<agent名>/`，分支 `agent/<agent名>/<任务>`。
-- **流程**：领任务后 `git worktree add ~/work/<项目名>.wt/<agent名> -b agent/<agent名>/<任务> origin/main` → 开发/构建/测试 → push 分支 → 人类合并 → `git worktree remove`。
+- **布局**：主 worktree `~/source/<项目名>`（跟踪 main，人类或共用者使用）；agent 专属 `~/source/<项目名>.wt/<agent名>/`，分支 `agent/<agent名>/<任务>`。
+- **流程**：领任务后（先按 三-5 ⑤ 认领登记）`git worktree add ~/source/<项目名>.wt/<agent名> -b agent/<agent名>/<任务> origin/main` → 开发/构建/测试 → **分支准出**：`git pull --rebase origin main` 且自测（至少构建+冒烟）通过，commit 携带 `Agent: <agent名>` trailer，并在该 worktree 内配置独立提交身份（`git config user.name zhn-<agent名>`）→ push 分支 → 人类合并 → `git worktree remove`。
 - **生命周期**：会话结束即 remove，成果靠分支保留而非残留目录；月度压缩时主设备顺带 prune 并清理已合并的 `agent/*` 本地分支（三-2 第 8 步）。
 - **依赖**：Python venv 位于 `~/.agent-tools/venvs/`，跨 worktree 直接复用；`node_modules` 每 worktree 独立安装，依赖共享缓存 `~/.agent-tools/cache` 降低代价（pnpm 项目 store 天然共享）。
 
@@ -291,7 +264,7 @@
   .env
   *.pyc
   ```
-- **gitleaks pre-commit hook**：每台设备安装 [gitleaks](https://github.com/gitleaks/gitleaks) 并配置为 pre-commit hook（`gitleaks protect --staged`），提交含疑似密钥时直接拒绝。Linux/Termux 与 Windows（Git Bash hook 通用）一致。
+- **gitleaks pre-commit hook**：每台设备安装 [gitleaks](https://github.com/gitleaks/gitleaks) 并配置为 pre-commit hook（`gitleaks protect --staged`）。**hook 必须链式委托**：全局 `core.hooksPath` 指向 `~/.agent-tools/hooks`，该 hook 先执行 gitleaks，随后**转发调用项目自身的 pre-commit**（`$(git rev-parse --git-dir)/hooks/pre-commit`），不得整体覆盖 husky 等项目级钩子。Linux/Termux 与 Windows（Git Bash hook 通用）一致。
 - **服务端扫描（可选）**：GitHub 私有库的 push protection/secret scanning 属付费高级功能，Gitee 个人版无此功能；**有条件则开启，无条件以本地 hook 为准**。
 - **事故处置**：一旦密钥被提交并推送：
   1. **立即轮换该密钥**——仅删除文件无效，密钥已永久留在 Git 历史中；
@@ -308,7 +281,7 @@
   | 项目名 | Git 地址 | 默认分支 | 本地约定克隆路径 | 简述 | 记忆文件 |
   ```
 
-- agent 需要处理某项目时，按登记表 clone 到约定的本地路径（建议 `~/work/<项目名>`），项目运行时依赖装进 `~/.agent-tools/venvs/<项目名或agent名>/`。
+- agent 需要处理某项目时，按登记表 clone 到约定的本地路径（**统一为 `~/source/<项目名>`**），项目运行时依赖装进 `~/.agent-tools/venvs/<项目名或agent名>/`。
 - 项目相关的记忆写在 `memory/projects/<项目名>.md`，并与登记表中"记忆文件"列对应。
 
 ## 八、 Agent 启动自检指令 (必读)

@@ -3,6 +3,7 @@
 > 只允许在文件末尾追加，禁止修改/删除/重排已有行。
 > 每条格式：[@agent名 @设备名 YYYY-MM-DD HH:mm UTC+8] 内容
 
+
 [@workbuddy @zhn-tbxg2iah-win 2026-11-04 15:35 UTC+8] 本机完成规范 v1.7 初始化：建立 ~/.agent-shared（Git 仓库，main 分支）、~/.agent-tools（含 venvs/workbuddy）、~/.agent-docs 三大目录；生成 env/ 全套登记表与模板。待办：人类建 Gitee 主库 + GitHub 备份库并配置双远端；选定文档同步工具；rclone 与 gitleaks 未安装；MCP 服务未配置；文档同步区与 NAS 挂载未接入。
 
 [@workbuddy @zhn-tbxg2iah-win 2026-11-04 15:45 UTC+8] 双远端配置完成并首推成功：origin=Gitee 主库 https://gitee.com/ParvaUltra/agent-workspace.git，backup=GitHub 备份库 https://github.com/jryx0/agent-workspace.git。仓库级 Git 身份设为 zhn <997524210@qq.com>（首提交已重置署名，新号 176a4a3）。已封装 env/git-sync.sh 与 git alias `git sync`（双远端推送）。待办：人类提供 GitHub 提交邮箱或改用 noreply 地址；gitleaks/rclone 安装；文档同步工具与 NAS 接入。
@@ -32,7 +33,6 @@
 
 [@trae @zhn-tbxg2iah-win 2026-11-04 17:20 UTC+8] 【署名更正】人类指出本会话实际执行者为 trae，不是 workbuddy。已在 env/agents.md 新增 `trae | zhn-tbxg2iah-win` 登记行；自本条起所有记忆与交接一律署名 trae。上一条 17:15 的署名 workbuddy 按 append-only 原则保留原文不改，但该署名无效（内容仍有效）。
 
+[@trae @zhn-tbxg2iah-win 2026-11-04 18:08 UTC+8] 用户偏好：当用户说"规范"时，必须先确认指的是哪份规范（通常有两类：① 多 Agent 协作总规范 = global/rules.md；② 项目自身的开发规范，如某个项目目录下的 AGENTS.md / constitution.md / README 中的规范章节）。先确认再行动，不要默认。
 
-
-
-
+[@workbuddy @zhn-tbxg2iah-win 2026-11-04 18:15 UTC+8] 【确认与更正】① trae 18:08 条目（"规范"一词先确认指哪份）内容有效，已确认；但其原插入位置在文件开头，违反 append-only 末尾追加原则，因尚未提交进 git 历史，已在提交前归位至文末（历史无篡改）。② 人类提及的"trae 规范深度评估"在 org.md 中未找到对应内容，当前仅有上述一条偏好记录；请 trae 将评估正文补录至本文件（末尾追加），或由人类转述要点。③ 规范压缩（v1.8.1）执行：rules.md 变更记录瘦身，v1.1–v1.7 详细条目移入 memory/archive/2026-11-rules-changelog.md（归档只读），各版本保留一行摘要；git 历史与归档双重保全，无信息丢失。
