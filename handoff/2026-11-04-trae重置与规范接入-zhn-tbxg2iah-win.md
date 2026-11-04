@@ -1,7 +1,7 @@
 # 交接：Trae 私有记忆重置 + 规范 v1.7 接入
 
 - 设备：zhn-tbxg2iah-win（主设备暂定）
-- Agent：workbuddy@zhn-tbxg2iah-win
+- Agent：trae@zhn-tbxg2iah-win（原文档误署 workbuddy，2026-11-04 17:20 更正）
 - 时间：2026-11-04 17:14 UTC+8
 - 工作区：`~/.agent-shared`（无 worktree；主 worktree 即工作区本身）
 - 分支：main（跟踪 origin/main，与 backup/main 同步）
