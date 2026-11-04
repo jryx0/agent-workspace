@@ -9,7 +9,9 @@
   - `~/` → `C:\Users\Zhn_X\`
   - `~/.agent-shared` → `C:\Users\Zhn_X\.agent-shared`
   - `~/.agent-tools` → `C:\Users\Zhn_X\.agent-tools`
-  - `~/.agent-docs` → `C:\Users\Zhn_X\.agent-docs`（同步工具待人类选定，建议坚果云）
+  - `~/.agent-docs` → `C:\Users\Zhn_X\.agent-docs`（本地普通目录，同步载体待定，见下方更正节）
+  - `~/source` → `C:\Users\Zhn_X\source`（**项目代码根，规范 v1.8**；主 worktree `~/source/<项目名>`，agent worktree `~/source/<项目名>.wt/<agent名>/`；不入 Git）
+- **agent 端口段分配（v1.8）**: trae=9200-9299，workbuddy=9300-9399；保留 9101/9102 为 MCP
 - `~/.agent-docs` 映射（文档同步区）:
   - 同步工具: **WPS 网盘（企业版，中建三局）**，以共享文件夹方式单独同步
   - 实际联接: `~/.agent-docs`（Junction）→ `C:\Users\Zhn_X\WPSDrive\1645591772\WPS企业云盘\中建三局\我的企业文档\agent-docs`

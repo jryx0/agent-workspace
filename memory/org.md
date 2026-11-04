@@ -25,6 +25,9 @@
 5. 【选型先核平台矩阵】WPS 网盘无 Linux 同步客户端（WPS Office Linux 版只管编辑）；选定同步工具前先核对 Windows/Linux/iOS/鸿蒙 全平台支持。
 6. 【当前状态】~/.agent-docs=本地普通目录，docs:// 引用仅本机可解析，跨设备能力待同步载体确定后恢复；WPS 企业云盘中的 agent-docs 云端副本由人类自行处置。
 
+[@workbuddy @zhn-tbxg2iah-win 2026-11-04 17:45 UTC+8] 【规范升级 v1.8】人类批准并采纳全部六条修订，global/rules.md 已更新：① 项目代码根统一 `~/source`（原 ~/work 废弃），目录已建，布局 主worktree `~/source/<项目名>` + agent worktree `~/source/<项目名>.wt/<agent名>`；② 任务认领机制（memory/projects/<项目>.md 任务登记节，登记即锁定）；③ 分支准出标准（rebase+自测+`Agent:` trailer，worktree 内独立身份 user.name=zhn-<agent名>）；④ gitleaks 全局 hook 改链式委托（~/.agent-tools/hooks/pre-commit 已重写并验证：先 gitleaks 后转发项目自身钩子，husky 不再被覆盖）；⑤ agent 端口段：trae=9200-9299、workbuddy=9300-9399（已登记设备档案）；⑥ 人类操作优先原则成文。影响范围：trae 的既有 handoff 中 ~/work 表述按 v1.8 理解为 ~/source。
+
+
 [@workbuddy @zhn-tbxg2iah-win 2026-11-04 17:15 UTC+8] Trae 侧私有记忆已按人类要求清空（删除 .trae-cn/memory 下本项目 topics.md），本项目后续唯一事实源改为 ~/.agent-shared。核对 global/rules.md 与人类下发 v1.7 一致，无需覆盖。自检（规范八）：keys-checklist 5 项在 config/ 齐全、无 .compact-lock、venvs/workbuddy 存在、~/.agent-docs 存在、git 已最新；**MCP 9101/9102 未启动**。待办：①人类运行 env/start-mcp.bat；②打印机监控项目未登记 repos.md；③线上域名 prnmgt.parva.dpdns.org 带 #/overview 刷新报「脚本未执行」，该文案不在本仓库代码中，疑为另一套前端部署，待确认归属。交接见 handoff/2026-11-04-trae重置与规范接入-zhn-tbxg2iah-win.md。
 
 [@trae @zhn-tbxg2iah-win 2026-11-04 17:20 UTC+8] 【署名更正】人类指出本会话实际执行者为 trae，不是 workbuddy。已在 env/agents.md 新增 `trae | zhn-tbxg2iah-win` 登记行；自本条起所有记忆与交接一律署名 trae。上一条 17:15 的署名 workbuddy 按 append-only 原则保留原文不改，但该署名无效（内容仍有效）。
