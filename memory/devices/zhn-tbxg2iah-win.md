@@ -15,6 +15,9 @@
   - 实际联接: `~/.agent-docs`（Junction）→ `C:\Users\Zhn_X\WPSDrive\1645591772\WPS企业云盘\中建三局\我的企业文档\agent-docs`
   - `docs://<路径>` → 解析到 `~/.agent-docs/<路径>`（2026-11-04 联接读写测试通过）
   - ⚠️ **WPS 网盘无 Linux 同步客户端**：Linux/Termux 设备上 `docs://` 引用不可直接解析，走金山文档网页版手动获取，或经 NAS 中转
+
+> **【更正 2026-11-04 17:10】** 上方 WPS 联接映射已废弃：WPS 同步方案放弃（配置冲突事故，复盘见 org.md 同日条目）。当前 `~/.agent-docs` = 本地普通目录（22 文件，内容完整），WPS 企业云盘侧已清空。`docs://` 引用仅本机可解析；同步载体待人类重新选定（候选：坚果云等），选定后更新本节。
+
 - `nas://` 解析: → `Z:\`（Git Bash `/z/`，SMB 已挂载，2026-11-04 验证可达，总容量 22T；规范目录 `Z:\backup\`、`Z:\docs\` 已创建）
 - 网络代理: github.com 走 SOCKS5 代理 `socks5://127.0.0.1:10808`（git 全局作用域配置 `http.https://github.com.proxy`，2026-11-04 已验证；Gitee 直连不受影响。代理客户端未运行时 GitHub 推拉会失败，届时先启动代理）
 - 密钥: config/ 暂未分发；核对清单含 putty-oraclevps.ppk、putty-printer-monitor.ppk 两项（待人类复制）
