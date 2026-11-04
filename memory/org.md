@@ -11,3 +11,6 @@
 
 [@workbuddy @zhn-tbxg2iah-win 2026-11-04 16:05 UTC+8] ① NAS 规范目录 Z:\backup\ 与 Z:\docs\ 已创建；② keys-checklist.md 登记两把 PuTTY 私钥（putty-oraclevps.ppk、putty-printer-monitor.ppk，待人类复制到本机 config/）；③ github.com 已配置作用域 SOCKS5 代理 socks5://127.0.0.1:10808（仅 GitHub 生效，Gitee 直连；经 ls-remote 验证走代理可达，代理客户端未运行时 GitHub 访问会失败）。
 
+[@workbuddy @zhn-tbxg2iah-win 2026-11-04 16:15 UTC+8] NAS→百度网盘冷备链路已由人类在 NAS 侧打通。按规范 五-3 执行要点：部署后第一周人类每日核对 manifest 是否生成；每月随机抽 1–2 文件做恢复演练（拉回比对 sha256）；连续 3 天失败必须人工可感知告警。密钥分发进行中：keys-checklist.md 两把 PuTTY 私钥（putty-oraclevps.ppk、putty-printer-monitor.ppk）待人类复制到本机 ~/.agent-shared/config/，复制完成后由 agent 核对存在性并更新清单状态。
+
+
