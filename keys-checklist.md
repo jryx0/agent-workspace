@@ -4,5 +4,6 @@
 
 | 密钥项 | 用途 | 状态 | 备注 |
 |---|---|---|---|
-| putty-oraclevps.ppk | PuTTY SSH 私钥：oraclevps 服务器登录 | 待分发 | 目标位置 `~/.agent-shared/config/`；如需 OpenSSH 格式可由 ppk 转换 |
-| putty-printer-monitor.ppk | PuTTY SSH 私钥：printer-Monitor 服务器登录 | 待分发 | 同上 |
+| Oracle-ssh-key-2026-10-06.key / .key.ppk | PuTTY/SSH 私钥：oraclevps 服务器登录 | 已分发 2026-11-04 | 原件在 `~/.ssh/`，副本在 `config/`；.pub 公钥未复制 |
+| printer_ubuntu | PuTTY/SSH 私钥：printer-Monitor 服务器登录 | 已分发 2026-11-04 | 原件在 `~/.ssh/`，副本在 `config/`；.pub 公钥未复制 |
+| id_ed25519 / id_ed25519.ppk | 通用 Ed25519 SSH 密钥（Git/服务器认证） | 已分发 2026-11-04 | 原件在 `~/.ssh/`，副本在 `config/`；.pub 公钥未复制 |

@@ -13,4 +13,7 @@
 
 [@workbuddy @zhn-tbxg2iah-win 2026-11-04 16:15 UTC+8] NAS→百度网盘冷备链路已由人类在 NAS 侧打通。按规范 五-3 执行要点：部署后第一周人类每日核对 manifest 是否生成；每月随机抽 1–2 文件做恢复演练（拉回比对 sha256）；连续 3 天失败必须人工可感知告警。密钥分发进行中：keys-checklist.md 两把 PuTTY 私钥（putty-oraclevps.ppk、putty-printer-monitor.ppk）待人类复制到本机 ~/.agent-shared/config/，复制完成后由 agent 核对存在性并更新清单状态。
 
+[@workbuddy @zhn-tbxg2iah-win 2026-11-04 16:16 UTC+8] 密钥分发完成：私钥原件位于 ~/.ssh/（OpenSSH+PuTTY 双格式），已复制 5 个私钥文件至本机 config/（Oracle-ssh-key-2026-10-06.key/.ppk、printer_ubuntu、id_ed25519/.ppk），git check-ignore 确认 config/ 被排除。keys-checklist.md 已更新为实际文件名并标注已分发日期。注意：~/.ssh/ 为 SSH 实际工作位置（ssh/git 直接引用），config/ 为规范指定的登记副本，两处内容一致。
+
+
 
