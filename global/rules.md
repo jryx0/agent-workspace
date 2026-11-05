@@ -1,9 +1,10 @@
-# 多设备多 Agent 协同工作架构与规范 (v1.8.3)
+# 多设备多 Agent 协同工作架构与规范 (v1.8.4)
 
 > **致所有 Agent：** 你现在接入了一个跨设备（Windows/Linux/iOS/Android/HarmonyOS）、多 Agent 协同的个人/团队工作空间。请严格遵循本规范进行文件读写、记忆存储、工具调用和任务交接。如果你是人类用户，请按此文档进行环境初始化。
 
 ## 变更记录
 
+- **v1.8.4 (2026-11-05)**：明确「全局安装」判定口径与项目级 CLI 归属——① 三-5 ② 改为**按安装位置判定**、不按是否需要管理员权限：装进用户级托管前缀（`~/.workbuddy/binaries/node/versions/*`、`%APPDATA%\npm` 等）也算全局安装，一律禁止；② 四-1 补充 Node 依赖须装进项目 `node_modules/`；③ 四-4 表格新增「项目级 CLI」行，新增 ⑦ 条款：项目级 CLI（wrangler/vite/tsc 等）必须声明为项目 devDependency、随 lock 文件走、用 `npx` 调用，含存量整改流程（卸载全局→项目本地化→补登记）；④ 四-4 ③ 区分系统级工具与项目级 CLI 的登记去处，明确「未登记的安装视为不合规」适用于所有共享前缀。触发事件：另一会话全局安装 wrangler@4.157.0 未登记。
 - **v1.8.3 (2026-11-05)**：新增 **四-4 工具链基线管理**——① 探测优先，已装且满足基线即复用，禁止重复下载；② 首次运行扫描一次（`env/tools-scan.sh --write` 生成 `memory/devices/tools-<设备名>.md` + stamp），stamp 未满 30 天其他 agent 不得再全量扫描，只跑 `--check`；③ 新装/升级/卸载必须刷新清单并在 `env/toolchain.md` §五 追加变更日志；④ 来源类型枚举（复用/包管理器/官方Release/未知来源）；⑤ 二进制不入 Git、不登记完整包列表；⑥ GUI 程序不做版本探测。配套新增 `env/toolchain.md`（基线+变更日志+设备索引）、`env/tools-scan.sh`（扫描脚本）；自检新增第 8 步 `[Agent自动]` 工具链核对；二-1 目录树同步补充上述两文件。
 - **v1.8.2 (2026-11-04)**：采纳 trae handoff 评审中 v1.8 尚未覆盖的 4 项——① 三-6 新增 worktree 适用场景（单人单任务直接 clone，仅多 agent 并发同一项目时启用）；② 八 启动自检 7 步标签化（`[Agent自动]`/`[Agent报告]`/`[人类执行]`），明确可自动完成与需人类处置的边界；③ 五-1 新增 commit message 规范（type 枚举 + agent 署名）；④ 移动端只读描述由 3 处收敛为 四-3 单一权威定义。另勘误：五-1 推送命令 `--all --tags` 同用（Git 2.55 已禁止）改为分步推送。
 - **v1.8.1 (2026-11-04)**：变更记录瘦身——v1.1–v1.7 详细条目移入 `memory/archive/2026-11-rules-changelog.md`（归档只读），各版本保留一行摘要；正文补全 v1.8 全部条款（此前因工作区误重置丢失，本次重新写入并逐条核验）。
@@ -170,7 +171,7 @@
 ### 5. 多 Agent 并发纪律 (v1.5 新增，v1.6 扩充)
 - **同机并发前提**：同机多个 Agent **可以同时运行**，但必须同时满足以下四条：
   1. **各用各的 venv**：依赖隔离遵循 四-1，装入并激活 `~/.agent-tools/venvs/<自己的名字>/`，禁止共用或激活他人虚拟环境；
-  2. **禁止系统级安装**：不得执行系统级 `pip install` / `npm install -g`（Windows 上含"以管理员身份"安装全局包）；缺依赖时装入自己的 venv，并按 五-1 将变更同步进 `env/requirements.txt` 等清单；
+  2. **禁止全局安装**（v1.8.4 明确化）：不得执行 `npm install -g` / 系统级 `pip install` / `pip install --user` 等把包装进**共享前缀**的命令。"全局"按安装位置判定，**不按是否需要管理员权限判定**——装进 `~/.workbuddy/binaries/node/versions/*`、`%APPDATA%\npm` 等用户级托管目录同样算全局安装，一律禁止（Windows 上"以管理员身份"安装更在其内）。缺依赖时：Python 装进自己的 venv；**Node/项目级 CLI 必须声明为项目的 devDependency 并装在项目的 `node_modules/` 内**，用 `npx <tool>` 或 npm scripts 调用（见 四-4 ⑦）。唯一例外是基础运行时本身（Git/Python/Node，四-1 允许系统装一份）。
   3. **项目目录占用确认（兜底）**：对项目目录的并行操作**默认走 三-6 worktree 模式**（各用各的 checkout，无需占用确认）；仅当共用主 worktree（临时小改动）时，先查 `handoff/` 最新交接文档确认无其他 Agent 占用，开始占用时**必须在交接文档中注明占用者与预计释放时间**，禁止并行操作同一目录；
   4. **命名隔离与端口段**：临时文件一律写入 `tmp/<agent名>/`；Agent 因调试等需要自起的服务必须带 agent 名命名与登记（端口记录进 `memory/devices/<设备名>.md`），**禁止占用 9101/9102 等本规范保留端口**，避免服务与文件被静默互相覆盖。dev server、测试数据库、docker 容器等开发资源按 **agent 端口段**分配（如 trae=9200-9299、workbuddy=9300-9399），端口段登记进设备档案，禁止越段占用。
   5. **任务认领机制**：项目开发任务统一登记在 `memory/projects/<项目名>.md` 的任务登记节（append-only），格式：`任务ID | 描述 | 认领agent | 状态`。agent 领任务先追加认发行（登记即锁定），完成或放弃必须**追加**状态行（不得改写旧行）；未登记认领的任务其他 agent 不得开工，防止重复劳动。
@@ -192,7 +193,7 @@
 
 ### 1. 依赖与运行时安装纪律
 - **系统级共享**：Python/Node.js/Git 等基础运行时系统安装一份即可。
-- **环境隔离**：Agent 专属的 Python 依赖必须安装在 `~/.agent-tools/venvs/你的agent名字/` 中。
+- **环境隔离**：Agent 专属的 Python 依赖必须安装在 `~/.agent-tools/venvs/你的agent名字/` 中；**Node/项目级 CLI 依赖必须装在项目的 `node_modules/` 并由项目 lock 文件声明**（见 四-4 ⑦），不得装进共享全局前缀（三-5 ②）。
 - **禁止违规存放**：严禁在 `~/.agent-shared` (Git 工作区) 内部创建任何 `venv` 或 `node_modules`。
 - **Windows Shell 选型（v1.3 新增）**：
   - **Git Bash 为主**：负责运行 `env/` 下全部 `.sh` 脚本（`setup.sh`、`start-mcp.sh` 等），保证与 Linux/Termux 单套脚本通用，且 `~` 解析与本规范一致；
@@ -225,6 +226,7 @@
 |---|---|
 | 系统级基线（git/python/node/npm/gh/curl/unzip/ssh）与工具区二进制（gitleaks 等，放 `~/.agent-tools/bin`） | `env/toolchain.md`（基线、来源类型、变更日志）+ `memory/devices/tools-<设备名>.md`（本机实测，脚本生成） |
 | 项目/venv 依赖 | `env/requirements.txt`、项目 lock 文件 |
+| **项目级 CLI**（wrangler / vite / tsc / eslint 等，v1.8.4 新增） | **项目自身的 `package.json` + lock 文件**（devDependency，装进项目 `node_modules/`，见 ⑦） |
 | MCP 服务 | `env/mcp-registry.md`（见 四-2） |
 | 桌面客户端（WPS/PuTTY/网盘/NAS 映射） | `memory/devices/<设备名>.md`（属人类环境，不在工具链基线内） |
 
@@ -233,7 +235,10 @@
   `bash env/tools-scan.sh --write`
   生成 `memory/devices/tools-<设备名>.md` 并刷新 stamp（`~/.agent-tools/run/tools-scan.stamp`），随后提交并 `git sync`。
   **已有 stamp 且未满 30 天时，其他 agent 不得再全量扫描**，只跑 `bash env/tools-scan.sh --check` 核对基线即可；超过 30 天才重新全量刷新（避免同一台机器被反复扫描、清单反复抖动）。
-- **③ 新装 / 升级 / 卸载必须登记**：执行 `tools-scan.sh --write` 刷新本机清单，并在 `env/toolchain.md` §五 变更日志**追加一行**（日期 | 设备 | 操作 | 工具与版本 | 来源类型 | 操作者 | 备注）。**未登记的安装视为不合规**。
+- **③ 新装 / 升级 / 卸载必须登记**：**系统级工具与工具区二进制**执行 `tools-scan.sh --write` 刷新本机清单，并在 `env/toolchain.md` §五 变更日志**追加一行**（日期 | 设备 | 操作 | 工具与版本 | 来源类型 | 操作者 | 备注）；**项目级 CLI** 则由项目 `package.json`/lock 文件的提交来登记（并在 `memory/projects/<项目名>.md` 追加一条说明）。**未登记的安装视为不合规**——无论装在系统级、用户级托管前缀还是项目外，都不能以"某会话临时装一下"为由跳过登记。
+- **⑦ 项目级 CLI 归项目所有（v1.8.4 新增）**：wrangler、vite、tsc、eslint 等**只在某个项目里用得到**的命令行工具，必须声明为该项目的 devDependency，装进项目 `node_modules/`，随项目 Git 仓库（lock 文件）走，用 `npx <tool>` / npm scripts 调用。**禁止装成全局**——全局安装会造成：① 所有项目/会话共用同一版本，互相冲突；② 新设备 clone 项目后拿不到该命令，部署/构建不可复现；③ 无法从任何清单看出这台机器装过它。
+  - 探测时还要查项目自身的 `package.json` / lock 文件，不能只看 `command -v`；仅当项目确无依赖声明且确实需要该工具时才安装，且必须按上述方式落到项目本地。
+  - **存量整改**：发现历史上已全局安装的项目级 CLI，按"卸载全局 → 项目本地化 → 补登记（`toolchain.md` §五 追加卸载与安装各一行 + 项目记忆说明）"处理，禁止用"补一条登记"把违规状态合法化。
 - **④ 来源类型必填其一**：`复用`（本机已装直接用，首选）/ `包管理器`（winget/apt/brew/scoop，记包名）/ `官方Release`（记版本号与下载 URL）/ `未知来源`（绿色版、他处拷贝——可直接用，但**密钥相关工具须核验哈希或换官方来源**）。
 - **⑤ 约束**：工具二进制**不入 Git**，`~/.agent-tools/bin` 为唯一工具区，禁止散落到项目目录；不登记 `pip list`/`npm ls` 这类完整包列表（噪音），只登记 agent 干活真正依赖的工具；多版本并存时须在设备清单注明"默认解析哪个"，否则 agent 会用错解释器装包。
 - **⑥ GUI 程序（puttygen 等）不做版本探测**：执行 `--version` 会弹窗挂起会话，清单里记为"未探测"即可，只核对存在性。

@@ -21,6 +21,23 @@ RUN_DIR="${HOME}/.agent-tools/run"
 STAMP="${RUN_DIR}/tools-scan.stamp"
 MODE="${1:-table}"
 
+# 项目级 CLI 白名单探测（四-4 ⑦）：这些工具只允许装在项目 node_modules 内，
+# 出现在 npm 全局列表 = 不合规，须卸载并项目本地化
+PROJECT_CLIS=(wrangler vite tsc eslint prettier turbo)
+GLOBAL_CLI_WARN=0
+
+scan_global_clis() {
+  local npm_bin out c ver
+  npm_bin="$(locate npm 2>/dev/null)" || return
+  out="$("$npm_bin" list -g --depth=0 2>/dev/null)" || return
+  for c in "${PROJECT_CLIS[@]}"; do
+    ver="$(echo "$out" | grep -E "^[├└]── ${c}@" | head -1 | sed "s/.*${c}@//")"
+    [ -z "$ver" ] && continue
+    echo "⚠️ 全局安装的项目级 CLI：${c}@${ver}（不合规，四-4 ⑦）——应卸载并声明为项目 devDependency，用 npx 调用"
+    GLOBAL_CLI_WARN=$((GLOBAL_CLI_WARN+1))
+  done
+}
+
 # 设备名：<hostname>-<os>，全小写（规范 二-0.5）
 DEVICE="${AGENT_DEVICE:-$(hostname 2>/dev/null | tr '[:upper:]' '[:lower:]' | tr -d ' ')}-win"
 
@@ -134,6 +151,9 @@ emit_table() {
   done
   echo ""
   echo "> 统计：可用 $ok / 未安装 $miss / 低于基线 $low ｜ 扫描时间 $(date '+%Y-%m-%d %H:%M') ｜ 设备 \`$DEVICE\`"
+  local g
+  g="$(scan_global_clis)"
+  if [ -n "$g" ]; then echo ""; echo "## 全局项目级 CLI 违规（四-4 ⑦）"; echo ""; echo "$g"; fi
 }
 
 case "$MODE" in
@@ -189,6 +209,8 @@ case "$MODE" in
       if [ -n "$ver" ] && ! ver_ge "$ver" "$base"; then echo "⚠️ 低于基线：$c $ver < $base"; bad=1; fi
     done
     [ $pathwarn -gt 0 ] && echo "ℹ️ 共 $pathwarn 项属 PATH 注入差异（不同 agent 会话 PATH 不同），非安装缺失，不视为基线失败"
+    g="$(scan_global_clis)"
+    if [ -n "$g" ]; then echo "$g"; echo "ℹ️ 以上为四-4 ⑦ 存量违规，不计入基线失败，但须按存量整改流程处理"; fi
     [ $bad -eq 0 ] && echo "✅ 基线核对通过，无需全量扫描"
     exit $bad
     ;;
