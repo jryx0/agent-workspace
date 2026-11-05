@@ -72,6 +72,6 @@
 
 | 设备 | 清单文件 | 上次扫描 | 备注 |
 |---|---|---|---|
-| zhn-tbxg2iah-win | `memory/devices/tools-zhn-tbxg2iah-win.md` | 2026-11-05 08:40 | 首发设备；rclone 按决策不装（NAS 自带云同步直推百度网盘）；用户级 PATH 的 node 目录已修正为 `22.22.2-6`（方案 A，复用已装版本） |
+| zhn-tbxg2iah-win | `memory/devices/tools-zhn-tbxg2iah-win.md` | 2026-11-05 09:03 | 首发设备；rclone 按决策不装（NAS 自带云同步直推百度网盘）；用户级 PATH 的 node 目录已修正为 `22.22.2-6`（方案 A，复用已装版本） |
 
 > 新设备接入时：① 在此表追加一行；② 执行 `AGENT_DEVICE=<设备名> bash env/tools-scan.sh --write`；③ 提交并 `git sync`。
