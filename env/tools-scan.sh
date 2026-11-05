@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tools-scan.sh — 本机工具链扫描（规范 六-2，v1.8.3）
+# tools-scan.sh — 本机工具链扫描（规范 四-4，v1.8.3）
 #
 # 用法：
 #   ./tools-scan.sh              输出 markdown 表格到 stdout（供人看/临时核对）
