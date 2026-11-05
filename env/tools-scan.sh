@@ -6,7 +6,7 @@
 #   ./tools-scan.sh --write      全量扫描并写入 memory/devices/tools-<设备名>.md，刷新 stamp
 #   ./tools-scan.sh --check      只核对基线，不写文件（自检第 8 步用）；有缺项/低版本时退出码 1
 #
-# 设计原则（六-2）：
+# 设计原则（四-4）：
 #   1. 探测优先：已装且满足基线即"复用"，禁止重复下载
 #   2. 首次扫描一次：--write 生成设备清单 + stamp，之后 30 天内不再全量扫描
 #   3. 新装/升级/卸载后必须 --write 刷新，并在 env/toolchain.md 变更日志 append 一行
