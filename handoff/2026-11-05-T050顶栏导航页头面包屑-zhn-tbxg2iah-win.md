@@ -46,7 +46,7 @@ $ node scripts/build_web_assets.mjs --check
 web_assets.js 与 36 个源文件一致
 
 $ node scripts/web_size.mjs
-合计 64.3 KB / 23.9 KB gzip
+合计 63.1 KB / 23.9 KB gzip
 通过：首屏 gzip 23.9 KB ≤ 40.0 KB（余量 16.1）
 （styles-refresh.css 5.9 KB / 2.3 KB gzip；icons.svg 2.9 KB / 1.0 KB gzip；app.js 13.3 KB / 6.1 KB gzip）
 
