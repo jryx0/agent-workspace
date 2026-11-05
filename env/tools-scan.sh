@@ -68,13 +68,31 @@ get_version() {
   esac
 }
 
-# 定位可执行文件：先 PATH，再工具区（支持 .exe）
+# 定位可执行文件，返回码含义：
+#   0 = PATH 中找到 ｜ 1 = 工具区找到（PATH 不可见）｜ 3 = 磁盘已装但当前 PATH 无（禁止重复安装）｜ 2 = 确实未安装
+# rc=3 的情形（v1.8.3 补丁）：WorkBuddy/系统托管运行时在磁盘上，但不同 agent 会话注入的 PATH 不同，
+# 若直接判为"未安装"会诱使后续 agent 重复下载——违反 四-4 ① 探测优先。
 locate() {
-  local c="$1" p
+  local c="$1" p cand d
   p="$(command -v "$c" 2>/dev/null)" && { echo "$p"; return 0; }
   for cand in "${TOOLS_BIN}/${c}" "${TOOLS_BIN}/${c}.exe"; do
     [ -x "$cand" ] || [ -f "$cand" ] && { echo "$cand"; return 1; }
   done
+  # 托管运行时磁盘探测（按工具名分别找）
+  case "$c" in
+    node|npm)
+      for d in "${HOME}/.workbuddy/binaries/node/versions/"*/; do
+        [ -d "$d" ] || continue
+        cand="${d}${c}.exe"; [ -f "$cand" ] || cand="${d}${c}"
+        [ -f "$cand" ] && { echo "$cand"; return 3; }
+      done ;;
+    python|python3)
+      for d in "${HOME}/.workbuddy/binaries/python/versions/"*/; do
+        [ -d "$d" ] || continue
+        cand="${d}python.exe"; [ -f "$cand" ] || cand="${d}python"
+        [ -f "$cand" ] && { echo "$cand"; return 3; }
+      done ;;
+  esac
   return 2
 }
 
@@ -100,6 +118,12 @@ emit_table() {
     fi
     ver="$(get_version "$c" "$path")"
     [ -z "$ver" ] && ver="未知"
+    if [ $rc -eq 3 ]; then
+      ver="$(get_version "$c" "$path")"
+      printf "| %s | %s | ⚠️ 已装但当前 PATH 不可见（**无需安装**，修 PATH 或注入路径） | %s | 否（磁盘存在） | %s |\n" \
+        "$c" "${ver:-未知}" "$(echo "$path" | sed "s|^$HOME|~|")" "$use"
+      ok=$((ok+1)); continue
+    fi
     if [ $rc -eq 1 ]; then visible="否（仅工具区，需新开终端或加 PATH）"; else visible="是"; fi
     if [ -n "$base" ] && [ "$ver" != "未知" ] && ! ver_ge "$ver" "$base"; then
       status="⚠️ 低于基线 $base"; low=$((low+1))
@@ -150,16 +174,21 @@ case "$MODE" in
     age_days=$(( ( $(date +%s) - $(date -d "${scanned:0:19}" +%s 2>/dev/null || echo 0) ) / 86400 ))
     echo "上次扫描：${scanned}（约 ${age_days} 天前）"
     [ "$age_days" -ge 30 ] && echo "⚠️ 清单已超过 30 天，建议重新全量扫描（--write）"
-    bad=0
+    bad=0 pathwarn=0
     for row in "${TOOLS[@]}"; do
       IFS='|' read -r c use base <<< "$row"
       [ "$c" = "rclone" ] && continue   # 本机按决策不装
       [ -z "$base" ] && continue
-      path="$(locate "$c")"
-      if [ $? -eq 2 ]; then echo "❌ 缺失：$c（基线 >=$base，用途：$use）"; bad=1; continue; fi
+      path="$(locate "$c")"; rc=$?
+      if [ $rc -eq 2 ]; then echo "❌ 缺失：$c（基线 >=$base，用途：$use）——需按 四-4 ① 探测后安装并登记"; bad=1; continue; fi
+      if [ $rc -eq 3 ]; then
+        echo "⚠️ 已装但当前 PATH 不可见：$c（磁盘路径 $path）——**禁止重复安装**，请注入 PATH 或用绝对路径调用"
+        pathwarn=$((pathwarn+1)); continue
+      fi
       ver="$(get_version "$c" "$path")"
       if [ -n "$ver" ] && ! ver_ge "$ver" "$base"; then echo "⚠️ 低于基线：$c $ver < $base"; bad=1; fi
     done
+    [ $pathwarn -gt 0 ] && echo "ℹ️ 共 $pathwarn 项属 PATH 注入差异（不同 agent 会话 PATH 不同），非安装缺失，不视为基线失败"
     [ $bad -eq 0 ] && echo "✅ 基线核对通过，无需全量扫描"
     exit $bad
     ;;
