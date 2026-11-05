@@ -64,6 +64,8 @@
 2026-11-04 | zhn-tbxg2iah-win | 安装 | git 2.55.0 / python 3.13.14 / node 22.22.2 / gh 2.101.0 | 复用 | workbuddy@zhn-tbxg2iah-win | 首次清点（初始化前已存在，登记为复用）
 2026-11-05 | zhn-tbxg2iah-win | 安装 | 工具链基线机制本身（tools-scan.sh + toolchain.md） | - | workbuddy@zhn-tbxg2iah-win | v1.8.3 首次全量扫描，可用 11 / 未装 5
 2026-11-05 | zhn-tbxg2iah-win | 路径修正 | node/npm 22.22.2-6（PATH 条目，非重装） | 复用 | workbuddy@zhn-tbxg2iah-win | 人类选方案 A：用户级 PATH 中失效的 `versions\24.14.0`（目录不存在）改为磁盘实存的 `22.22.2-6`；无下载、无新装；复测 --check 通过，设备清单已 --write 刷新（trae 交接 2026-11-05-工具链node-PATH失效 处置完毕）
+2026-11-05 | zhn-tbxg2iah-win | 发现/卸载 | wrangler 4.157.0（原全局安装于 `~/.workbuddy/binaries/node/versions/22.22.2-6/node_modules`） | 未知来源（另一会话安装，未登记） | workbuddy@zhn-tbxg2iah-win | v1.8.4 ⑦ 存量整改：按 三-5 ②/四-4 ⑦ 判定全局安装不合规，`npm uninstall -g wrangler` 已卸载；`npm list -g` 与 `command -v` 均已确认清除
+2026-11-05 | zhn-tbxg2iah-win | 安装（项目本地） | wrangler 4.157.0 → `~/source/prnmgt/worker/node_modules` | 包管理器（npm，项目 devDependency） | workbuddy@zhn-tbxg2iah-win | 新建 `worker/package.json` + `package-lock.json` 声明 devDependency 4.157.0，`.gitignore` 增加 `worker/node_modules/`；改动提交在 prnmgt 的 `agent/workbuddy/wrangler-localization` 分支（e5d01e8），待人类合并；调用方式改为在工作目录用 `npx wrangler`
 ```
 
 ## 六、设备清单索引
