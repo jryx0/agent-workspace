@@ -1,9 +1,23 @@
-# 多设备多 Agent 协同工作架构与规范 (v1.8.4)
+# 多设备多 Agent 协同工作架构与规范 (v1.8.5)
 
 > **致所有 Agent：** 你现在接入了一个跨设备（Windows/Linux/iOS/Android/HarmonyOS）、多 Agent 协同的个人/团队工作空间。请严格遵循本规范进行文件读写、记忆存储、工具调用和任务交接。如果你是人类用户，请按此文档进行环境初始化。
 
+## 〇、 规范发现与注入（v1.8.5 新增，最高优先级）
+
+> **背景**：本规范只存放在 `~/.agent-shared/global/rules.md`，**不会自动进入 Agent 会话上下文**。会话启动时若未注入，Agent 无从知道规范存在，第八节自检也不会执行——2026-11-05 某会话未加载任何版本规范即执行 `npm install -g wrangler`，根因即此机制缺陷（调查见 `memory/org.md` 09:08 条目）。
+
+- **① 注入通道（人类负责配置，按可靠性排序）**
+  1. **平台全局指令（必配）**：WorkBuddy 桌面版「左下角头像 → 设置 → 个性化 → 给 WorkBuddy 的指令」（旧名：自定义指令，≤1500 字符），**每个新会话自动注入**。内容只放短红线（模板见 `env/project-AGENTS-hook.md` A 段）：开工前读本规范并执行第八节自检；装工具前跑 `tools-scan.sh --check`；禁全局安装；改 `~/.agent-shared` 后 10 分钟内 commit + `git sync`。
+  2. **项目规则文件（项目级补充）**：工作区根目录 `AGENTS.md` / `CODEBUDDY.md`（打开项目自动读取）。
+  3. **用户级规则目录 / 技能**：长文本按需加载，**不得替代 ①② 的必读入口**。
+- **② 项目挂接（硬性）**：`~/source/` 下每个项目的 `AGENTS.md` / `CODEBUDDY.md` 必须在「开工前必读顺序」**首项**写明全局规范路径与「先读并执行第八节自检，再读本项目文件」；挂接块模板见 `env/project-AGENTS-hook.md` B 段。未挂接的项目视为**接入未完成**，登记进 `memory/projects/<项目名>.md` 并提醒人类；agent **不得擅自改写项目规则文件**，改动必须走 三-6 worktree + `agent/*` 分支，待人类合并。
+- **③ Agent 侧兜底（无注入时）**：任何会话在涉及**文件写入、环境配置、代码、工具/依赖安装、Git 写操作**之前，若上下文中没有本规范全文或指针，必须自行 Read `~/.agent-shared/global/rules.md`；读不到则**停止写操作并报告人类**。不得以「用户没提规范」「任务很小」为由跳过第八节自检。
+- **④ 首次注入验证**：配置全局指令后，人类新开一个任务发「开工前按规范自检」；agent 应主动读本规范并跑 `tools-scan.sh --check`。未做到即注入失败，检查指令是否保存、是否为新任务（指令只在会话开始时注入，当前会话不会重新加载）。
+- **⑤ 单一原件**：规范正文只在 `global/rules.md` 维护；全局指令与项目 AGENTS.md **只放指向本文件的短指针**，禁止复制条款正文，避免多处不同步。规范升版只改本文件并追加变更记录，注入端无需改动。
+
 ## 变更记录
 
+- **v1.8.5 (2026-11-05)**：新增 **〇 规范发现与注入**（最高优先级章节）——① 明确平台全局指令（必配、只放短红线）/项目规则文件/技能三类注入通道；② 项目 AGENTS.md 必须首部挂接全局规范，新增配套模板 `env/project-AGENTS-hook.md`；③ Agent 侧兜底：未被注入时涉文件/环境/安装/Git 写操作前必须自行读规范，读不到即停写上报；④ 首次注入验证流程；⑤ 单一原件原则（注入端禁止复制条款正文）。第八节自检新增第 9 步 `[Agent自动]` 规范注入确认。触发事件：另一会话未加载任何规范即全局安装 wrangler；人类已于 09:15 完成平台全局指令配置。⑥ 勘误 三-6 提交身份写法：worktree 与主仓库共用 `.git/config`，改用 `git -c` 一次性指定，禁止裸 `git config` 污染主 worktree 署名。
 - **v1.8.4 (2026-11-05)**：明确「全局安装」判定口径与项目级 CLI 归属——① 三-5 ② 改为**按安装位置判定**、不按是否需要管理员权限：装进用户级托管前缀（`~/.workbuddy/binaries/node/versions/*`、`%APPDATA%\npm` 等）也算全局安装，一律禁止；② 四-1 补充 Node 依赖须装进项目 `node_modules/`；③ 四-4 表格新增「项目级 CLI」行，新增 ⑦ 条款：项目级 CLI（wrangler/vite/tsc 等）必须声明为项目 devDependency、随 lock 文件走、用 `npx` 调用，含存量整改流程（卸载全局→项目本地化→补登记）；④ 四-4 ③ 区分系统级工具与项目级 CLI 的登记去处，明确「未登记的安装视为不合规」适用于所有共享前缀。触发事件：另一会话全局安装 wrangler@4.157.0 未登记。
 - **v1.8.3 (2026-11-05)**：新增 **四-4 工具链基线管理**——① 探测优先，已装且满足基线即复用，禁止重复下载；② 首次运行扫描一次（`env/tools-scan.sh --write` 生成 `memory/devices/tools-<设备名>.md` + stamp），stamp 未满 30 天其他 agent 不得再全量扫描，只跑 `--check`；③ 新装/升级/卸载必须刷新清单并在 `env/toolchain.md` §五 追加变更日志；④ 来源类型枚举（复用/包管理器/官方Release/未知来源）；⑤ 二进制不入 Git、不登记完整包列表；⑥ GUI 程序不做版本探测。配套新增 `env/toolchain.md`（基线+变更日志+设备索引）、`env/tools-scan.sh`（扫描脚本）；自检新增第 8 步 `[Agent自动]` 工具链核对；二-1 目录树同步补充上述两文件。
 - **v1.8.2 (2026-11-04)**：采纳 trae handoff 评审中 v1.8 尚未覆盖的 4 项——① 三-6 新增 worktree 适用场景（单人单任务直接 clone，仅多 agent 并发同一项目时启用）；② 八 启动自检 7 步标签化（`[Agent自动]`/`[Agent报告]`/`[人类执行]`），明确可自动完成与需人类处置的边界；③ 五-1 新增 commit message 规范（type 枚举 + agent 署名）；④ 移动端只读描述由 3 处收敛为 四-3 单一权威定义。另勘误：五-1 推送命令 `--all --tags` 同用（Git 2.55 已禁止）改为分步推送。
@@ -185,7 +199,7 @@
 - **适用场景**（v1.8.2）：**单人单任务直接 clone 到 `repos.md` 登记路径，不启用 worktree**——worktree 的唯一目的是隔离同机多 agent 对同一项目的并发修改，无并发时启用它只增加清理负担。仅当两个及以上 agent 同时修改同一项目代码时，才按下述布局启用协作模式。
 - **范围**：仅 `repos.md` 登记的项目代码仓库；**`~/.agent-shared` 禁用 worktree**（append-only 记忆与压缩机制依赖单一历史，分支化会使其失效）。
 - **布局**：主 worktree `~/source/<项目名>`（跟踪 main，人类或共用者使用）；agent 专属 `~/source/<项目名>.wt/<agent名>/`，分支 `agent/<agent名>/<任务>`。
-- **流程**：领任务后（先按 三-5 ⑤ 认领登记）`git worktree add ~/source/<项目名>.wt/<agent名> -b agent/<agent名>/<任务> origin/main` → 开发/构建/测试 → **分支准出**：`git pull --rebase origin main` 且自测（至少构建+冒烟）通过，commit 携带 `Agent: <agent名>` trailer，并在该 worktree 内配置独立提交身份（`git config user.name zhn-<agent名>`）→ push 分支 → 人类合并 → `git worktree remove`。
+- **流程**：领任务后（先按 三-5 ⑤ 认领登记）`git worktree add ~/source/<项目名>.wt/<agent名> -b agent/<agent名>/<任务> origin/main` → 开发/构建/测试 → **分支准出**：`git pull --rebase origin main` 且自测（至少构建+冒烟）通过，commit 携带 `Agent: <agent名>` trailer，并以独立提交身份提交（`git -c user.name=zhn-<agent名> -c user.email=<agent邮箱> commit ...`）——**禁止用裸 `git config user.name/user.email`**：worktree 默认与主仓库共用 `.git/config`，会篡改主 worktree 的署名（v1.8.5 勘误，见 〇 相关公告）→ push 分支 → 人类合并 → `git worktree remove`。
 - **生命周期**：会话结束即 remove，成果靠分支保留而非残留目录；月度压缩时主设备顺带 prune 并清理已合并的 `agent/*` 本地分支（三-2 第 8 步）。
 - **依赖**：Python venv 位于 `~/.agent-tools/venvs/`，跨 worktree 直接复用；`node_modules` 每 worktree 独立安装，依赖共享缓存 `~/.agent-tools/cache` 降低代价（pnpm 项目 store 天然共享）。
 
@@ -338,6 +352,7 @@
    - **存在且未满 30 天**：**不再全量扫描**，只跑 `bash ~/.agent-shared/env/tools-scan.sh --check`，基线通过即继续；缺项或低于基线时上报人类；
    - **存在但超 30 天**：重新 `--write` 刷新一次，结果入库存档。
    禁止跳过本步直接安装工具（先探测，再决定是否安装，见 四-4 ①）。
+9. **[Agent自动] 规范注入确认（v1.8.5，见 〇）**：确认本会话上下文已包含本规范全文或全局指令指针；没有则立即读 `~/.agent-shared/global/rules.md`。若任务涉及 `~/source/` 下项目，检查其 `AGENTS.md`/`CODEBUDDY.md` 首部是否已挂接全局规范（〇 ②），未挂接则登记到 `memory/projects/<项目名>.md` 并提醒人类，不擅自改写。
 
 ## 九、 人类用户的初始化清单 (供参考)
 

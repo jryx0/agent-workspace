@@ -28,3 +28,9 @@
   - 9101 MCP 文件系统（规范保留，未启动）
   - 9102 MCP Git 操作（规范保留，未启动）
 
+
+
+## 规范注入点（v1.8.5，2026-11-05 09:15）
+- 平台全局指令：已由人类配置（左下角头像 → 设置 → 个性化 →「给 WorkBuddy 的指令」），所有新会话自动注入；内容以设置界面为准，基准模板见 `env/project-AGENTS-hook.md` A 段。指令只在会话开始时注入，当前会话不会重载。
+- 项目侧：`~/source/` 下项目 AGENTS.md 按 〇 ② 首部挂接；prnmgt 挂接在 `agent/workbuddy/agents-md-hook`（85de576）待人类合并。
+- 提交身份：worktree 内用 `git -c` 一次性指定；`~/source/prnmgt` 主仓库署名已恢复为 张皓 <hao.zhang@gmail.com>，`~/.agent-shared` 仍为 zhn <997524210@qq.com>。

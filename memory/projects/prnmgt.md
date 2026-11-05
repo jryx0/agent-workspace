@@ -56,3 +56,6 @@ node tools/compare/verify_all.mjs            # 契约 46/46 PASS
 ```
 
 [@workbuddy @zhn-tbxg2iah-win 2026-11-05 09:03 UTC+8] 【prnmgt 工具链整改】按规范 v1.8.4 四-4 ⑦，wrangler 由全局安装改为项目本地 devDependency 4.157.0（`worker/package.json` + `package-lock.json`），调用方式 `cd ~/source/prnmgt/worker && npx wrangler <cmd>`。改动在 `agent/workbuddy/wrangler-localization` 分支（e5d01e8，worktree `~/source/prnmgt.wt/workbuddy`），待人类合并；新设备 clone 后执行 `cd worker && npm ci` 即可复现，不再依赖任何全局安装。
+
+
+[@workbuddy @zhn-tbxg2iah-win 2026-11-05 09:20 UTC+8] 【v1.8.5 〇 ② 挂接】AGENTS.md「开工前必读顺序」新增第 0 项指向 `~/.agent-shared/global/rules.md`；改动在 `agent/workbuddy/agents-md-hook`（85de576，worktree `~/source/prnmgt.wt/workbuddy-agents`），未动 master，待人类合并。另：主仓库 `.git/config` 的 user.name/email 已恢复为 张皓 <hao.zhang@gmail.com>（上次 worktree 内裸 `git config` 误改），今后本项目 worktree 提交一律用 `git -c` 指定独立身份。
