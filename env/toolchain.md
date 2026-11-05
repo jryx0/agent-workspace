@@ -63,12 +63,13 @@
 2026-11-04 | zhn-tbxg2iah-win | 安装 | gitleaks 8.30.1 | 官方Release | workbuddy@zhn-tbxg2iah-win | 全局 pre-commit 密钥扫描（六-1），装至 ~/.agent-tools/bin
 2026-11-04 | zhn-tbxg2iah-win | 安装 | git 2.55.0 / python 3.13.14 / node 22.22.2 / gh 2.101.0 | 复用 | workbuddy@zhn-tbxg2iah-win | 首次清点（初始化前已存在，登记为复用）
 2026-11-05 | zhn-tbxg2iah-win | 安装 | 工具链基线机制本身（tools-scan.sh + toolchain.md） | - | workbuddy@zhn-tbxg2iah-win | v1.8.3 首次全量扫描，可用 11 / 未装 5
+2026-11-05 | zhn-tbxg2iah-win | 路径修正 | node/npm 22.22.2-6（PATH 条目，非重装） | 复用 | workbuddy@zhn-tbxg2iah-win | 人类选方案 A：用户级 PATH 中失效的 `versions\24.14.0`（目录不存在）改为磁盘实存的 `22.22.2-6`；无下载、无新装；复测 --check 通过，设备清单已 --write 刷新（trae 交接 2026-11-05-工具链node-PATH失效 处置完毕）
 ```
 
 ## 六、设备清单索引
 
 | 设备 | 清单文件 | 上次扫描 | 备注 |
 |---|---|---|---|
-| zhn-tbxg2iah-win | `memory/devices/tools-zhn-tbxg2iah-win.md` | 2026-11-05 | 首发设备；rclone 按决策不装（NAS 自带云同步直推百度网盘） |
+| zhn-tbxg2iah-win | `memory/devices/tools-zhn-tbxg2iah-win.md` | 2026-11-05 08:40 | 首发设备；rclone 按决策不装（NAS 自带云同步直推百度网盘）；用户级 PATH 的 node 目录已修正为 `22.22.2-6`（方案 A，复用已装版本） |
 
 > 新设备接入时：① 在此表追加一行；② 执行 `AGENT_DEVICE=<设备名> bash env/tools-scan.sh --write`；③ 提交并 `git sync`。
