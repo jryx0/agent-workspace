@@ -1,17 +1,30 @@
 # 2026-11-05 前端视觉改版方案编制 · zhn-tbxg2iah-win（workbuddy）
 
-- 性质：**仅方案与效果图，生产仓库零改动**（`git diff HEAD` 为空）
+> **规范三-4 交接要素速览**（当前状态 / 已完成 / 待办 / 关键文件 / worktree / 下一步）
+>
+> | 要素 | 内容 |
+> |---|---|
+> | **当前状态** | 方案与效果图已完成并入库，**4 项决策全部拍板，方案可开工**；生产代码**零改动**（`git diff HEAD` 为空） |
+> | **已完成** | 效果图（可交互 mockup + 配色对照卡 + 定稿截图 7 张）、实施方案 v3、执行提示词（自包含任务书）、T-049~T-052 四张任务卡入库、`check.mjs` 0 问题 |
+> | **待办** | 等人类指派执行 agent 按 T-049→T-049b→T-050→T-051→T-052 顺序实现；生产部署由人类执行 `npx wrangler deploy` |
+> | **关键文件** | 方案 `docs/plan-2026-11-05-ui-visual-refresh.md`（生产仓库）；任务书 `docs/ui-refresh/exec-prompt.md`；效果图 `docs/ui-refresh/mockup.html`（均在 prnmgt 仓库 `agent/workbuddy/ui-refresh-plan` 分支）；效果图 PNG 在 `docs://prnmgt/ui-refresh/`（`~/.agent-docs`） |
+> | **worktree / 分支** | `~/source/prnmgt.wt/workbuddy` · 分支 `agent/workbuddy/ui-refresh-plan`（已推 origin，待人类合并） |
+> | **下一步** | 人类合并该分支 → 指派执行 agent 走 worktree `~/source/prnmgt.wt/<agent名>` + `agent/<agent名>/ui-refresh`，逐卡过 `check.mjs` + `web_size.mjs` + `build_web_assets --check` |
+
+- 性质：**方案与效果图，生产代码零改动**（`git diff HEAD` 为空）；方案文档与任务卡已入 prnmgt 仓库分支，**待人类合并**
 - 人类需求（14:10 口头提出）：优化打印机管理项目 web 页面显示、美化；**不动业务逻辑**；不明显增加页面体积；不用框架、原生 JS/CSS；**先出效果图待确认**
 - 人类补充（15:27）：**配色再给几个方案** → 15:27 拍板 **采用石墨灰（slate）**
 - 人类补充（15:40）：**表格对齐=全部居中 / 布局=A 顶栏 / 涨跌红涨绿跌=接受** → **4 个决策点全部拍板，方案可开工**
-- 交付物目录：`C:/Users/Zhn_X/WorkBuddy/2026-11-04-21-23-46/`
-  - `prnmgt-ui-refresh-exec-prompt.md`（**执行提示词 · 自包含任务书，15:45 编制**）
-  - `prnmgt-ui-mockup.html`（68.1 KB 单文件效果图，双击即开；**默认即定稿态**）
-  - `prnmgt-ui-refresh-plan.md`（实施方案 v3 · 决策全部落定）
-  - `prnmgt-ui-palette.html` + `palette-overview.png`（配色对照卡，已标注选定项）
-  - `final-*.png`（定稿效果图 7 张）/ `pal-*.png`（6 套备查截图）
-  - 辅助脚本：`gen-palette.mjs`（对照卡生成）/ `verify.mjs`（15 项自检）/ `verify-plan-tokens.mjs`（方案↔mockup token 一致性）/ `probe-legacy.cjs`（legacy 保真运行时探测）
-- 生产仓库：`C:/Users/Zhn_X/source/prnmgt`，master HEAD `f4ddfbf`（系他人合并 T-047，与本会话无关）
+- **交付物（已入库，跨设备可达）**
+  - prnmgt 仓库分支 `agent/workbuddy/ui-refresh-plan`（**待人类合并**）：
+    - `docs/plan-2026-11-05-ui-visual-refresh.md`（实施方案 v3 · 决策全部落定）
+    - `docs/ui-refresh/exec-prompt.md`（**执行提示词 · 自包含任务书，15:45 编制**）
+    - `docs/ui-refresh/mockup.html`（68.1 KB 单文件效果图，双击即开；**默认即定稿态**）
+    - `docs/ui-refresh/palette.html`（配色对照卡，已标注选定项）
+    - `specs/0001-prnmgt-refactor/tasks.md` → 新增 T-049 / T-049b / T-050 / T-051 / T-052 五张卡（状态 todo）
+  - `~/.agent-docs/prnmgt/ui-refresh/`（**跨设备同步区**，PNG 图表 1.3 MB，不进 Git）：`final-overview.png` / `final-collect.png` / `final-toner.png` / `final-report.png` / `final-layoutB.png` / `final-alignopt.png` / `final-legacy.png` / `palette-overview.png` —— 引用写 `docs://prnmgt/ui-refresh/<文件名>`
+- 生产仓库：`~/source/prnmgt`，master HEAD `3c2fed7`（T-048 月环比计划，他人会话产物）
+- **⚠️ 卡号重编（16:05 规范核查发现并修正）**：原方案用 T-048~T-051，但生产 `tasks.md` 的 **T-048 已被「月环比基数改上月同期」占用**（他人会话 15:55 登记，状态 todo）→ 撞号会导致两张卡互相覆盖。已整体重编为 **T-049 / T-049b / T-050 / T-051 / T-052**，与生产现有最大卡号 T-048 无冲突（`grep` 确认 T-049~T-052 未被占用）。
 
 ---
 
@@ -59,11 +72,11 @@
 
 | 卡 | 内容 | 文件 | 预估 |
 |---|---|---|---|
-| T-048 | Token 扩展 + 基础层 | `tokens.css`、新 `styles-refresh.css` | +110 行 |
-| **T-048b** | **落地石墨灰配色 + ink token**：改 8 个既有 token 值 + 新增 14 个 | `tokens.css` | +32 行 |
-| T-049 | 顶栏 + 导航 + 页头 + 面包屑 | `styles-refresh.css`、`index.html`、`app.js` | +95 行 |
-| T-050 | 卡片 + 涨跌片 + 状态徽标 | `styles-refresh.css`、`lib.js` | +120 行 |
-| T-051 | 表格 + 子页签分段控件 | `styles-refresh.css` | +100 行 |
+| T-049 | Token 扩展 + 基础层 | `tokens.css`、新 `styles-refresh.css` | +110 行 |
+| **T-049b** | **落地石墨灰配色 + ink token**：改 8 个既有 token 值 + 新增 14 个 | `tokens.css` | +32 行 |
+| T-050 | 顶栏 + 导航 + 页头 + 面包屑 | `styles-refresh.css`、`index.html`、`app.js` | +95 行 |
+| T-051 | 卡片 + 涨跌片 + 状态徽标 | `styles-refresh.css`、`lib.js` | +120 行 |
+| T-052 | 表格 + 子页签分段控件 | `styles-refresh.css` | +100 行 |
 
 **新建 `styles-refresh.css` 而非改 `styles.css`**：不触旧代码 + 出问题删一个 `<link>` 即回滚 + 可独立长缓存。
 
@@ -132,7 +145,7 @@
 
 砍到 ~22 KB（+11%）也可行：去侧边栏 −0.8、箭头改字符 −0.2、复用现有图标 −0.3。
 
-> 注：6 套方案只存在于**评审件 mockup**（不进生产）。落地时按 T-048b **只落地石墨灰这一套**，其余 5 套不写进 `tokens.css`（全落地会 +156 行 / +1.4KB gzip，且徒增选择成本）。
+> 注：6 套方案只存在于**评审件 mockup**（不进生产）。落地时按 T-049b **只落地石墨灰这一套**，其余 5 套不写进 `tokens.css`（全落地会 +156 行 / +1.4KB gzip，且徒增选择成本）。
 
 ---
 
@@ -201,8 +214,8 @@
 
 **决策带来的删减（执行时不要做多余的事）**：
 - 布局 A → **不落地**侧边栏 DOM/CSS（效果图的布局 B 仅留备查）
-- 全居中 → **不落地**「数字右对齐」档位，且 **T-051 不得触碰 `styles.css:197-201` 的 `text-align`**（其注释已说明源自旧系统 `query_page.js:191/193`）
-- 涨跌色 → **需要** `deltaChip`（T-050）
+- 全居中 → **不落地**「数字右对齐」档位，且 **T-052 不得触碰 `styles.css:197-201` 的 `text-align`**（其注释已说明源自旧系统 `query_page.js:191/193`）
+- 涨跌色 → **需要** `deltaChip`（T-051）
 
 另需确认（不阻塞开工）：
 - **是否保留「现版对照」模式作为长期回归手段**——建议不保留进生产（纯属评审件），但可留一份 `docs/ui-refresh/legacy-look.md` 记录视觉基线。
@@ -247,16 +260,45 @@ app.js               12.3 KB     5.6 KB
 
 ## 八、下一步
 
-**决策已全部拍板，可直接开工。** 执行入口是本目录的 **`prnmgt-ui-refresh-exec-prompt.md`**（自包含任务书，含逐卡指令、准出命令、禁止事项、token 全表、已知坑表）。
+**决策已全部拍板，方案与任务卡已入库，可直接开工。** 执行入口是生产仓库分支 `agent/workbuddy/ui-refresh-plan` 内的 **`docs/ui-refresh/exec-prompt.md`**（自包含任务书，含逐卡指令、准出命令、禁止事项、token 全表、已知坑表）。
 
-1. 建 worktree `~/source/prnmgt.wt/<agent名>` + 分支 `agent/<agent名>/ui-refresh`
-2. 按 T-048 → T-048b → T-049 → T-050 → T-051 顺序执行，每卡过 `check.mjs` + `web_size.mjs` + `build_web_assets --check` + 单测
-3. T-048b 落地时**必须同步改 `tokens.css` 头注释**（记录「2026-11-05 人类决策变更主色系与交互态共 8 项」）并把决策来源写进卡内
-4. 全部完成后交 workbuddy 审核，**部署生产 Worker 由人类执行**（worker/ 目录 `npx wrangler deploy`）
+1. **人类先合并** `agent/workbuddy/ui-refresh-plan`（含方案 v3 + 执行提示词 + 效果图 + T-049~T-052 五张卡）进 master
+2. 执行 agent 建 worktree `~/source/prnmgt.wt/<agent名>` + 分支 `agent/<agent名>/ui-refresh`
+3. 按 T-049 → T-049b → T-050 → T-051 → T-052 顺序执行，每卡过 `check.mjs` + `web_size.mjs` + `build_web_assets --check` + 单测
+4. T-049b 落地时**必须同步改 `tokens.css` 头注释**（记录「2026-11-05 人类决策变更主色系与交互态共 8 项」）并把决策来源写进卡内
+5. 全部完成后交 workbuddy 审核，**部署生产 Worker 由人类执行**（worker/ 目录 `npx wrangler deploy`）
 
-**未做**（等人类指派执行 agent）：未建 worktree、未建分支、未改 prnmgt 任何文件、未跑 build、未部署。
+**未做**（等人类指派执行 agent）：未跑 build、未改任何生产代码、未部署。
 
-**未跟踪文件说明**：主仓库 `.login-out.txt`（wrangler 登录输出，勿提交）与 `docs/plan-2026-11-04-device-gap.md`（11-04 他人会话产物）**均与本方案无关**，本会话全部改动都在 WorkBuddy 工作区。
+**未跟踪文件说明**：主仓库 `.login-out.txt`（wrangler 登录输出，勿提交）与 `docs/plan-2026-11-04-device-gap.md`（11-04 他人会话产物）**均与本方案无关**。
+
+---
+
+## 八之二、16:00-16:10 规范合规自查与修正（规范 v1.8.5）
+
+按人类要求「检查是否遵守 rule 规范，各种产出、handoff」，逐条比对 `~/.agent-shared/global/rules.md` v1.8.5 + 项目 `AGENTS.md` + `constitution.md`，**发现 4 项违规并已全部修正**：
+
+| # | 级别 | 违规内容 | 依据条款 | 修正动作 |
+|---|---|---|---|---|
+| **V1** | **P0** | **任务卡撞号**：原方案用 T-048~T-051，但生产 `tasks.md` 的 **T-048 已被「月环比基数改上月同期」占用**（他人会话 15:55 登记，状态 todo）→ 执行 agent 建卡会与该卡互相覆盖 | 项目 `AGENTS.md` §二「一次只做一张卡」+ 规范三-5 ⑤「任务认领机制」 | 整体重编为 **T-049 / T-049b / T-050 / T-051 / T-052**；用脚本做占位符替换防连环覆盖；`grep` 确认 T-048 归零且 T-049~T-052 在生产未被占用 |
+| **V2** | P1 | **任务卡未登记**：五张卡只在方案文档里，生产 `tasks.md` 无卡片，执行 agent 无处认领 | 规范三-5 ⑤ + 章程原则3「一条命令能验证」 | 五张卡写入 `specs/0001-prnmgt-refactor/tasks.md`，每卡含 `依赖/改动范围/验收/状态` 四字段 + 计划 + 背景；验收全部写成「命令 → 期望输出」；`check.mjs` 复跑 **0 问题**（任务 47→52） |
+| **V3** | P1 | **交付物未入库，跨设备不可达**：全部产出只在本机 WorkBuddy 工作区，其他设备（含移动端）无法获取，handoff 里引用的还是绝对路径 | 规范三-3「跨设备文件分类」+ 三-4「关键文件链接」+ 五-2 引用规范 | 文本类（≤1MB）入 prnmgt 仓库 `docs/`：方案 → `docs/plan-2026-11-05-ui-visual-refresh.md`、任务书 → `docs/ui-refresh/exec-prompt.md`、效果图 → `docs/ui-refresh/mockup.html` 与 `palette.html`；PNG（1.3MB 图表）入 `~/.agent-docs/prnmgt/ui-refresh/`，引用写 `docs://prnmgt/ui-refresh/<文件名>`；handoff 内绝对路径**已清零** |
+| **V4** | P1 | **handoff 缺规范三-4 要求的五要素**（当前状态/已完成/待办/关键文件/worktree/下一步）：原文档章节标题用的是自定义措辞，且缺「当前状态」独立表述 | 规范三-4「交接文档需包含」 | 首部新增「规范三-4 交接要素速览」表，六要素齐备；worktree 路径与分支填实（`~/source/prnmgt.wt/workbuddy` · `agent/workbuddy/ui-refresh-plan`） |
+
+### 未修正但需登记的一项
+
+**commit message type 未用枚举值**：`c0f79d8` 与 `2d5f511` 的 type 写成中文「前端视觉改版」，规范五-1 要求 type 取 `docs/feat/fix/refactor/memory/handoff/infra/scripts`。**不修正**——同条规范明确「历史提交不追溯改写」，且两条均已推双远端，改写会破坏他人已拉取的历史。后续提交一律用枚举 type（本次入库提交已用 `docs:`）。
+
+### 本轮顺带确认的无违规项
+
+- **第八节启动自检**：9 步全过（记忆目录正常、5 项密钥齐全、无 compact-lock、MCP 9101 在线、工具链 stamp 存在且未满 30 天、项目 `AGENTS.md` 第 10 行已挂接全局规范）
+- **记忆 append-only**：`git diff f67e266..HEAD -- memory/projects/prnmgt.md` = **8 insertions / 0 deletions**，无改写无重排；署名格式 `[@workbuddy @zhn-tbxg2iah-win YYYY-MM-DD HH:mm UTC+8]` 合规
+- **agent 署名**：`workbuddy` 已在 `env/agents.md` 登记（设备 `zhn-tbxg2iah-win`），非无效署名
+- **gitleaks**：全局 hook 已配（`core.hooksPath` → `~/.agent-tools/hooks`），链式委托项目自身 pre-commit；本次提交 0 leaks
+- **双远端**：origin 与 backup 均为 `5fe8f33`，一致；仓库无 tag 故 `--tags` 无对象
+- **worktree 规范**：按三-6 建 `~/source/prnmgt.wt/workbuddy` + `agent/workbuddy/ui-refresh-plan`；提交身份用 `git -c user.name=zhn-workbuddy` 一次性指定，**未用裸 `git config`** 污染主 worktree 署名
+- **生产代码零改动**：主仓库 `git diff HEAD` 为空；`worker/src/lib/web_assets.js` 两仓库 md5 相同（`3f1cb7e9...`），未跑 build 故未污染生成物
+- **既有基线问题（非本轮引入）**：`build_web_assets --check` 在**主仓库同样报不一致**，属 `AGENTS.md` 坑表第 83 条记录的 CRLF 坑，本轮改动未触及 `worker/src/web/` 任何文件
 
 ---
 
@@ -302,19 +344,19 @@ OK  评审条高度动态 var(--rev-h)  OK  syncRevH 存在
 
 决策带来的**删减**（写进提示词，防止执行 agent 做多余的事）：
 - 布局 A → **不落地**侧边栏 DOM/CSS（效果图的布局 B 仅留备查）
-- 全居中 → **不落地**「数字右对齐」档位，且 T-051 **不得触碰** `styles.css:197-201` 的 `text-align`（其注释已说明源自旧系统 `query_page.js:191/193`，是旧系统基线）
-- 涨跌色 → **需要** `deltaChip`（T-050）
+- 全居中 → **不落地**「数字右对齐」档位，且 T-052 **不得触碰** `styles.css:197-201` 的 `text-align`（其注释已说明源自旧系统 `query_page.js:191/193`，是旧系统基线）
+- 涨跌色 → **需要** `deltaChip`（T-051）
 
 ### 10.2 执行提示词（新增交付物）
 
-`prnmgt-ui-refresh-exec-prompt.md` —— **自包含任务书**，执行 agent 无需看历史对话即可完整执行。含 9 个部分：任务定义 / 业务背景（Cloudflare Workers+D1、无框架、29 个 tab）/ 已定决策（不可再讨论）/ 11 条硬约束红线 + 绝对不可碰清单 + 行数红线 / worktree 与提交规范 / **逐卡指令（T-048/T-048b/T-049/T-050/T-051，每卡含文件、具体改法、准出命令）** / 全局准出 + 人工验收清单 / 15 条禁止事项 / 汇报格式模板 / 附录 A token 全表 + 附录 B 视觉基准深链 + 附录 C 10 条已知坑。
+`prnmgt-ui-refresh-exec-prompt.md` —— **自包含任务书**，执行 agent 无需看历史对话即可完整执行。含 9 个部分：任务定义 / 业务背景（Cloudflare Workers+D1、无框架、29 个 tab）/ 已定决策（不可再讨论）/ 11 条硬约束红线 + 绝对不可碰清单 + 行数红线 / worktree 与提交规范 / **逐卡指令（T-049/T-049b/T-050/T-051/T-052，每卡含文件、具体改法、准出命令）** / 全局准出 + 人工验收清单 / 15 条禁止事项 / 汇报格式模板 / 附录 A token 全表 + 附录 B 视觉基准深链 + 附录 C 10 条已知坑。
 
 ### 10.3 ⚠️ 本轮纠正两处**事实性错误**（此前方案与 handoff 均写错）
 
 | # | 错误说法 | 事实 | 影响 |
 |---|---|---|---|
 | **E1** | 「`styles.css` 784 行**已超 `MAX_LINES=300` 上限**，新增只能另起文件」 | **错**。`scripts/check.mjs:199` 是 `walk(src, ['.js'])` —— **`MAX_LINES` 只扫 `.js`，CSS 完全不受此门禁约束**（`styles.css` 784 行并不违规） | 结论虽仍指向「另起新文件」，但**理由错了**。真正理由是：784 行旧样式耦合深、另起文件便于回滚与长缓存。已在 plan/handoff/提示词全部改正 |
-| **E2** | 未提及 `web_size.mjs` 的首屏白名单 | **漏了关键一步**。`scripts/web_size.mjs:23` 的 `FIRST_SCREEN` 是**硬编码 5 项白名单**（`['index.html','tokens.css','styles.css','icons.svg','app.js']`），新增 `styles-refresh.css` **不手动加进去就不会计入首屏体积** —— 门禁形同虚设，改版后真实首屏体积会超出报告值 | 已在 T-048 卡与提示词里列为**必做项**，并给出改完的自检方法（`web_size.mjs` 输出应出现 `styles-refresh.css` 一行） |
+| **E2** | 未提及 `web_size.mjs` 的首屏白名单 | **漏了关键一步**。`scripts/web_size.mjs:23` 的 `FIRST_SCREEN` 是**硬编码 5 项白名单**（`['index.html','tokens.css','styles.css','icons.svg','app.js']`），新增 `styles-refresh.css` **不手动加进去就不会计入首屏体积** —— 门禁形同虚设，改版后真实首屏体积会超出报告值 | 已在 T-049 卡与提示词里列为**必做项**，并给出改完的自检方法（`web_size.mjs` 输出应出现 `styles-refresh.css` 一行） |
 
 > `build_web_assets.mjs` 的 `collect()` 递归遍历 `web/` 全部文件，新文件会自动进字节表，这一步无需配置。
 
@@ -324,8 +366,8 @@ OK  评审条高度动态 var(--rev-h)  OK  syncRevH 存在
 
 | 文件 | 现状 | 距 300 | 处置 |
 |---|---|---|---|
-| `worker/src/web/app.js` | 282 | **仅 18 行** | T-049 的页头挂载**必须 ≤ 18 行**，多的挪 `lib.js` |
-| `worker/src/web/lib.js` | 231 | 69 行 | T-050 的 `deltaChip`/`statusChip` 放这里（→ 约 256，安全） |
+| `worker/src/web/app.js` | 282 | **仅 18 行** | T-050 的页头挂载**必须 ≤ 18 行**，多的挪 `lib.js` |
+| `worker/src/web/lib.js` | 231 | 69 行 | T-051 的 `deltaChip`/`statusChip` 放这里（→ 约 256，安全） |
 | `worker/src/web/tabs/admin_master.js` | 298 | 2 行 | **本方案不得改** |
 | `worker/src/mcp.js` | 298 | 2 行 | **本方案不得改** |
 
