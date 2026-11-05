@@ -1,9 +1,10 @@
-# 多设备多 Agent 协同工作架构与规范 (v1.8.2)
+# 多设备多 Agent 协同工作架构与规范 (v1.8.3)
 
 > **致所有 Agent：** 你现在接入了一个跨设备（Windows/Linux/iOS/Android/HarmonyOS）、多 Agent 协同的个人/团队工作空间。请严格遵循本规范进行文件读写、记忆存储、工具调用和任务交接。如果你是人类用户，请按此文档进行环境初始化。
 
 ## 变更记录
 
+- **v1.8.3 (2026-11-05)**：新增 **四-4 工具链基线管理**——① 探测优先，已装且满足基线即复用，禁止重复下载；② 首次运行扫描一次（`env/tools-scan.sh --write` 生成 `memory/devices/tools-<设备名>.md` + stamp），stamp 未满 30 天其他 agent 不得再全量扫描，只跑 `--check`；③ 新装/升级/卸载必须刷新清单并在 `env/toolchain.md` §五 追加变更日志；④ 来源类型枚举（复用/包管理器/官方Release/未知来源）；⑤ 二进制不入 Git、不登记完整包列表；⑥ GUI 程序不做版本探测。配套新增 `env/toolchain.md`（基线+变更日志+设备索引）、`env/tools-scan.sh`（扫描脚本）；自检新增第 8 步 `[Agent自动]` 工具链核对；二-1 目录树同步补充上述两文件。
 - **v1.8.2 (2026-11-04)**：采纳 trae handoff 评审中 v1.8 尚未覆盖的 4 项——① 三-6 新增 worktree 适用场景（单人单任务直接 clone，仅多 agent 并发同一项目时启用）；② 八 启动自检 7 步标签化（`[Agent自动]`/`[Agent报告]`/`[人类执行]`），明确可自动完成与需人类处置的边界；③ 五-1 新增 commit message 规范（type 枚举 + agent 署名）；④ 移动端只读描述由 3 处收敛为 四-3 单一权威定义。另勘误：五-1 推送命令 `--all --tags` 同用（Git 2.55 已禁止）改为分步推送。
 - **v1.8.1 (2026-11-04)**：变更记录瘦身——v1.1–v1.7 详细条目移入 `memory/archive/2026-11-rules-changelog.md`（归档只读），各版本保留一行摘要；正文补全 v1.8 全部条款（此前因工作区误重置丢失，本次重新写入并逐条核验）。
 - **v1.8 (2026-11-04)**：① 项目代码根统一 `~/source`（三-2/三-6/七）；② 任务认领机制（三-5 ⑤）；③ 分支准出标准与提交归属（三-6）；④ gitleaks 全局 hook 链式委托（六-1）；⑤ agent 端口段分配（三-5 ④）；⑥ 人类操作优先原则（三-5 ⑥）。
@@ -71,6 +72,8 @@
 │   ├── mcp-registry.md     # 定制/手动安装 MCP 的登记表（备查，见四-2）
 │   ├── agents.md           # Agent 名登记表（agent名 | 所属设备 | 职责），见 三-1
 │   ├── repos.md            # 项目代码 Git 地址登记表（见 七）
+│   ├── toolchain.md        # 工具链基线与工具变更日志（见 四-4，v1.8.3 新增）
+│   ├── tools-scan.sh       # 本机工具扫描脚本：--write 生成设备清单 / --check 核对基线（见 四-4）
 │   ├── start-mcp.sh        # Linux/Termux/Git Bash 启动脚本
 │   ├── start-mcp.bat       # Windows 启动脚本（或以 PowerShell 计划任务替代，见四-1）
 │   └── .gitignore.template # 强制 gitignore 模板（见 六）
@@ -214,6 +217,27 @@
 - 无终端设备（iOS/HarmonyOS 等）**默认只读**：通过 Git 托管平台的客户端 App（或网页）阅读 `memory/`、`handoff/`、`repos.md` 等文本资产，二进制文档经同步工具 App 访问 `~/.agent-docs`。
 - **移动端写操作的唯一例外**：仅限在 `handoff/` 下紧急补录一份交接/备忘文件；该提交**必须**由人类在桌面端复核后合并（rebase 或接受 PR），桌面端 agent 发现移动端未复核提交时应提示人类。除此之外移动端不产生任何写入。
 
+### 4. 工具链基线管理（v1.8.3 新增）
+
+本机已有工具**优先复用，不得重复下载安装**。工具链分三层登记，不得混用：
+
+| 类别 | 登记去处 |
+|---|---|
+| 系统级基线（git/python/node/npm/gh/curl/unzip/ssh）与工具区二进制（gitleaks 等，放 `~/.agent-tools/bin`） | `env/toolchain.md`（基线、来源类型、变更日志）+ `memory/devices/tools-<设备名>.md`（本机实测，脚本生成） |
+| 项目/venv 依赖 | `env/requirements.txt`、项目 lock 文件 |
+| MCP 服务 | `env/mcp-registry.md`（见 四-2） |
+| 桌面客户端（WPS/PuTTY/网盘/NAS 映射） | `memory/devices/<设备名>.md`（属人类环境，不在工具链基线内） |
+
+- **① 探测优先，缺失才装**：任何安装动作前先 `command -v <tool>` + `<tool> --version`；**已装且满足基线即直接用**，登记来源为 `复用`，禁止无谓重复安装（既省时间，也避免同机多版本互相干扰）。
+- **② 首次扫描一次，之后增量**：新设备或新 agent 首次运行时执行一次
+  `bash env/tools-scan.sh --write`
+  生成 `memory/devices/tools-<设备名>.md` 并刷新 stamp（`~/.agent-tools/run/tools-scan.stamp`），随后提交并 `git sync`。
+  **已有 stamp 且未满 30 天时，其他 agent 不得再全量扫描**，只跑 `bash env/tools-scan.sh --check` 核对基线即可；超过 30 天才重新全量刷新（避免同一台机器被反复扫描、清单反复抖动）。
+- **③ 新装 / 升级 / 卸载必须登记**：执行 `tools-scan.sh --write` 刷新本机清单，并在 `env/toolchain.md` §五 变更日志**追加一行**（日期 | 设备 | 操作 | 工具与版本 | 来源类型 | 操作者 | 备注）。**未登记的安装视为不合规**。
+- **④ 来源类型必填其一**：`复用`（本机已装直接用，首选）/ `包管理器`（winget/apt/brew/scoop，记包名）/ `官方Release`（记版本号与下载 URL）/ `未知来源`（绿色版、他处拷贝——可直接用，但**密钥相关工具须核验哈希或换官方来源**）。
+- **⑤ 约束**：工具二进制**不入 Git**，`~/.agent-tools/bin` 为唯一工具区，禁止散落到项目目录；不登记 `pip list`/`npm ls` 这类完整包列表（噪音），只登记 agent 干活真正依赖的工具；多版本并存时须在设备清单注明"默认解析哪个"，否则 agent 会用错解释器装包。
+- **⑥ GUI 程序（puttygen 等）不做版本探测**：执行 `--version` 会弹窗挂起会话，清单里记为"未探测"即可，只核对存在性。
+
 ## 五、 存储与备份策略 (Git + NAS + 百度网盘)
 
 ### 1. Git 同步纪律（v1.3 变更：双远端）
@@ -304,6 +328,11 @@
 5. **[Agent自动]** 确认当前是否激活了位于 `~/.agent-tools/venvs/` 下的专属虚拟环境（查 `$VIRTUAL_ENV`）。
 6. **[Agent自动]** 若本会话需要手动安装的定制 MCP，先查 `env/mcp-registry.md` 确认本机是否已安装及版本是否一致。
 7. **[Agent报告]** 若本会话涉及重要文档，确认 `~/.agent-docs` 同步目录可达且同步状态正常（长期未同步/冲突文件堆积时，先提醒人类处理，禁止在未同步状态下直接编辑覆盖；同步冲突的处置一律由人类在客户端完成，见 三-5 ⑥）。
+8. **[Agent自动] 工具链核对（v1.8.3）**：检查 `~/.agent-tools/run/tools-scan.stamp` 是否存在——
+   - **不存在（本机首次运行）**：执行 `bash ~/.agent-shared/env/tools-scan.sh --write`，生成 `memory/devices/tools-<设备名>.md`，并在 `env/toolchain.md` §六 登记本设备，提交后 `git sync`；
+   - **存在且未满 30 天**：**不再全量扫描**，只跑 `bash ~/.agent-shared/env/tools-scan.sh --check`，基线通过即继续；缺项或低于基线时上报人类；
+   - **存在但超 30 天**：重新 `--write` 刷新一次，结果入库存档。
+   禁止跳过本步直接安装工具（先探测，再决定是否安装，见 四-4 ①）。
 
 ## 九、 人类用户的初始化清单 (供参考)
 

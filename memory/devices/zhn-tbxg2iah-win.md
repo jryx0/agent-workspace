@@ -4,6 +4,7 @@
 - os: win（Windows，Git Bash 为主、PowerShell 为辅，不使用 WSL）
 - **角色：主设备（2026-11-04 暂定，负责月度记忆压缩；人类注明后续会改）**
 - 运行时: Git 2.55.0 / Python 3.13.14 / Node v22.22.2
+- **工具清单权威来源：`memory/devices/tools-zhn-tbxg2iah-win.md`**（由 `env/tools-scan.sh --write` 自动生成，2026-11-05 首次扫描：可用 11 / 未装 5；基线定义见 `env/toolchain.md`）。以下为补充说明，版本以自动清单为准。
 - 工具: gitleaks v8.30.1（~/.agent-tools/bin，已加入用户 PATH；全局 core.hooksPath 指向 ~/.agent-tools/hooks 的 pre-commit）；rclone **不安装**——百度网盘冷备改用 NAS 自带云同步工具（人类在 NAS 侧配置）
 - 路径映射:
   - `~/` → `C:\Users\Zhn_X\`
