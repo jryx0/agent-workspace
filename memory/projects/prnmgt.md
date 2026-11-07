@@ -269,3 +269,10 @@ node tools/compare/verify_all.mjs            # 契约 46/46 PASS
 **未跑完整 `api_contract.mjs --check --target new`**：该脚本对每条路由用 `methods[0]` 发匿名请求，契约中 **19 条非 skip 路由首方法为 POST/DELETE**（含 `/api/logs/clear`、`/api/admin/data/clear`、`/api/admin/restore` 等破坏性接口），虽按 `auth` 期望应被 401 拦截，但在生产环境批量发匿名写方法请求风险/收益不划算；按 T-057 裁定该项仍留由人类自行决定执行。当前定向只读探测已覆盖新增 2 条路径的鉴权与静态资源一致性。
 **仍待人类确认**：现网 `paper_purchases` 是否建表 / 存量行数（`SELECT COUNT(*) AS n FROM paper_purchases`，**不得重复执行 DDL**）；若 14:03 那次 query 已是自检且已有录入数据，则 `n` 不再是 0。部署后浏览器录入一笔采购核对汇总数值亦由人类完成。
 **新需求（14:08 / 14:09 人类提出，尚未批准、未派工）**：① 采购录入由「张数」改为「箱数 / 每箱几包 / 每包多少张」；② 采购记录可修改。workbuddy 已完成只读链路调研（表结构 `qty_sheets` 单列、R-48 仅 GET/POST/DELETE 无 PUT、前端单值表单、备份用 `SELECT *` + 动态列恢复、`paper_calc.js` 只认 `qty_sheets`），**关键卡点是「箱包明细是否入库」决定是否触发 DDL 与 ADR-0011 再批准**（ADR-0010 豁免范围仅限「新增第 23 张表」）。按分工只出计划，待人类拍板后才固化卡面 / 派工 trae；**未改任何代码、未改卡面、未认领、未部署**。
+
+[@workbuddy @zhn-tbxg2iah-win#audit 2026-11-07 14:26 UTC+8] 【**ADR-0011 ACCEPTED → v3 立项、T-059 解锁**；本轮仍零代码改动】
+**人类裁定**：14:1x 选「明细存进数据库（接受 DDL）」+「现网已有记录且需回填」；14:26 明确回填方式「设置历史记录可修改，后续人工修改」= **R1**（三列 NULL 表示「历史记录，仅张数」，不做批量反推），并**批准 ADR-0011 + 保留旧 POST 格式兼容（D6）**。
+**固化内容（主仓 `90f5616` 已推 origin/master；上一提交 `438311d` 为 DRAFT 草案）**：ADR-0011 转 ACCEPTED（D1 扩展豁免至「修改第 23 表字段」、不另立项目；D2 三列可空 + `qty_sheets` 语义不变；D3 R-48 加 PUT；D4 DDL/部署归人类；D5=R1；D6 兼容）、方案 §7 改「前置已过」、`tasks.md` 新增 **T-059 DDL 双轨 / T-060 后端 PUT / T-061 前端三段式** 三卡（todo，61 卡 done 58 / todo 3）、新建 `docs/paper/exec-prompt-2026-11-07.md` 逐卡自包含提示词、BOARD 订正线上状态 + v3 批次 + 14:26 交接条目、OPEN-DECISIONS **#17 RESOLVED**。
+**门禁**：check.mjs 0 问题 / 3 条存量提示、全量 265 / pass 174 / fail 0 / skip 91、`git diff --check` 0、6 份文档 CRLF 0。
+**当前唯一可认领卡 = T-059**（worktree `~/source/prnmgt.wt/trae-paper-fields`、分支 `agent/trae/paper-fields`，严格 4 文件：schema.sql + 新 migration + 两份 c1 测试）；T-060 待 T-059 收官、T-061 待 T-060 收官，**不得提前认领或连做**。一次一张卡、trae 编码、workbuddy 复审收官。现网存量记录按 R1 保持可编辑、后续人工补填箱包。
+**红线不变**：现网**已有存量采购记录**，不得重复执行建表 DDL；v3 的一次性 ALTER migration 与全部部署由人类本人执行（v1.8.8 三-7 + ADR-0010 D4），workbuddy 不自行 deploy、trae 一律不得部署 / 执行 `wrangler d1 execute`。本轮**未改代码、未认领、未派工、未部署、未执行 DDL**。
