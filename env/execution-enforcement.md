@@ -1,0 +1,120 @@
+# 执行纪律保障方案（规范落地配套，待人类批准启用）
+
+> **状态**：方案文档，**未启用**、未改 `global/rules.md`、未改平台 `settings.json`、未改平台全局指令。
+> **配套只读工具**：`env/proxy-check.sh`（已落地，可立即使用）。
+> **唯一权威**：规范正文仍只在 `~/.agent-shared/global/rules.md`（〇⑤ 单一原件）；本文件只放机制设计与红线指针，不复制条款正文。
+> **触发事件**：2026-11-08 21:46/21:52 同一会话（`0b29b31e-…`）连装 requests 与 playwright，124 条审计命令中 `rules.md`／`agent-shared`／`tools-scan`／`启动自检` 出现 0 次；同轮 `git sync` 因代理软件未启动失败。人类追问「怎样保障后面的会话都能执行到位」「代理不同提醒我」。
+
+---
+
+## 一、为什么「注入了却没执行」
+
+| 层次 | 现状 | 失效点 |
+|---|---|---|
+| 注入 | 平台全局指令 529 字符，每个新会话自动注入；项目 `AGENTS.md` 首部挂接；`env/new-agent-bootstrap.md` 手动开场提示词 | 只是**自然语言建议**，模型在长会话、紧急任务、上下文压缩后容易稀释；没有任何校验点 |
+| 自检 | 八节 9 步 `[Agent自动]` | 做没做**不落盘、不可抽查**，事后只能翻 `~/.workbuddy/audit-log` 还原命令序列 |
+| 安装 | 三-5 ②／四-4／四-5 明令禁全局 | `pip install`／`npm i` 这类命令**没有任何拦截**，pre-commit hook 只管提交、管不到安装动作 |
+| 验收 | 〇④ 一次性「开工前按规范自检」 | 无持续抽查、无失败后的自动收敛动作 |
+| 歧义 | 全局指令写「禁止 npm install -g / pip install 全局安装」 | 被读成「只有带 `-g`／`--user` 才违规」；21:46 的 `python -m pip install requests` 不带 `--user`，实际落入 `%APPDATA%\Python\Python313\site-packages`，**仍属用户级全局** |
+| 代理 | 规范记「Gitee 直连、仅 GitHub 走代理」，实际全局还有 `http.proxy` | 代理软件一关，连 Gitee 一起挂；异常时 agent 自行找临时代理绕过，人类未被提醒 |
+
+**结论**：软注入只能提高概率，不能保证执行。要「执行到位」必须补上 **可验证凭证** 与 **命令级硬门禁** 两层。
+
+---
+
+## 二、三层保障（按强度递进，可分批启用）
+
+### L1 · 软注入强化（零风险，立即可做，人类在设置里粘贴）
+
+把「设置 → 个性化 → 给 WorkBuddy 的指令」全文替换为下面这版（约 900 字符，≤1500 上限）。相对现有 529 字符版的改动：**① 强制自检简报作为第一个输出；② 全局安装改为按安装位置判定；③ 推送前跑代理自检、异常先提醒；④ 明确未做到即停写上报**。
+
+```text
+【开工前必做】涉及文件/环境/代码/工具的操作前，先读 ~/.agent-shared/global/rules.md，执行「八、启动自检」全部 [Agent自动] 步骤；文件不存在就报告人类，不要自行猜规则。
+【第一个输出必须是自检简报】在任何写文件、改配置、装依赖、Git 写操作之前，先简报：规范版本号、9 步自检结果、tools-scan --check 结果、任务认领状态、代理与双远端状态。未出简报就动手＝违规；简报后即可继续，不必等我确认。
+1. 再读 ~/.agent-shared/handoff/ 最新一份 + memory/org.md 最近 200 行。
+2. 装任何工具/依赖前先跑 bash ~/.agent-shared/env/tools-scan.sh --check；已装且达标就复用，禁止重复下载。禁止把依赖装进全局或用户级位置——按安装位置判定，不按命令写法：pip install 不带 --user 却落入 %APPDATA%\Python\...\site-packages、npm install -g、pip install --user 全都算违规。项目级 CLI 用 devDependency + lock + npx；通用库装 ~/.agent-tools/venvs/<agent名>/。装完必须 --write 刷新清单并在 env/toolchain.md 追加变更日志。
+3. 改过 ~/.agent-shared 内文件，10 分钟内 commit（type: 简述 by <agent名>@zhn-tbxg2iah-win）并 git sync 推双远端；写完 handoff 立即提交。推送前跑 bash ~/.agent-shared/env/proxy-check.sh，代理配置异常或端口不通就先提醒我、停下等确认，禁止自己找临时代理绕过。
+4. 人类正在配置的目录/工具/服务不并行修改；云同步目录里的删除交给人类 UI 操作。
+5. 未读规范、未跑 --check、或代理异常未提醒，视为规范注入失败：立即停止写操作并报告人类。
+```
+
+> 由人类在 UI 粘贴最可靠：直接改磁盘上的 `~/.workbuddy/app/app-config.json` 可能被桌面端内存副本写回（2026-11-06 修路径笔误时已提示过）。粘贴后按 〇④ 新开任务验收。
+
+### L2 · 自检凭证 + 持续抽查（低风险）
+
+- `SessionStart` 钩子把「规范版本 + `tools-scan.sh --check` 结果 + `proxy-check.sh` 结果」注入上下文，并写凭证 `~/.agent-tools/run/self-check/<session_id>.json`（含时间戳、规范版本、9 步结果、任务认领状态）。凭证在 `~/.agent-tools/` 下，**不进 Git**。
+- 凭证让「做没做自检」变成可查事实：人类或审核方随时抽查，缺凭证即视为注入失败，按 〇④ 追查。
+- 抽查表登记在 `memory/org.md`（append-only），不必每次都查，建议每周或每次发现违规后抽查一次。
+
+### L3 · 命令级硬门禁（最强，需实测后启用）
+
+平台支持钩子（官方 Hook 参考指南，Beta）。**桌面版实测资料显示用户级配置落在 `~/.workbuddy/settings.json` 的 `hooks` 字段；官方 CLI 文档写的是 `~/.codebuddy/settings.json`** —— 本机 `~/.codebuddy/` 不存在、`~/.workbuddy/settings.json` 当前**无 hooks 字段**，所以必须先做一次探针实测再正式启用。
+
+建议配置（仅示意，未写入）：
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      { "matcher": "startup|resume|compact",
+        "hooks": [ { "type": "command", "command": "bash \"$HOME/.agent-shared/env/hooks/session-start.sh\"", "timeout": 20 } ] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Bash|PowerShell",
+        "hooks": [ { "type": "command", "command": "bash \"$HOME/.agent-shared/env/hooks/guard-install.sh\"", "timeout": 10 } ] }
+    ]
+  }
+}
+```
+
+两个脚本的职责（骨架，批准后落到 `env/hooks/`）：
+
+- `session-start.sh`：读 stdin 的 `session_id`；跑 `tools-scan.sh --check` 与 `proxy-check.sh --quiet`；把结果以纯文本 stdout 输出（SessionStart 的 stdout 会进入上下文），同时写自检凭证。**不联网、不写仓库、失败一律 exit 0**。
+- `guard-install.sh`：从 stdin JSON 取 `tool_input.command`；命中安装/部署模式（`pip install` / `python -m pip install` / `npm i|install|add` / `pnpm add` / `yarn add` / `npx wrangler deploy` 等）时检查：① 本会话自检凭证是否存在 → 缺则 `deny`；② 含 `-g` / `--global` / `--user` → `deny`；③ pip 安装既不处于 `~/.agent-tools/venvs/<agent名>/`、也不在项目本地 venv 内 → `deny`；④ 部署命令且非授权 agent → `deny`（三-7）。**解析失败、判断不了、超时一律放行**，理由用 `permissionDecisionReason` 回传。
+
+启用顺序（务必分批）：
+1. 先只挂 `SessionStart` 探针，新开任务看上下文里是否出现自检结果 → 确认桌面版确实触发；
+2. 再挂 `PreToolUse`，先用**只记录不拦截**模式跑一天，检查误报；
+3. 最后打开拦截；每次只改一处，改完新开会话验证。
+4. 外部编辑 `settings.json` 后，CLI 需在 `/hooks` 面板审核才生效；桌面版是否同样需要，以实测为准。
+
+**边界与风险（必须知情）**：① 钩子只对 WorkBuddy 会话生效，**trae 等其他 IDE／CLI 不受管**，那边仍靠 L1 与项目 `AGENTS.md`；② 功能为 Beta，接口可能变；③ 钩子能执行任意命令，脚本必须默认放行、超时 10 秒内、不做网络请求、不写密钥；④ 配置错误可能卡住所有会话，务必先探针后拦截，并保留一键删掉 `hooks` 字段的回滚方式。
+
+---
+
+## 三、「代理不同提醒我」的落地方式
+
+已落地 `env/proxy-check.sh`（只读、不改配置），它会提醒三类异常：
+
+1. **配置漂移**：存在全局 `http.proxy` → 提示「Gitee 被强制走代理，与规范期望不符，代理一关 origin 也失败」，并给出修正命令（由人类执行）；
+2. **代理软件未开**：代理端口探测不通 → 提示「v2rayN/xray 很可能未启动，先打开再 git sync，不要用会话临时代理绕过」；
+3. **远端异常 / 版本不一致**：origin 或 backup 不可达、或远端 main 与本地 HEAD 不一致 → 提示先对齐再收官。
+
+挂点三选一（可叠加）：L1 全局指令第 3 条（每次推送前 agent 自跑）、`SessionStart` 钩子（自动跑，最省事）、`memory/org.md` 抽查时人工跑一次。
+
+> 会话级 `HTTP_PROXY/HTTPS_PROXY` 由平台**动态分配**（2026-11-08 21:5x 为 57893，22:0x 为 62212），且实测 62212 访问 GitHub 被 reset；**不得写入 git 全局配置**，正式通道只有 v2rayN 的 10808。
+
+---
+
+## 四、需要人类批准的规范升版清单（拟 v1.8.9）
+
+以下均需人类点头后才改 `global/rules.md`（第十节修订流程），本方案**未擅自修改规范正文**：
+
+1. **三-5 ② 补一句**：「全局」按**安装位置**判定，不带 `--user` 却落入用户级 site-packages 同样违规 —— 消除 21:46 的歧义；
+2. **八 自检新增第 10 步** `[Agent自动]`：代理与双远端可用性核对，跑 `env/proxy-check.sh`，异常立即提醒人类、禁止临时代理绕过；
+3. **新增「执行纪律与凭证」条款**：自检简报为开工第一个输出；自检凭证落盘 `~/.agent-tools/run/self-check/`；平台钩子作为可选硬门禁（启用/停用由人类决定）；缺凭证或抽查不通过按 〇④ 追查；
+4. **二-1 `env/` 目录树 + 〇① 模板清单补登**：`env/new-agent-bootstrap.md`、`env/proxy-check.sh`、本文件 `env/execution-enforcement.md`（前次升版遗留待办一并关闭）；
+5. **五-1 推送前检查**：`git sync` 前跑代理核对，失败先上报，不得静默改用临时代理。
+
+---
+
+## 五、验收与抽查
+
+| 检查项 | 方法 | 通过标准 |
+|---|---|---|
+| 注入生效 | 新开任务只发「开工前按规范自检」 | agent 主动读 `rules.md`、跑 `--check`、输出 9/10 步简报 |
+| 门禁生效 | 新会话里让 agent 执行 `python -m pip install <某包>`（不实际安装） | 被 `deny` 并给出「先跑 --check / 改到 venv」理由 |
+| 代理提醒生效 | 关闭 v2rayN 后跑 `env/proxy-check.sh` | 打印 `[REMIND]` 且退出码 1 |
+| 抽查 | 每周看一次 `~/.agent-tools/run/self-check/` 与 `memory/org.md` | 有凭证、无未登记安装 |
+
+> 一句话总结：**L1 让 agent「知道且必须说出来」，L2 让「说没说」可查，L3 让「想违规也做不成」**。只做 L1 不能保证执行到位；L3 才能真正兜底，但需先实测桌面版钩子并接受 Beta 风险。
