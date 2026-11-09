@@ -43,7 +43,16 @@
 ## 六、未做 / 需人类
 
 1. **未部署**。`cd ~/source/prnmgt/worker && npx wrangler whoami` → `Not logged in. Your auth token has expired and could not be refreshed because the Cloudflare auth server could not be reached`（网络/代理问题，凭据未被清除）。属「不能确定」情形，**部署归人类**；若需重新登录：`npx wrangler login` 后再 `npm run deploy`（或 `npx wrangler deploy`）。
-2. **历史 UTC 存量行 DML 未执行、也未生成具体 SQL 落库**（裁定①：agent 只交建议文本）。执行前旧日期页面仍显示 12:xx，属预期，勿判回归。
+2. **历史 UTC 存量行 DML 未执行**（裁定①：agent 只交建议文本、不执行）。**订正脚本已交付**（项目仓库 `2059413`）：
+
+   | 文件 | 用途 |
+   |---|---|
+   | `docs/collect/sql-2026-11-09-t062-01-precheck.sql` | 只读预检：逐日 `delta_min`（480=仍 UTC / 0=已东八区 / NULL=无证据）+ 三桶汇总 |
+   | `docs/collect/sql-2026-11-09-t062-02-fix.sql` | DDL 建备份表 `collect_run_bak_t062_20261109` + 幂等日志 `dml_log`，DML 只改「备份值未变 且 与当日东八区证据差≈8h」的行 |
+   | `docs/collect/sql-2026-11-09-t062-03-verify.sql` | 复核 `delta_min` 全 0、`residual_8h`=0、无未来时间 |
+   | `docs/collect/sql-2026-11-09-t062-99-rollback.sql` | 从备份逐行还原 + 清审计标记 |
+
+   已在本地 SQLite 3.53 造 5 类场景实测：真 UTC 行 +8h、已东八区行跳过、无证据日不自动改、第二次重跑无变化、回滚差异 0、行数不变。**只动 `collect_run.ingested_at`**；`device_daily`/`account_daily.created_at` 由代码显式写 `nowIso()` 无需订正；`device_status_log.created_at` 虽走 UTC 默认值但不参与页面判读（页面用 `collected_at`），脚本仅作只读体检。建议顺序：**先部署 T-062 → 再跑 01→02→03**（02 幂等，可重跑补漏网行）。
 3. 7号/14号主数据 IP 疑重复（均 `10.113.123.248`）与 14号 443 超时，按裁定③由人类人工核对。
 4. **共享记忆 `memory/projects/prnmgt.md` 未提交**：该文件含 trae 4 行未提交登记（08:52 P0 认领、11:07 T-062 认领补登记、11:07 交付、11:22 二改交付），按规范不代提交；本次已**追加**我方「T-062 收官」一行于文件末尾，三行+一行仍待一次提交（建议由 trae 或人类确认后一并提交）。**故其他设备目前只能从本交接获知收官状态。**
 5. trae 的 P0「只读真机调研」仍登记 `doing`，未收口。
