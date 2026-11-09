@@ -34,3 +34,5 @@
 - 平台全局指令：已由人类配置（左下角头像 → 设置 → 个性化 →「给 WorkBuddy 的指令」），所有新会话自动注入；内容以设置界面为准，基准模板见 `env/project-AGENTS-hook.md` A 段。指令只在会话开始时注入，当前会话不会重载。
 - 项目侧：`~/source/` 下项目 AGENTS.md 按 〇 ② 首部挂接；prnmgt 挂接在 `agent/workbuddy/agents-md-hook`（85de576）待人类合并。
 - 提交身份：worktree 内用 `git -c` 一次性指定；`~/source/prnmgt` 主仓库署名已恢复为 张皓 <hao.zhang@gmail.com>，`~/.agent-shared` 仍为 zhn <997524210@qq.com>。
+
+[@workbuddy @zhn-tbxg2iah-win 2026-11-09 08:46 UTC+8] 【Git 代理配置修正（v1.8.9）】修前：全局 `http.proxy=socks5h://127.0.0.1:10808` + `http.https://github.com.proxy=socks5://127.0.0.1:10808`，Gitee 被误带代理、代理软件一关 origin 与 backup 同时失败；改前全量备份 `~/.agent-tools/run/git-global-config-backup-20261109-0840.txt`。修后：`git config --global --unset http.proxy`，**仅保留** GitHub 专用 `socks5://127.0.0.1:10808`；Gitee origin 直连、GitHub backup 经 v2rayN/xray 10808。Windows 系统代理 `ProxyEnable=0`（不影响 git 显式配置）；会话级 `HTTP_PROXY`/`HTTPS_PROXY` 由平台动态分配（本会话 60050，昨日 57893/62212），**禁止写入 git 全局配置**。自检入口：`bash ~/.agent-shared/env/proxy-check.sh`（只读，异常退出码 1 并打印 `[REMIND][需人类处理]`），`git sync` 推送前必跑；本次修复后退出码 0、双远端与本地一致。

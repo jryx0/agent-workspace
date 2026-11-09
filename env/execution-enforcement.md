@@ -1,6 +1,6 @@
 # 执行纪律保障方案（规范落地配套，待人类批准启用）
 
-> **状态**：方案文档，**未启用**、未改 `global/rules.md`、未改平台 `settings.json`、未改平台全局指令。
+> **状态**：命令级钩子门禁**未启用**、未改平台 `settings.json`；规范正文已于 **2026-11-09 升 v1.8.9**（本文件第四节清单已全部写入 `global/rules.md`），强化版全局指令已由人类粘贴并在新会话注入生效（〇④ 验收通过）。
 > **配套只读工具**：`env/proxy-check.sh`（已落地，可立即使用）。
 > **唯一权威**：规范正文仍只在 `~/.agent-shared/global/rules.md`（〇⑤ 单一原件）；本文件只放机制设计与红线指针，不复制条款正文。
 > **触发事件**：2026-11-08 21:46/21:52 同一会话（`0b29b31e-…`）连装 requests 与 playwright，124 条审计命令中 `rules.md`／`agent-shared`／`tools-scan`／`启动自检` 出现 0 次；同轮 `git sync` 因代理软件未启动失败。人类追问「怎样保障后面的会话都能执行到位」「代理不同提醒我」。
@@ -12,7 +12,7 @@
 | 层次 | 现状 | 失效点 |
 |---|---|---|
 | 注入 | 平台全局指令 529 字符，每个新会话自动注入；项目 `AGENTS.md` 首部挂接；`env/new-agent-bootstrap.md` 手动开场提示词 | 只是**自然语言建议**，模型在长会话、紧急任务、上下文压缩后容易稀释；没有任何校验点 |
-| 自检 | 八节 9 步 `[Agent自动]` | 做没做**不落盘、不可抽查**，事后只能翻 `~/.workbuddy/audit-log` 还原命令序列 |
+| 自检 | 八节 9 步 `[Agent自动]`（事故当时 v1.8.8；v1.8.9 起为 10 步） | 做没做**不落盘、不可抽查**，事后只能翻 `~/.workbuddy/audit-log` 还原命令序列 |
 | 安装 | 三-5 ②／四-4／四-5 明令禁全局 | `pip install`／`npm i` 这类命令**没有任何拦截**，pre-commit hook 只管提交、管不到安装动作 |
 | 验收 | 〇④ 一次性「开工前按规范自检」 | 无持续抽查、无失败后的自动收敛动作 |
 | 歧义 | 全局指令写「禁止 npm install -g / pip install 全局安装」 | 被读成「只有带 `-g`／`--user` 才违规」；21:46 的 `python -m pip install requests` 不带 `--user`，实际落入 `%APPDATA%\Python\Python313\site-packages`，**仍属用户级全局** |
@@ -30,7 +30,7 @@
 
 ```text
 【开工前必做】涉及文件/环境/代码/工具的操作前，先读 ~/.agent-shared/global/rules.md，执行「八、启动自检」全部 [Agent自动] 步骤；文件不存在就报告人类，不要自行猜规则。
-【第一个输出必须是自检简报】在任何写文件、改配置、装依赖、Git 写操作之前，先简报：规范版本号、9 步自检结果、tools-scan --check 结果、任务认领状态、代理与双远端状态。未出简报就动手＝违规；简报后即可继续，不必等我确认。
+【第一个输出必须是自检简报】在任何写文件、改配置、装依赖、Git 写操作之前，先简报：规范版本号、第八节全部自检步骤结果（现 10 步）、tools-scan --check 结果、任务认领状态、代理与双远端状态。未出简报就动手＝违规；简报后即可继续，不必等我确认。
 1. 再读 ~/.agent-shared/handoff/ 最新一份 + memory/org.md 最近 200 行。
 2. 装任何工具/依赖前先跑 bash ~/.agent-shared/env/tools-scan.sh --check；已装且达标就复用，禁止重复下载。禁止把依赖装进全局或用户级位置——按安装位置判定，不按命令写法：pip install 不带 --user 却落入 %APPDATA%\Python\...\site-packages、npm install -g、pip install --user 全都算违规。项目级 CLI 用 devDependency + lock + npx；通用库装 ~/.agent-tools/venvs/<agent名>/。装完必须 --write 刷新清单并在 env/toolchain.md 追加变更日志。
 3. 改过 ~/.agent-shared 内文件，10 分钟内 commit（type: 简述 by <agent名>@zhn-tbxg2iah-win）并 git sync 推双远端；写完 handoff 立即提交。推送前跑 bash ~/.agent-shared/env/proxy-check.sh，代理配置异常或端口不通就先提醒我、停下等确认，禁止自己找临时代理绕过。
@@ -39,10 +39,11 @@
 ```
 
 > 由人类在 UI 粘贴最可靠：直接改磁盘上的 `~/.workbuddy/app/app-config.json` 可能被桌面端内存副本写回（2026-11-06 修路径笔误时已提示过）。粘贴后按 〇④ 新开任务验收。
+> 人类已于 **2026-11-09 粘贴并验证注入生效**；当时粘贴的是「9 步自检结果」，v1.8.9 起建议把该处改为「第八节全部自检步骤结果（现 10 步）」，其余各条不变（改动极小，可等下次调整设置时顺手改）。
 
 ### L2 · 自检凭证 + 持续抽查（低风险）
 
-- `SessionStart` 钩子把「规范版本 + `tools-scan.sh --check` 结果 + `proxy-check.sh` 结果」注入上下文，并写凭证 `~/.agent-tools/run/self-check/<session_id>.json`（含时间戳、规范版本、9 步结果、任务认领状态）。凭证在 `~/.agent-tools/` 下，**不进 Git**。
+- `SessionStart` 钩子把「规范版本 + `tools-scan.sh --check` 结果 + `proxy-check.sh` 结果」注入上下文，并写凭证 `~/.agent-tools/run/self-check/<session_id>.json`（含时间戳、规范版本、全部自检步骤结果〔现 10 步〕、任务认领状态）。凭证在 `~/.agent-tools/` 下，**不进 Git**。
 - 凭证让「做没做自检」变成可查事实：人类或审核方随时抽查，缺凭证即视为注入失败，按 〇④ 追查。
 - 抽查表登记在 `memory/org.md`（append-only），不必每次都查，建议每周或每次发现违规后抽查一次。
 
@@ -96,15 +97,17 @@
 
 ---
 
-## 四、需要人类批准的规范升版清单（拟 v1.8.9）
+## 四、规范升版清单（v1.8.9，2026-11-09 已批准并全部落地）
 
-以下均需人类点头后才改 `global/rules.md`（第十节修订流程），本方案**未擅自修改规范正文**：
+人类 2026-11-09 授权「升级版本」，以下 5 项已写入 `global/rules.md`（第十节修订流程），并在顶部变更记录追加 v1.8.9 条目：
 
-1. **三-5 ② 补一句**：「全局」按**安装位置**判定，不带 `--user` 却落入用户级 site-packages 同样违规 —— 消除 21:46 的歧义；
-2. **八 自检新增第 10 步** `[Agent自动]`：代理与双远端可用性核对，跑 `env/proxy-check.sh`，异常立即提醒人类、禁止临时代理绕过；
-3. **新增「执行纪律与凭证」条款**：自检简报为开工第一个输出；自检凭证落盘 `~/.agent-tools/run/self-check/`；平台钩子作为可选硬门禁（启用/停用由人类决定）；缺凭证或抽查不通过按 〇④ 追查；
-4. **二-1 `env/` 目录树 + 〇① 模板清单补登**：`env/new-agent-bootstrap.md`、`env/proxy-check.sh`、本文件 `env/execution-enforcement.md`（前次升版遗留待办一并关闭）；
-5. **五-1 推送前检查**：`git sync` 前跑代理核对，失败先上报，不得静默改用临时代理。
+1. ✅ **三-5 ②**：「全局」按**包最终安装位置**判定，不带 `--user` 却落入 `%APPDATA%\Python\...\site-packages` 同样违规 —— 消除 21:46 的歧义；
+2. ✅ **八 自检第 10 步** `[Agent自动]`：代理与双远端可用性核对，跑 `env/proxy-check.sh`，异常立即提醒人类、禁止临时代理绕过；
+3. ✅ **〇⑥ 执行纪律与凭证**：自检简报为开工第一个输出；自检凭证落盘 `~/.agent-tools/run/self-check/`；平台钩子作为可选硬门禁（启用/停用由人类决定）；缺凭证或抽查不通过按 〇④ 追查；
+4. ✅ **二-1 `env/` 目录树 + 〇① 模板清单补登**：`env/new-agent-bootstrap.md`、`env/proxy-check.sh`、本文件 `env/execution-enforcement.md`（前次升版遗留待办一并关闭）；
+5. ✅ **五-1 推送前检查**：`git sync` 前跑代理核对，失败先上报，不得静默改用临时代理。
+
+> 仍未落地的是 **L3 命令级钩子**（需先探针实测桌面版是否触发，再由人类决定是否启用）；L1 强化版全局指令已粘贴并验证生效，L2 凭证与抽查已写入规范。
 
 ---
 
@@ -112,7 +115,7 @@
 
 | 检查项 | 方法 | 通过标准 |
 |---|---|---|
-| 注入生效 | 新开任务只发「开工前按规范自检」 | agent 主动读 `rules.md`、跑 `--check`、输出 9/10 步简报 |
+| 注入生效 | 新开任务只发「开工前按规范自检」 | agent 主动读 `rules.md`、跑 `--check`、输出覆盖全部 `[Agent自动]` 步骤（现 10 步）的简报 |
 | 门禁生效 | 新会话里让 agent 执行 `python -m pip install <某包>`（不实际安装） | 被 `deny` 并给出「先跑 --check / 改到 venv」理由 |
 | 代理提醒生效 | 关闭 v2rayN 后跑 `env/proxy-check.sh` | 打印 `[REMIND]` 且退出码 1 |
 | 抽查 | 每周看一次 `~/.agent-tools/run/self-check/` 与 `memory/org.md` | 有凭证、无未登记安装 |
