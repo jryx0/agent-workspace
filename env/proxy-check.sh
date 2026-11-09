@@ -59,10 +59,14 @@ if [ -d "$SHARED/.git" ]; then
     OUT="$(timeout 15 git -C "$SHARED" ls-remote "$R" refs/heads/main 2>/dev/null || true)"
     RH="$(printf '%s' "$OUT" | cut -c1-7)"
     if [ -n "$RH" ]; then
+      LOCAL_FULL="$(git -C "$SHARED" rev-parse HEAD 2>/dev/null || true)"
+      RH_FULL="$(printf '%s' "$OUT" | cut -f1)"
       if [ "$RH" = "$LOCAL" ]; then
         say "远端 $R              : $RH（与本地一致）"
+      elif [ -n "$LOCAL_FULL" ] && git -C "$SHARED" cat-file -e "${RH_FULL}^{commit}" 2>/dev/null && git -C "$SHARED" merge-base --is-ancestor "$RH_FULL" "$LOCAL_FULL" 2>/dev/null; then
+        say "远端 $R              : $RH（本地领先，待 git sync 推送；属正常，不算异常）"
       else
-        remind "远端 $R 的 main 为 $RH，本地为 $LOCAL，版本不一致 —— 需 git push/pull 对齐后再收官，禁止只推一个远端。"
+        remind "远端 $R 的 main 为 $RH，本地为 $LOCAL，且不是「本地领先」——可能远端领先或历史分叉：先 git pull --rebase / 报告人类，禁止只推一个远端。"
       fi
     else
       remind "远端 $R 不可达 —— 先查代理软件与 git 代理配置，不要改用临时代理只推另一个远端。"
