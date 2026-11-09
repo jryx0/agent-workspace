@@ -43,7 +43,7 @@
 ## 六、未做 / 需人类
 
 1. **未部署**。`cd ~/source/prnmgt/worker && npx wrangler whoami` → `Not logged in. Your auth token has expired and could not be refreshed because the Cloudflare auth server could not be reached`（网络/代理问题，凭据未被清除）。属「不能确定」情形，**部署归人类**；若需重新登录：`npx wrangler login` 后再 `npm run deploy`（或 `npx wrangler deploy`）。
-2. **历史 UTC 存量行 DML 未执行**（裁定①：agent 只交建议文本、不执行）。**订正脚本已交付**（项目仓库 `2059413`）：
+2. **历史 UTC 存量行 DML 未执行**（裁定①：agent 只交建议文本、不执行）。**订正脚本已交付**（项目仓库 `2059413`，`f4fa8bf` 修订 GLOB 兼容问题，见下）：
 
    | 文件 | 用途 |
    |---|---|
@@ -53,6 +53,13 @@
    | `docs/collect/sql-2026-11-09-t062-99-rollback.sql` | 从备份逐行还原 + 清审计标记 |
 
    已在本地 SQLite 3.53 造 5 类场景实测：真 UTC 行 +8h、已东八区行跳过、无证据日不自动改、第二次重跑无变化、回滚差异 0、行数不变。**只动 `collect_run.ingested_at`**；`device_daily`/`account_daily.created_at` 由代码显式写 `nowIso()` 无需订正；`device_status_log.created_at` 虽走 UTC 默认值但不参与页面判读（页面用 `collected_at`），脚本仅作只读体检。建议顺序：**先部署 T-062 → 再跑 01→02→03**（02 幂等，可重跑补漏网行）。
+
+   **⚠️ 现网执行踩坑（2026-11-09 12:35，人类实跑 01）**：`npx wrangler d1 execute prnmgt --remote --file=...01-precheck.sql` 报
+   `X [ERROR] LIKE or GLOB pattern too complex: SQLITE_ERROR`。
+   原因：P1 用 `ingested_at GLOB '[0-9][0-9][0-9][0-9]-...'`（20 组 `[0-9]`，75 字节模式）校验格式，**D1 运行时的 `LIKE`/`GLOB` 模式长度限制比本地 SQLite 严**（本地同一语句可通过，故上一轮本地实测未暴露）。02 的末行格式闸门有同样隐患。
+   处理（已修，项目仓库 **`f4fa8bf`**）：两处均改为 `strftime` 回环判据 ——
+   `strftime('%Y-%m-%d %H:%M:%S', ingested_at) = ingested_at`（合法值回环相等；非法/空值返回 NULL 或不等 → 不计入/不进 UPDATE）。语义与 GLOB 等价（本地复测：T 分隔、带毫秒、空串三种非法格式均未被 +8h，合法 UTC 行正常 +8h，`bad_format=3/4` 计数正确；5 类主场景与幂等/回滚结果不变）。
+   **结论：重跑仍是同一命令**，无需改文件名或顺序；若 01 的多条结果只打印最后一段，可单独用 `--command` 跑 P2 逐日明细。
 3. 7号/14号主数据 IP 疑重复（均 `10.113.123.248`）与 14号 443 超时，按裁定③由人类人工核对。
 4. **共享记忆 `memory/projects/prnmgt.md` 未提交**：该文件含 trae 4 行未提交登记（08:52 P0 认领、11:07 T-062 认领补登记、11:07 交付、11:22 二改交付），按规范不代提交；本次已**追加**我方「T-062 收官」一行于文件末尾，三行+一行仍待一次提交（建议由 trae 或人类确认后一并提交）。**故其他设备目前只能从本交接获知收官状态。**
 5. trae 的 P0「只读真机调研」仍登记 `doing`，未收口。
