@@ -58,3 +58,21 @@
 - 提示词内两处易漏技术点：`RUN_UPSERT` 的 `DO UPDATE` 须同步 `ingested_at`（否则同日重跑后主表与实采行时间再次错位）；`activeDeviceNos()` 为 data/status 共用，只能在 `synthDataRows` 内按 `is_total_only` 过滤，不能改公共函数。整机三量禁止冒充账号口径数值。
 - 部署自检第 4 项的基线号请按实际部署时的 `origin/master` 填写；若已在 `b0cbc7c` 上部署，本文档提交不涉及任何代码变更，**无需因 `4c840bd` 重新部署**（该提交只含文档）。
 - `memory/projects/prnmgt.md` 中「origin/master = 3a4ffe1」仍过时，且该文件有 trae 08:52 未提交改动，本次依旧未触碰、未代提交，待 trae 提交后补登。
+
+---
+
+## 八、2026-11-09 09:45 · 人类部署完成 + 线上自检 PASS + T-062 获批
+
+**部署留痕（规范三-7：部署后立即线上自检，并在共享记忆留痕：时间 / 基线提交号 / 部署者 / 自检结果 / 线上与基线是否一致）**
+
+- **部署者**：人类本人（09:45 告知「IP 问题已经部署」；具体时刻与 Version ID 未告知，agent 未代部署）。
+- **基线提交号**：部署内容 = `cfcc927`（打印机 IP 超链接 https→http，4 文件 +7/-7）；其后 `b0cbc7c`（T-062 卡面）、`4c840bd`（执行提示词）、`7046d2b`（批准状态 + 本次留痕）**仅文档，前端代码未变**。
+- **自检结果（workbuddy 09:47 只读 HTTP，PASS）**：`https://prnmgt.parva.dpdns.org` → `/` 200、`/api/config` 200、`/assets/app.js` 200；`/assets/tabs/collect.js`（13444B）、`admin_master.js`（15003B）、`overview_cards.js`（8997B）均 200 且与本地基线**逐字节一致**（归一 CRLF）；三文件 `href="http://` 共 **5** 处、`href="https://` **0** 处 → IP 链接已全部 http。网络偶发 000 已重试取样，无失败项。
+- **线上版本与基线是否一致**：**一致**。线上前端资源与当前 `origin/master` = `7046d2b` 中的前端资源逐字节相同（该提交未改前端）；`git push` 与部署已分离，本次由人类完成部署并已验证。
+- **预期仍存在（T-062 未修，勿判回归）**：采集事件时间仍 12:xx、7号仍显示「无采集数据」。未执行任何 DDL / 现网 DML、未连现网 D1。
+
+**T-062 批准留痕**
+
+- 人类 09:45 明确「T-062 已经批准」。`tasks.md` T-062 卡面、`docs/collect/exec-prompt-t062.md`、`BOARD.md` 已同步脱离 DRAFT，prnmgt 提交 **`7046d2b`** 已推 `origin/master`（上一基线 `4c840bd`）。
+- **仍未解锁开工**：提示词 §三 三项裁定（① 历史 UTC 存量行订正方式 ② 是否登记 `OPEN-DECISIONS.md` #13 口径延伸 ③ 7号/14号 主数据 IP 重复与 14号 443 超时人工核对）**均未落定**。结论补写进 §三 并把卡面 / 共享记忆改 doing 前，仍**禁止投喂、认领、开工**；卡面 `状态: todo` 不变，不并入 v3 暂停卡或 v4 批次。
+- 当前任务登记：trae 08:52 P0 只读真机调研 **doing**；T-059~T-061 暂停；T-062 已批准待裁定。`memory/projects/prnmgt.md` 的 trae 未提交改动本次仍未触碰、未代提交；其「origin/master = 3a4ffe1」登记待 trae 提交后补登（现为 `7046d2b`）。
