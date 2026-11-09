@@ -43,7 +43,7 @@
 ## 六、未做 / 需人类
 
 1. **未部署**。`cd ~/source/prnmgt/worker && npx wrangler whoami` → `Not logged in. Your auth token has expired and could not be refreshed because the Cloudflare auth server could not be reached`（网络/代理问题，凭据未被清除）。属「不能确定」情形，**部署归人类**；若需重新登录：`npx wrangler login` 后再 `npm run deploy`（或 `npx wrangler deploy`）。
-2. **历史 UTC 存量行 DML 未执行**（裁定①：agent 只交建议文本、不执行）。**订正脚本已交付**（项目仓库 `2059413`，`f4fa8bf` 修订 GLOB 兼容问题，见下）：
+2. **历史 UTC 存量行 DML 已由人类执行**（2026-11-09 14:07，结果见第八节）；**订正脚本**（项目仓库 `2059413` / `f4fa8bf` / 说明 `868adf7`）：
 
    | 文件 | 用途 |
    |---|---|
@@ -69,3 +69,32 @@
 - T-062 已 done，**不得再按该卡编码**；v3 三卡（T-059~T-061）仍暂停；v4 研究阶段不变。
 - 分支 `agent/trae/collect-time-total-only` 与 worktree `~/source/prnmgt.wt/trae-t062` 已合并，可由人类决定是否清理（workbuddy 未删）。
 - 项目仓库剩 3 个既有未跟踪项（`.login-out.txt`、`docs/plan-2026-11-04-device-gap.md`、`tmp/`），未纳入提交。
+
+## 八、现网执行结果（2026-11-09 14:07，人类执行 · workbuddy 只读复核）
+
+**部署状态**：T-062 代码**已上线**。workbuddy 以只读 HTTP 复核 `https://prnmgt.parva.dpdns.org/assets/tabs/{collect,overview_cards,admin_master}.js`，三者与本地基线（`868adf7`）**逐字节一致**（13919 / 8997 / 15003 B），`collect.js` 含 T-062 三态逻辑（`total_only`/`no_data` 9 处命中），IP 链接仍全 `http`。
+
+**DML 执行**：`02-fix.sql` 5 条语句、写入 48 行（含备份 21 + 审计 + UPDATE 20，D1 的 `rows_written` 是合并计数）；`dml_log.applied_at = 2026-11-09 06:07:11`（UTC，即本地 14:07）。
+
+**只读复核结果**（`--command` 实测）：
+
+| 指标 | 值 |
+|---|---|
+| `collect_run` 总行数 / 备份表行数 | 21 / 21（一致，只改值未增删） |
+| `changed_rows`（已 +8h） | **20** |
+| `unchanged_rows` | **1** |
+| `future_rows`（CAST 后判定） | **0** |
+| `min_v` / `max_v` | `2026-10-16 17:27:01` / `2026-11-08 20:14:32` |
+
+**唯一例外：`2026-10-19` 未被订正**（`ingested_at` 仍 `04:12:00`，备份值相同）。原因：当日 `device_daily`/`account_daily` 的 `MAX(created_at)=20:00:20`，与 `ingested_at` 相差 **15h48m**，既不≈8h 也不≈0，被 02 的证据闸门判为 `CHECK 偏差异常` 而跳过。合理解释：旧代码 UPSERT 不更新 `ingested_at`，保留**首次入库**时刻（本地 12:12 → UTC 04:12），而当天 **20:00 又重采过一次**，把 `created_at` 覆盖成 20:00 → 12:12+8h 与 20:00 差 7h48m，叠上时区差即 15h48m。
+
+**待人类决定**（1 行，可回滚，备份值 `2026-10-19 04:12:00` 已在备份表）：
+
+```sql
+UPDATE collect_run
+   SET ingested_at = strftime('%Y-%m-%d %H:%M:%S', ingested_at, '+8 hours')
+ WHERE collect_date = '2026-10-19'
+   AND ingested_at = '2026-10-19 04:12:00';   -- 幂等：已改过则不重复 +8h
+```
+
+**类型陷阱经验（写给后续 agent）**：`strftime('%s', x)` 返回 **TEXT**，与整数比较时 SQLite 按存储类排序（INTEGER < TEXT），`strftime('%s',x) > strftime('%s','now')` 会**恒为真**，必须 `CAST(... AS INTEGER)`。02/03 的判据均走 `ABS(减法)` 或同格式字符串比较，不受影响（已复核 03:45 行是 TEXT vs TEXT 同格式比较，正确）。
