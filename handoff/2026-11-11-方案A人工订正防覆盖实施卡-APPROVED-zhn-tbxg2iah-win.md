@@ -1,8 +1,8 @@
 # 【APPROVED · 已批准 · 可投喂】方案 A「人工订正防覆盖」实施卡
 
-> 自包含任务书。可直接复制投喂执行 Agent（trae），无需回看历史对话；**投喂前须过 §零 B3 的防撞闸**。
+> 自包含任务书。可直接复制投喂执行 Agent（trae），无需回看历史对话；**§零 B3 防撞闸已于 2026-11-11 16:32 经人类明确「允许并行」解除**；逐卡提示词见 `handoff/2026-11-11-T063逐卡执行提示词-zhn-tbxg2iah-win.md`。
 > 编制：workbuddy@zhn-tbxg2iah-win · 2026-11-11 12:4x +08 · 批准落地 12:56 +08
-> 人类授权范围：**2026-11-11 12:56 书面裁定「1. 新 ADR 豁免，2. B2 按建议进行」** —— 立项形式 = 新 ADR 豁免（不另立项目），B2 三项全部按建议。**仍未授权**：DDL / DML 执行、部署、认领与编码（认领由执行 Agent 按三-5 ⑤ 自行登记）。
+> 人类授权范围：**2026-11-11 12:56 书面裁定「1. 新 ADR 豁免，2. B2 按建议进行」** —— 立项形式 = 新 ADR 豁免（不另立项目），B2 三项全部按建议。**仍未授权**：DDL / DML 执行与部署（归人类本人）；认领与编码由执行 Agent 按三-5 ⑤ 自行登记。**2026-11-11 16:32 追加授权**：人类明确「允许并行」→ B3 防撞闸解除，T-063 可派工。
 > 卡号：**T-063**（后端锁定内核）/ **T-064**（前端可见性与解锁），已于 12:56 登记进 `specs/0001-prnmgt-refactor/tasks.md`（状态 todo；64 卡 / done 59 / todo 5）；`docs/adr/0012-manual-locked.md` 状态 **ACCEPTED**，决策 **#19 RESOLVED**。
 > 基线判据（**不写死 hash**，后续治理文档提交不再使本卡失效）：立项起点 `868adf7`；本批次立项文档已合入 `origin/master`，形成纯文档提交链（如 `46093a1`、`ba58a46`，均只改治理文档）。派工前实测 `git rev-parse origin/master` 并核对：① local = origin 一致；② `git diff --name-only 868adf7..origin/master` 的**全部**文件都在白名单内（`docs/adr/0012-manual-locked.md`、`constitution.md`、`AGENTS.md`、`specs/0001-prnmgt-refactor/spec.md`、`specs/0001-prnmgt-refactor/tasks.md`、`BOARD.md`、`docs/decisions/OPEN-DECISIONS.md`），**不含任何 `worker/**` / `collector/**` / `tools/**` 代码**。满足即可作为基座；出现白名单外文件或代码改动即停下报告。
 > 分工（全局规范 v1.8.9 三-7）：workbuddy 编卡 / 复审 / 合并收官；**trae 编码且一律不得部署、不得执行 `wrangler d1 execute`**；**现网 ALTER 与全部部署由人类本人执行**。
@@ -26,13 +26,13 @@
 |---|---|---|
 | **D-1** 存量 `is_baseline=1` 基线行 | **R1：现网一次性 DML 补锁** | `UPDATE device_daily / account_daily SET manual_locked = 1 WHERE is_baseline = 1;`（§四已给全文）。执行前先 `SELECT` 计数并留痕；回滚时须区分「本来就锁定的新写入」与「批量补锁的基线行」。**只交 SQL 文本，由人类本人执行** |
 | **D-2** 存量「已被改过但无标记」的 inline 订正行 | **不追溯，全部保持 0** | 历史 `/api/history` 订正无来源标记与审计，加列后无法自动识别；上线前由人类确认是否有需人工补标的日期，若需则另交一次性 DML |
-| **D-3** 与在途任务的隔离 | **独立批次**：不并入 v3 / v4、不与 P0 只读真机调研连做 | 「是否允许并行」按建议的保守口径**默认不放行**：`memory/projects/prnmgt.md` 中 trae 的 P0（2026-11-09 08:52）仍 `doing` 且无 done 行，按 AGENTS.md「一次只做一张卡」与全局规范三-5 ⑤，**P0 登记 done 或人类明确允许并行之前不得认领 T-063**（见 B3） |
+| **D-3** 与在途任务的隔离 | **独立批次**：不并入 v3 / v4、不与 P0 只读真机调研连做 | **2026-11-11 16:32 人类明确「允许并行」→ 防撞闸解除，T-063 可派工**（B3 留痕已先行落地）；独立批次边界不变：不并入 v3 / v4、不与 P0 连做、T-064 仍须等 T-063 复审合并 |
 
 ### B3 · 认领与同步纪律
 
 按三-5 ⑤/⑦：开工前查 `~/.agent-shared/memory/projects/prnmgt.md` 任务登记节，确认 T-063 未被他人认领（doing/open）；**认领与完成各追加一行**（append-only，禁止改旧行）。
 
-**当前唯一剩余派工前置（防撞闸）**：登记节中 trae 的 P0 只读真机调研（2026-11-09 08:52 `doing`）**未见 done 行**。按 AGENTS.md「二、一次只做一张卡」与三-5 ⑤⑦，**在 P0 登记 done 或人类明确允许并行之前，不得认领 T-063**；若人类明确放行，须先在本卡或 handoff 追加一行留痕后再派工。共享记忆该文件有**他人未提交改动（M）**，本卡全程未触碰、未代提交；执行 Agent 也不得代为提交或强行 rebase。
+**B3 防撞闸已解除（2026-11-11 16:32，人类明确授权）**：人类答复「**允许并行**」，对应 12:56 裁定 D-3 留下的「是否允许并行须人类明确」。授权范围**仅限解除**「P0（trae 11-09 08:52 `doing`、无 done 行）未 done 时不得认领 T-063」这一条闸；按 AGENTS.md「二、一次只做一张卡」本次为**一次性豁免**，留痕已先写入本卡 / #19 / ADR-0012 / BOARD 16:32 条目后再派工（符合本条原文要求）。**不解除**：T-064 对 T-063 复审合并的依赖、v4 前置未过与 v3 三卡暂停、#18 未决、T-063 与 T-064 不得连做；本批次仍不构成 v4 开工令。执行 Agent 仍须自行查登记节并追加 doing 行；若由 trae 执行且 P0 仍在途，必须用**独立 worktree / 分支**（`~/source/prnmgt.wt/trae-t063`、`agent/trae/T-063`），不得在 P0 的 worktree 内改文件。共享记忆该文件有**他人未提交改动（M）**，本卡全程未触碰、未代提交；执行 Agent 也不得代为提交或强行 rebase。
 
 ### B4 · 部署与 DDL 归人类本人
 
@@ -132,7 +132,7 @@ SQLite 3.24+ 支持 `ON CONFLICT DO UPDATE SET ... WHERE`；Cloudflare D1 与本
 
 ### T-063 · 后端锁定内核（P0，可独立闭环）
 
-- **依赖**：B1 已通过（ADR-0012 ACCEPTED / #19 RESOLVED / 章程豁免已登记）；B2 三项已裁定并写入本卡；**B3 防撞闸已过**（P0 登记 done 或人类明确允许并行）且认领已登记 doing；B4 执行时遵守；`origin/master` 基线复核按头部判据通过（相对立项起点 `868adf7` 仅治理文档、代码零改动）。
+- **依赖**：B1 已通过（ADR-0012 ACCEPTED / #19 RESOLVED / 章程豁免已登记）；B2 三项已裁定并写入本卡；**B3 防撞闸已过**（2026-11-11 16:32 人类明确「允许并行」）且认领已登记 doing；B4 执行时遵守；`origin/master` 基线复核按头部判据通过（相对立项起点 `868adf7` 仅治理文档、代码零改动）。
 - **文件白名单**（严格 9 个，超出即停下请示）：
   1. `worker/schema.sql`
   2. `worker/migrations/20261111_manual_locked.sql`（新增，DDL 双轨）
@@ -242,7 +242,7 @@ UPDATE account_daily SET manual_locked = 1 WHERE is_baseline = 1;
 
 ## 十、状态与引用
 
-- **当前状态**：**APPROVED（2026-11-11 12:56 人类批准）** —— 立项形式新 ADR 豁免、B2 三项按建议；ADR-0012 ACCEPTED、#19 RESOLVED、四处章程豁免登记、T-063 / T-064 卡面与 BOARD 交接条目均已落地。**未派工（B3 防撞闸：P0 仍 doing）、未认领、未改代码、未执行 DDL/DML、未部署、未连现网**。
+- **当前状态**：**APPROVED（2026-11-11 12:56 人类批准）** —— 立项形式新 ADR 豁免、B2 三项按建议；ADR-0012 ACCEPTED、#19 RESOLVED、四处章程豁免登记、T-063 / T-064 卡面与 BOARD 交接条目均已落地。**16:32 人类明确「允许并行」→ B3 防撞闸解除、可派工**；逐卡提示词 `handoff/2026-11-11-T063逐卡执行提示词-zhn-tbxg2iah-win.md` 已出。**仍未认领、未改代码、未执行 DDL/DML、未部署、未连现网**。
 - 共享记忆 `memory/projects/prnmgt.md` 有他人未提交改动（M），本卡未触碰、未代提交；本文件单独提交并推双远端。
 - 工作区日志：`C:/Users/Zhn_X/WorkBuddy/2026-11-04-21-23-46/.workbuddy/memory/2026-11-11.md`。
 - 同日相关留痕：`handoff/2026-11-11-PRN014手动采集闭环-zhn-tbxg2iah-win.md`（第七节：20:10 强制重采 cron 变更）。
