@@ -8,6 +8,8 @@
 > 分工（全局规范 v1.8.9 三-7）：workbuddy 编卡 / 复审 / 合并收官；**trae 编码且一律不得部署、不得执行 `wrangler d1 execute`**；**现网 ALTER 与全部部署由人类本人执行**。
 > 本卡为只读诊断结论 + 设计，不含任何业务代码改动。
 
+> **T-064 派工（2026-11-11 17:48）**：S4 已由人类「确认T064」解挂，逐卡提示词见 `handoff/2026-11-11-T064逐卡执行提示词-zhn-tbxg2iah-win.md`（自包含，由人类复制投喂）；最新 handoff `2026-11-11-prnmgt-S4解挂与T064投喂-zhn-tbxg2iah-win.md` 承载滚动继承后的 8 字段全量快照。本节不改动 B1 / B2 / B3 的历史裁定文字。
+
 ---
 
 ## 零、最高优先：立项已过 / 三项开工前置（任一未过即不得投喂、认领、改码）
@@ -156,7 +158,7 @@ SQLite 3.24+ 支持 `ON CONFLICT DO UPDATE SET ... WHERE`；Cloudflare D1 与本
 
 ### T-064 · 前端可见性与解锁按钮（P1）
 
-- **依赖**：T-063 复审通过并合并（未合并不得认领）。
+- **依赖**：T-063 复审通过并合并（未合并不得认领）—— **已满足**：T-063 17:2x 收官 `d5fad5d`；**S4 已于 2026-11-11 17:48 经人类「确认T064」解挂**，可投喂。逐卡执行以共享仓 `handoff/2026-11-11-T064逐卡执行提示词-zhn-tbxg2iah-win.md` 为准（自包含）；挂起快照以最新 handoff 为准；卡面状态保持 `todo`、执行方只登记 `doing`。
 - **文件白名单**（严格 6 个）：`worker/src/modules/history.js`、`worker/src/lib/dept_query.js`、`worker/src/modules/dept_data.js`、`worker/src/web/tabs/dept_data.js`、`worker/src/web/tabs/dept_data_write.js`、`worker/src/lib/web_assets.js`（build 生成，禁止手改）；如需追加单测则第 7 个，须先请示。
 - **验收**：列表正确显示锁定标记、admin 解锁按钮触发 `POST /api/history {action:'unlock'}` 成功后刷新且标记消失、非 admin 不显示按钮、后端 403 时前端有错误态；`build_web_assets.mjs && --check` 一致、`web_size` 首屏 gzip ≤ 40KB、`check.mjs` 0 问题、全量 `node --test` fail 0、单次转义无实体字面（T-051/T-058 教训）、`@media print` 计算样式与基线一致、headless Chrome CDP 实测无 JS 异常；未部署。
 
@@ -242,7 +244,7 @@ UPDATE account_daily SET manual_locked = 1 WHERE is_baseline = 1;
 
 ## 十、状态与引用
 
-- **当前状态**：**APPROVED（2026-11-11 12:56 人类批准）** —— 立项形式新 ADR 豁免、B2 三项按建议；ADR-0012 ACCEPTED、#19 RESOLVED、四处章程豁免登记、T-063 / T-064 卡面与 BOARD 交接条目均已落地。**16:32 人类明确「允许并行」→ B3 防撞闸解除、可派工**；逐卡提示词 `handoff/2026-11-11-T063逐卡执行提示词-zhn-tbxg2iah-win.md` 已出。**仍未认领、未改代码、未执行 DDL/DML、未部署、未连现网**。
+- **当前状态**：**APPROVED（2026-11-11 12:56 人类批准）** —— 立项形式新 ADR 豁免、B2 三项按建议；ADR-0012 ACCEPTED、#19 RESOLVED、四处章程豁免登记、T-063 / T-064 卡面与 BOARD 交接条目均已落地。**16:32 人类明确「允许并行」→ B3 防撞闸解除、可派工**；逐卡提示词 `handoff/2026-11-11-T063逐卡执行提示词-zhn-tbxg2iah-win.md` 已出。**仍未认领、未改代码、未执行 DDL/DML、未部署、未连现网**。 **补注（2026-11-11 17:48）**：T-063 已复审合并收官 `d5fad5d`（PASS、未部署）；**S4 解挂、T-064 可投喂**，提示词 `2026-11-11-T064逐卡执行提示词-zhn-tbxg2iah-win.md` 已备。S1/S2/S3 仍 suspended，部署仍归人类本人。
 - 共享记忆 `memory/projects/prnmgt.md` 有他人未提交改动（M），本卡未触碰、未代提交；本文件单独提交并推双远端。
 - 工作区日志：`C:/Users/Zhn_X/WorkBuddy/2026-11-04-21-23-46/.workbuddy/memory/2026-11-11.md`。
 - 同日相关留痕：`handoff/2026-11-11-PRN014手动采集闭环-zhn-tbxg2iah-win.md`（第七节：20:10 强制重采 cron 变更）。
