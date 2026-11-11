@@ -4,7 +4,7 @@
 > 编制：workbuddy@zhn-tbxg2iah-win · 2026-11-11 12:4x +08 · 批准落地 12:56 +08
 > 人类授权范围：**2026-11-11 12:56 书面裁定「1. 新 ADR 豁免，2. B2 按建议进行」** —— 立项形式 = 新 ADR 豁免（不另立项目），B2 三项全部按建议。**仍未授权**：DDL / DML 执行、部署、认领与编码（认领由执行 Agent 按三-5 ⑤ 自行登记）。
 > 卡号：**T-063**（后端锁定内核）/ **T-064**（前端可见性与解锁），已于 12:56 登记进 `specs/0001-prnmgt-refactor/tasks.md`（状态 todo；64 卡 / done 59 / todo 5）；`docs/adr/0012-manual-locked.md` 状态 **ACCEPTED**，决策 **#19 RESOLVED**。
-> 基线：立项实测 `origin/master` = `868adf7`；**立项治理文档提交后 `origin/master` = `46093a1`**（7 个文档文件、代码零改动，已推 origin）。**派工基座应为 `46093a1`**，执行方实测为该值属预期、不是漂移；若为其它值则停下报告。
+> 基线判据（**不写死 hash**，后续治理文档提交不再使本卡失效）：立项起点 `868adf7`；本批次立项文档已合入 `origin/master`，形成纯文档提交链（如 `46093a1`、`ba58a46`，均只改治理文档）。派工前实测 `git rev-parse origin/master` 并核对：① local = origin 一致；② `git diff --name-only 868adf7..origin/master` 的**全部**文件都在白名单内（`docs/adr/0012-manual-locked.md`、`constitution.md`、`AGENTS.md`、`specs/0001-prnmgt-refactor/spec.md`、`specs/0001-prnmgt-refactor/tasks.md`、`BOARD.md`、`docs/decisions/OPEN-DECISIONS.md`），**不含任何 `worker/**` / `collector/**` / `tools/**` 代码**。满足即可作为基座；出现白名单外文件或代码改动即停下报告。
 > 分工（全局规范 v1.8.9 三-7）：workbuddy 编卡 / 复审 / 合并收官；**trae 编码且一律不得部署、不得执行 `wrangler d1 execute`**；**现网 ALTER 与全部部署由人类本人执行**。
 > 本卡为只读诊断结论 + 设计，不含任何业务代码改动。
 
@@ -132,7 +132,7 @@ SQLite 3.24+ 支持 `ON CONFLICT DO UPDATE SET ... WHERE`；Cloudflare D1 与本
 
 ### T-063 · 后端锁定内核（P0，可独立闭环）
 
-- **依赖**：B1 已通过（ADR-0012 ACCEPTED / #19 RESOLVED / 章程豁免已登记）；B2 三项已裁定并写入本卡；**B3 防撞闸已过**（P0 登记 done 或人类明确允许并行）且认领已登记 doing；B4 执行时遵守；`origin/master` 基线复核一致（立项后基座 `46093a1`，仅文档）。
+- **依赖**：B1 已通过（ADR-0012 ACCEPTED / #19 RESOLVED / 章程豁免已登记）；B2 三项已裁定并写入本卡；**B3 防撞闸已过**（P0 登记 done 或人类明确允许并行）且认领已登记 doing；B4 执行时遵守；`origin/master` 基线复核按头部判据通过（相对立项起点 `868adf7` 仅治理文档、代码零改动）。
 - **文件白名单**（严格 9 个，超出即停下请示）：
   1. `worker/schema.sql`
   2. `worker/migrations/20261111_manual_locked.sql`（新增，DDL 双轨）
