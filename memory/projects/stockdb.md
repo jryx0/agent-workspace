@@ -87,3 +87,17 @@
 **部署时间** 18:53–19:01；**基线提交号** `f2d5b81`（改动对象为 NAS 脚本，非共享仓代码）；**部署者** workbuddy@zhn-tbxg2iah-win。**自检全通过**：探测单测 real=200/fake=000；负向测试（副本改假域名）→ 日志「源站不可用(code=000), 本次跳过同步; 引擎保持运行…」、7899 全程 200 未被停；正向端到端（19:00）→「源站可用(code=200), 开始同步」→ 增量 `3/3 files failed=0` →「引擎已恢复服务 (第 1 次拉起成功)」→ `result=OK`；600519 最新交易日 20261111 完好；两容器 healthy；看板正确把负向轮记 `手动 skipped`。线上生效版本 v3（md5 `cb155958b0a372a64155da204c9176dd`），22:00 起自动轮次按 v3 执行。
 
 **遗留限制**：引擎二进制启动仍需在线授权校验（闭源，脚本层无法根治）——若 NAS/容器在源站故障期间重启，entrypoint 拉起依旧会失败，需源站恢复后再拉；v3 覆盖的常态场景＝「运行中的引擎不会被同步误停」。未派工：查询页改同源 `/db/`、探测 URL 域名核对。详见 `handoff/2026-11-11-stockdb-sync.sh-v3源站门禁与拉起重试-部署留痕-zhn-tbxg2iah-win.md`。
+
+---
+
+[@workbuddy @zhn-tbxg2iah-win 2026-11-11 19:22 UTC+8] 【部署完成 · 看板远程启动引擎 + 全套归档重建提示词 · 三-7 ⑤ 留痕】人类 19:04 指令两条：①看板增加启动引擎功能；②全套脚本/配置/看板 HTML 归档至 agent-docs 并编制重建提示词（18:51 修改授权延续）。
+
+**新增架构**：宿主机常驻 `scripts/engine-ctl-server.py`（python3 stdlib，root，只绑 docker 网关 `172.18.0.1:7910`，LAN 不可路由；token 校验 `X-Stockdb-Token`；仅 `GET /status` 与 `POST /start`，无 stop；同步进行中 409 拒绝，防读写冲突）；`/etc/cron.d/stockdb-ctl` 每分钟探活自动拉起（重启/被杀自愈，且服务启动时自动探测 `stockdb_default` 网关，子网变化可自愈）；nginx 新增 `location /ctl/` 反代并注入 token（token 只在 NAS `conf/ctl.token` 600 与 nginx 配置内，页面源码不出现）；`web/sync.html` 引擎「无响应」时数据引擎卡片出现「⚙ 启动引擎」按钮，回显结果并自动刷新。**注意**：`webconf/default.conf` 的 `proxy_pass` 写死网关 IP，`docker compose down` 重建网络后需手改并 reload。
+
+**部署时间** 19:11–19:15；**基线** 共享仓 `250768c`（NAS 侧变更，非共享仓代码）；**部署者** workbuddy。NAS 变更：新增 engine-ctl-server.py / conf/ctl.token / /etc/cron.d/stockdb-ctl；更新 default.conf 与 sync.html（各留 `.bak.20261111`）；nginx reload；sync.sh 仍为 v3 未动。MD5：engine-ctl-server.py `52ff86b6…`、sync.html `e96cf801…`、default.conf `743dd8c5…`。`/tmp` 部署残留（含 token 临时文件）已清理。
+
+**自检全通过**：`/ctl/status` 经 8080 = 200；引擎在线时 start 回「无需启动」；**故障模拟端到端**（stop → 7899 拒连/`/db/` 502 → POST `/ctl/start` → 启动成功 → 600519 最新交易日 20261111）；同步中守卫 409 实测（该轮 19:13:40–19:14:17 `result=OK`）；pkill 控制服务后 cron 19:15:01 自动拉回（5s 内恢复）；LAN 直连网关超时不可达。
+
+**归档**：`~/.agent-docs/脚本/NAS/stockdb-docker/` 18 文件（1:1 于 NAS 11-11 现状，唯 default.conf token 置换为 `__STOCKDB_CTL_TOKEN__`），主文档 `261111｜重建｜stockdb 引擎与看板重建提示词.md`（按 zhn-docs-std 命名；脚本/配置保留原文件名以满足重建功能性要求）。**归档为静态快照，NAS 后续变更不自动同步，改动时须手动更新归档**。提示词含架构图、9 步重建流程、自研修改点对照、闭源二进制获取、8 条已知坑、8 项验证清单、指纹表。
+
+详见 `handoff/2026-11-11-stockdb-看板远程启动引擎上线与全套归档-zhn-tbxg2iah-win.md`。
