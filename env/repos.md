@@ -4,3 +4,4 @@
 # 格式：项目名 | Git 地址 | 默认分支 | 本地约定克隆路径 | 简述 | 记忆文件
 项目名 | Git 地址 | 默认分支 | 本地约定克隆路径 | 简述 | 记忆文件
 prnmgt | https://github.com/jryx0/prnmgt.git | master | ~/source/prnmgt | Cloudflare Worker + D1 打印机管理系统重构（43 卡全 done，生产运行中） | projects/prnmgt.md
+stockdb | 无（资产在 NAS /volume1/docker/stockdb，经 SMB docker 共享访问） | 无 | 无（不在 ~/source） | A 股行情数据引擎 NAS 常驻服务：7899 引擎 + 8080 查询页/同步看板 | projects/stockdb.md
