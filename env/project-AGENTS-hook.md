@@ -1,19 +1,20 @@
-# 规范注入端模板（配套 global/rules.md 〇 章，v1.8.5）
+# 规范注入端模板（配套 global/rules.md 〇 章，v2.0 分级版）
 
 > 用途：把「去哪里读规范」的**短指针**放进两类注入端。按 〇 ⑤「单一原件」，**禁止把规范条款正文复制到这里或全局指令里**；规范正文只在 `global/rules.md` 维护。
 > 本文件是模板，不是配置本身。实际生效内容以 WorkBuddy 设置界面 / 各项目 AGENTS.md 为准。
 
 ## A 段 · 平台全局指令模板（设置 → 个性化 →「给 WorkBuddy 的指令」，≤1500 字符）
 
-人类已于 2026-11-05 09:15 完成粘贴。以下为基准模板，如 UI 中内容有调整，以 UI 为准。
+人类已于 2026-11-05 09:15 首次粘贴，2026-11-09 / 11-11 两次更新；**v2.0 需第三次粘贴**。以下 A 段为 v2.0 分级版全文，与 `env/execution-enforcement.md` 二-L1 逐字同源（改动须两处同步，〇⑦ ⑤）；如 UI 中内容有调整，以 UI 为准。
 
 ```
-【开工前必做】
-1. 涉及文件/环境/代码/工具的操作前，先读 ~/.agent-shared/global/rules.md，执行其中「八、启动自检」标 [Agent自动] 的步骤；文件不存在就报告人类，不要自行猜规则。
-2. 再读 ~/.agent-shared/handoff/ 最新一份 + memory/org.md 最近 200 行。
-3. 装任何工具/依赖前先跑 bash ~/.agent-shared/env/tools-scan.sh --check；已装且达标就复用，禁止重复下载。禁止 npm install -g / pip install 全局安装；项目级 CLI 用 devDependency + npx。装完必须 --write 刷新清单并在 env/toolchain.md 追加变更日志。
-4. 改过 ~/.agent-shared 内文件，10 分钟内 commit（type: 简述 by <agent>@zhn-tbxg2iah-win）并 git sync 推双远端；写完 handoff 立即提交。
-5. 人类正在配置的目录/工具/服务不并行修改；云同步目录里的删除交给人类 UI 操作。
+【开工前·档位判定（第一个输出就要声明）】按 ~/.agent-shared/global/rules.md 〇⑦ 判定本次会话档位并说明依据；拿不准按 T2，禁止为省事降级。
+- T0 纯对话/只读：不写文件、不装依赖、不碰共享仓 → 不读规范全文、不出自检简报；一旦涉及写操作先读规范。
+- T1 本机单会话：只写当前工作区/项目本地文件，且同时满足「不写 ~/.agent-shared、不写 ~/.agent-tools、不装/升级依赖、不认领任务卡、不部署/不推远端」→ 不读 handoff / org.md / 挂起快照，不跑 10 步自检与代理核对；只遵守下面最小红线集。
+- T2 协作（默认）：涉及 ~/source 项目、写共享仓或共享工具区、安装依赖、认领任务卡、部署、git sync，或我明确说「开工前按规范自检」→ 全量执行，不得降级。
+【最小红线集（任何档位都不可豁免）】① 密钥永不入 Git；② 禁把依赖装进全局或用户级位置（按安装位置判定，不按命令写法：pip install 不带 --user 落入 %APPDATA%\Python...\site-packages、npm install -g、pip install --user 全算违规）；需要装依赖即转 T2；③ 不并行修改我正在配置的目录/工具/服务，云同步目录里的删除交我 UI 操作；④ 不改 global/rules.md 正文；⑤ 不碰他人未提交改动、不代提交、不强 rebase。
+【T2 补充】装任何工具/依赖前先跑 bash ~/.agent-shared/env/tools-scan.sh --check，先探测平台内置能力，已装且达标就复用，禁止重复下载；项目级 CLI 用 devDependency + lock + npx，通用库装 ~/.agent-tools/venvs/<agent名>/。装完 --write 刷新清单并在 env/toolchain.md 追加变更日志。改过 ~/.agent-shared 内文件 10 分钟内 commit（type: 简述 by <agent名>@zhn-tbxg2iah-win）并 git sync 推双远端；写完 handoff 立即提交。推送前跑 bash ~/.agent-shared/env/proxy-check.sh，配置异常或端口不通先提醒我、停下等确认，禁止自己找临时代理绕过。再读最新一份 handoff（多项目按项目各补读一份）+ org.md 最近 200 行。
+【T2 第一个输出必须是自检简报】在任何写文件、改配置、装依赖、Git 写操作之前，先简报：规范版本号、第八节 10 步自检结果、tools-scan --check 结果、任务认领状态、当前挂起项（读最新 handoff「挂起任务」快照，按项目+任务ID，suspended 一律不得认领/开工）、代理与双远端状态。未出简报就动手＝违规；简报后即可继续，不必等我确认。未读规范、未跑 --check、或代理异常未提醒，视为注入失败：停止写操作并报告我。
 ```
 
 注意：全局指令**只在会话开始时注入**，改完必须新开任务才生效；当前会话不会重新加载。
@@ -32,6 +33,6 @@
 ## C 段 · 首次注入验证（〇 ④）
 
 1. 新开一个任务，只发一句：`开工前按规范自检`
-2. 预期：agent 主动读 `~/.agent-shared/global/rules.md` → 跑 `bash ~/.agent-shared/env/tools-scan.sh --check` → 读最新 handoff 与 org.md 最近 200 行
+2. 预期：agent 主动读 `~/.agent-shared/global/rules.md` → 跑 `bash ~/.agent-shared/env/tools-scan.sh --check` → 读最新 handoff 与 org.md 最近 200 行（**该显式自检指令按 〇⑦ 强制判 T2**，不受 T0 纯对话判定影响）
 3. 未做到即注入失败：检查指令是否保存、是否为**新任务**、路径是否写对
 4. 验证通过后，把结果按署名规范追加一条到 `memory/org.md`
