@@ -56,6 +56,6 @@
 
 ## 六、状态
 
-- 未部署（`git push` 未发生、线上代码版本未变，基线仍为 origin/master 既有提交）。
+- 未部署生产：线上 Worker 与采集端代码/配置版本均未变化，基线仍为既有 master；本节的 `git push` 仅指共享记忆仓库的文档同步，与生产部署无关。
 - 未改 `~/.agent-shared` 内既有文件；仅新增本 handoff。
 - 工作区当日日志：`.workbuddy/memory/2026-11-11.md`。
