@@ -1,46 +1,38 @@
-# 【DRAFT · 未批准 · 禁止投喂 / 禁止认领 / 禁止编码】方案 A「人工订正防覆盖」实施卡
+# 【APPROVED · 已批准 · 可投喂】方案 A「人工订正防覆盖」实施卡
 
-> 自包含任务书。批准后可直接复制投喂执行 Agent（trae），无需回看历史对话。
-> 编制：workbuddy@zhn-tbxg2iah-win · 2026-11-11 12:4x +08
-> 人类授权范围：**仅「按方案 A 做实施卡」**。尚未批准立项、表结构变更、DDL 执行或部署。
-> 建议卡号：**T-063**（后端锁定内核）/ **T-064**（前端可见性与解锁），编号待批准后在 `specs/0001-prnmgt-refactor/tasks.md` 登记；本卡**不代建卡面**。
-> 基线：编卡时 `git rev-parse origin/master` = **`868adf7`**（local = origin）。派工前必须实测复核，不一致即停下报告。
+> 自包含任务书。可直接复制投喂执行 Agent（trae），无需回看历史对话；**投喂前须过 §零 B3 的防撞闸**。
+> 编制：workbuddy@zhn-tbxg2iah-win · 2026-11-11 12:4x +08 · 批准落地 12:56 +08
+> 人类授权范围：**2026-11-11 12:56 书面裁定「1. 新 ADR 豁免，2. B2 按建议进行」** —— 立项形式 = 新 ADR 豁免（不另立项目），B2 三项全部按建议。**仍未授权**：DDL / DML 执行、部署、认领与编码（认领由执行 Agent 按三-5 ⑤ 自行登记）。
+> 卡号：**T-063**（后端锁定内核）/ **T-064**（前端可见性与解锁），已于 12:56 登记进 `specs/0001-prnmgt-refactor/tasks.md`（状态 todo；64 卡 / done 59 / todo 5）；`docs/adr/0012-manual-locked.md` 状态 **ACCEPTED**，决策 **#19 RESOLVED**。
+> 基线：12:56 实测 `git rev-parse origin/master` = **`868adf7`**（local = origin，与编卡时一致）。派工前仍须实测复核，不一致即停下报告。
 > 分工（全局规范 v1.8.9 三-7）：workbuddy 编卡 / 复审 / 合并收官；**trae 编码且一律不得部署、不得执行 `wrangler d1 execute`**；**现网 ALTER 与全部部署由人类本人执行**。
 > 本卡为只读诊断结论 + 设计，不含任何业务代码改动。
 
 ---
 
-## 零、最高优先：四项开工阻断（任一未过即不得投喂、认领、改码）
+## 零、最高优先：立项已过 / 三项开工前置（任一未过即不得投喂、认领、改码）
 
-### B1 · 触犯「既有 22 表冻结」，必须先由人类书面裁定立项形式
+### B1 · 立项形式 —— **已通过（2026-11-11 12:56）**
 
-`device_daily` / `account_daily` 属既有 22 表。以下条款叠加生效：
+人类书面裁定 **「新 ADR 豁免」**，即本卡原 (a) 方案：批准 `docs/adr/0012-manual-locked.md`（**ACCEPTED**），在 `constitution.md` / `AGENTS.md` / `spec.md` 各登记一条一次性豁免，`docs/decisions/OPEN-DECISIONS.md` 新增 **#19 RESOLVED**；**不另立项目**。
 
-| 位置 | 条文要点 |
-|---|---|
-| `constitution.md:61,95` | 采集端代码 0 行改动；改 D1 表结构须先写 ADR 由人类批准 |
-| `AGENTS.md:48` | 既有 22 表字段 / 索引 / 语义冻结 |
-| `specs/0001-prnmgt-refactor/spec.md:34-35` | 「改 D1 表结构 / 字段语义 / 索引 → **永不（需另立项目）**」 |
-| `OPEN-DECISIONS.md` #16 / #17 | 已批准的豁免**只覆盖第 23 表 `paper_purchases`**，并明确保留其它冻结项 |
-| #18 / BOARD v4 | 改既有 22 表与采集端仍列为前置未过的禁止事项 |
+**豁免边界（不得扩大解释）**：严格仅限给 `device_daily` / `account_daily` 各加一列 `manual_locked` 及配套后端 / 前端 / 测试代码。既有 22 表其它列 / 主键 / 索引 / 语义、采集端 `collector/**` 零改动（ADR-0005）、`lib/diff.js` 统计口径、既有路由契约、第 23 表语义（#17）、**#18 前置未过 / v4 研究阶段 / v3 三卡 T-059~T-061 暂停**一律不解除；本批次**不构成 v4 开工令**。
 
-方案 A 要给两张既有表各加一列 → **属冻结范围**。需人类书面二选一并明确记录：
-- **(a) 新 ADR 豁免**：批准 `ADR-0012`（名称建议「日快照表新增人工锁定标记」），在 `constitution.md`、`AGENTS.md`、`spec.md`、`OPEN-DECISIONS.md` 增登 #19 载明豁免边界；
-- **(b) 另立项目**：按 `spec.md:34` 走新项目。
+派工前已由 workbuddy 落地：ADR-0012、四处豁免登记、#19、T-063 / T-064 卡面、BOARD 12:56 交接条目；项目仓 `check.mjs` 实测 **0 问题 / 3 条存量提示**、`git diff --check` EXIT 0。**执行 Agent 不得自行修改上述任何文档**（§六 禁动清单）。现网 ALTER / DML / 部署归人类本人（B4 不变）。
 
-**未裁定前**：不得改 `worker/schema.sql`、不得新增 migration 文件、不得执行 `wrangler d1 execute`、不得登记 `tasks.md` 卡面、不得改 `BOARD.md` / 章程 / 决策文档。上述文档统一由 workbuddy 在批准后收官订正，trae 不得自行修改。
+### B2 · 三项待裁定 —— **已全部裁定（按建议，2026-11-11 12:56）**
 
-### B2 · 三项待人类裁定（写入本卡后方可开工）
-
-| # | 待裁定项 | 建议 |
+| # | 裁定 | 执行要求 |
 |---|---|---|
-| D-1 | **存量基线行是否补锁**：历史上人工插入的 `is_baseline=1` 行现在是 `manual_locked=0`，上线后仍可能被采集覆盖成「标记是基线、数值是采集值」的畸形行 | **建议 R1**：现网一次性 DML 把 `is_baseline=1` 的存量行置 `manual_locked=1`（数量少、语义明确），其余行全保持 0；由人类本人执行，agent 只交 SQL 文本 |
-| D-2 | **存量「已被改过但无标记」的行**：历史上 `/api/history` 的 inline 订正没有任何来源标记与审计，加列后无法自动识别 | 建议：不追溯、全部保持 0；上线前由人类确认是否有需要人工补标的日期，若需则另交一次性 DML |
-| D-3 | **与在途任务的隔离**：v4 研究阶段前置未过、v3 三卡（T-059~T-061）暂停、trae 另有 P0 只读真机调研在做 | 建议：本批次独立，不并入 v3/v4、不与 P0 连做；是否允许并行须人类明确 |
+| **D-1** 存量 `is_baseline=1` 基线行 | **R1：现网一次性 DML 补锁** | `UPDATE device_daily / account_daily SET manual_locked = 1 WHERE is_baseline = 1;`（§四已给全文）。执行前先 `SELECT` 计数并留痕；回滚时须区分「本来就锁定的新写入」与「批量补锁的基线行」。**只交 SQL 文本，由人类本人执行** |
+| **D-2** 存量「已被改过但无标记」的 inline 订正行 | **不追溯，全部保持 0** | 历史 `/api/history` 订正无来源标记与审计，加列后无法自动识别；上线前由人类确认是否有需人工补标的日期，若需则另交一次性 DML |
+| **D-3** 与在途任务的隔离 | **独立批次**：不并入 v3 / v4、不与 P0 只读真机调研连做 | 「是否允许并行」按建议的保守口径**默认不放行**：`memory/projects/prnmgt.md` 中 trae 的 P0（2026-11-09 08:52）仍 `doing` 且无 done 行，按 AGENTS.md「一次只做一张卡」与全局规范三-5 ⑤，**P0 登记 done 或人类明确允许并行之前不得认领 T-063**（见 B3） |
 
 ### B3 · 认领与同步纪律
 
-按三-5 ⑤/⑦：开工前查 `~/.agent-shared/memory/projects/prnmgt.md` 任务登记节，确认 T-063 未被他人认领（doing/open）；**认领与完成各追加一行**（append-only，禁止改旧行）。编卡时该文件有**他人未提交改动（M）**，本卡全程未触碰、未代提交；执行 Agent 也不得代为提交或强行 rebase。
+按三-5 ⑤/⑦：开工前查 `~/.agent-shared/memory/projects/prnmgt.md` 任务登记节，确认 T-063 未被他人认领（doing/open）；**认领与完成各追加一行**（append-only，禁止改旧行）。
+
+**当前唯一剩余派工前置（防撞闸）**：登记节中 trae 的 P0 只读真机调研（2026-11-09 08:52 `doing`）**未见 done 行**。按 AGENTS.md「二、一次只做一张卡」与三-5 ⑤⑦，**在 P0 登记 done 或人类明确允许并行之前，不得认领 T-063**；若人类明确放行，须先在本卡或 handoff 追加一行留痕后再派工。共享记忆该文件有**他人未提交改动（M）**，本卡全程未触碰、未代提交；执行 Agent 也不得代为提交或强行 rebase。
 
 ### B4 · 部署与 DDL 归人类本人
 
@@ -76,7 +68,7 @@
 
 ---
 
-## 二、方案 A 设计（待 D-1~D-3 裁定后冻结）
+## 二、方案 A 设计（**已冻结** · 12:56 三项裁定落定，不得自行调整）
 
 ### D1 · 列定义（两表各一列）
 
@@ -140,7 +132,7 @@ SQLite 3.24+ 支持 `ON CONFLICT DO UPDATE SET ... WHERE`；Cloudflare D1 与本
 
 ### T-063 · 后端锁定内核（P0，可独立闭环）
 
-- **依赖**：B1~B4 全部通过；D-1~D-3 已写入本卡；`origin/master` 基线复核一致；认领已登记 doing。
+- **依赖**：B1 已通过（ADR-0012 ACCEPTED / #19 RESOLVED / 章程豁免已登记）；B2 三项已裁定并写入本卡；**B3 防撞闸已过**（P0 登记 done 或人类明确允许并行）且认领已登记 doing；B4 执行时遵守；`origin/master` 基线复核一致（12:56 实测 `868adf7`）。
 - **文件白名单**（严格 9 个，超出即停下请示）：
   1. `worker/schema.sql`
   2. `worker/migrations/20261111_manual_locked.sql`（新增，DDL 双轨）
@@ -188,7 +180,7 @@ ALTER TABLE account_daily ADD COLUMN manual_locked INTEGER NOT NULL DEFAULT 0;
 --   SELECT COUNT(*) AS n FROM account_daily WHERE manual_locked <> 0;
 ```
 
-**D-1 若裁定 R1**，另交一份独立 DML 文本（同样由人类本人执行，agent 只交文本不执行）：
+**D-1 已裁定 = R1**，另交一份独立 DML 文本（同样由人类本人执行，agent 只交文本不执行；执行前先 `SELECT` 计数并留痕）：
 
 ```sql
 -- 建议先备份 / 先 SELECT 计数，执行后核对行数
@@ -202,8 +194,9 @@ UPDATE account_daily SET manual_locked = 1 WHERE is_baseline = 1;
 
 ## 五、门禁、提交与复审纪律
 
-- 门禁（**以纯 LF 沙盒 `git archive` 导出为准**，主仓 Windows `core.autocrlf=true` 会让 `build_web_assets --check` 假失败）：
+- 门禁（**以纯 LF 沙盒 `git archive` 导出为准**；主仓 Windows 工作区曾出现 CRLF 漂移 —— 12:56 实测项目仓 `core.autocrlf=false`、index 存 LF 而磁盘为 CRLF，会让 `build_web_assets --check` 假失败，已在立项提交时把两份章程文档归一化为 LF）：
   `node scripts/check.mjs` 0 问题 · `node scripts/build_web_assets.mjs --check` 一致 · `node scripts/web_size.mjs` ≤ 40KB · `node --test tools/tests/*.test.mjs tools/tests/unit/*.test.mjs` fail 0（T-062 收官基线 **275 / pass 184 / fail 0 / skip 91**，以派工前实测为准，只增不减）· `node --check` 目标文件 · `git diff --check` EXIT 0 · 改动文件 CRLF 0。
+- **规模红线说明**：T-063 白名单 9 文件 / T-064 6 文件，字面上越过 `constitution.md` 五/六的「单卡 < 5 文件」；但属「新增一列 + 两条 upsert 加 WHERE」的原子集（2 个新增文件、1 个可选，缺任一写入入口会出现「能锁但入口不置位」的半成品），历史 T-055（白名单 4→8 文件临时授权）与 T-062（7 文件）有同口径先例，`check.mjs` 对 >5 文件只 warn 不 error。**12:56 实测 0 问题 / 3 条存量提示**，新增两卡未引入新提示。若人类要求严格按 5 文件拆卡，须重新裁定拆分方式，不得由执行 Agent 自行合并或拆分。
 - 提交：worktree 模式（`~/source/prnmgt.wt/trae-t063`、分支 `agent/trae/T-063`）；一次性署名
   `git -c user.name=zhn-trae -c user.email=trae@zhn-tbxg2iah-win commit -m "..." -m "Agent: trae"`；
   推分支到 origin，**不合并 master、不改 `tasks.md` 卡面、不自报 done、停下等 workbuddy 复审**。追加修正用**新提交，不 amend**。
@@ -213,7 +206,7 @@ UPDATE account_daily SET manual_locked = 1 WHERE is_baseline = 1;
 
 ## 六、禁动清单（越界即打回）
 
-`lib/diff.js` · `lib/util.js` · `lib/paper_calc.js` · `collector/**`（ADR-0005）· `worker/src/routes.js` 与 `tools/tests/fixtures/routes.json`（不新增路由）· `routes` 门禁白名单 · `tools/tests/api_contract.mjs` 判据 · 三个 CSS 与 `index.html` / `app.js` · 既有 22 表的其它列与主键 · `BOARD.md` / `tasks.md` / `constitution.md` / `spec.md` / `OPEN-DECISIONS.md`（由 workbuddy 收官统一订正）· 现网 D1 与线上服务。
+`lib/diff.js` · `lib/util.js` · `lib/paper_calc.js` · `collector/**`（ADR-0005）· `worker/src/routes.js` 与 `tools/tests/fixtures/routes.json`（不新增路由）· `routes` 门禁白名单 · `tools/tests/api_contract.mjs` 判据 · 三个 CSS 与 `index.html` / `app.js` · 既有 22 表的其它列与主键 · `BOARD.md` / `tasks.md` / `constitution.md` / `spec.md` / `OPEN-DECISIONS.md` / `docs/adr/**`（立项文档已由 workbuddy 于 12:56 订正完毕，执行方一律不得改）· 现网 D1 与线上服务。
 
 ---
 
@@ -249,8 +242,9 @@ UPDATE account_daily SET manual_locked = 1 WHERE is_baseline = 1;
 
 ## 十、状态与引用
 
-- **当前状态**：DRAFT，仅编制完成；**未批准立项、未登记卡面、未认领、未改代码、未执行 DDL、未部署**。
+- **当前状态**：**APPROVED（2026-11-11 12:56 人类批准）** —— 立项形式新 ADR 豁免、B2 三项按建议；ADR-0012 ACCEPTED、#19 RESOLVED、四处章程豁免登记、T-063 / T-064 卡面与 BOARD 交接条目均已落地。**未派工（B3 防撞闸：P0 仍 doing）、未认领、未改代码、未执行 DDL/DML、未部署、未连现网**。
 - 共享记忆 `memory/projects/prnmgt.md` 有他人未提交改动（M），本卡未触碰、未代提交；本文件单独提交并推双远端。
 - 工作区日志：`C:/Users/Zhn_X/WorkBuddy/2026-11-04-21-23-46/.workbuddy/memory/2026-11-11.md`。
 - 同日相关留痕：`handoff/2026-11-11-PRN014手动采集闭环-zhn-tbxg2iah-win.md`（第七节：20:10 强制重采 cron 变更）。
+- 立项依据：`~/source/prnmgt/docs/adr/0012-manual-locked.md`（ACCEPTED，含批准检查单与豁免边界）、`docs/decisions/OPEN-DECISIONS.md` #19 RESOLVED、`BOARD.md` 12:56 交接条目、`specs/0001-prnmgt-refactor/tasks.md` 的 T-063 / T-064 卡面。
 - 依据文件：`worker/src/modules/ingest.js`、`worker/src/lib/{history_save,admin_baseline,admin_account,admin_import,dept_query,diff}.js`、`worker/src/modules/{history,dept_data}.js`、`worker/schema.sql`、`collector/printer_monitor/{db,sync}.py`、`constitution.md`、`AGENTS.md`、`specs/0001-prnmgt-refactor/spec.md`、`docs/decisions/OPEN-DECISIONS.md`。
