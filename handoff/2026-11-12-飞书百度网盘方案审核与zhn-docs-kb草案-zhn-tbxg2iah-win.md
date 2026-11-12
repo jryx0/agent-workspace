@@ -1,0 +1,50 @@
+# 飞书+百度网盘方案审核与 zhn-docs-kb v0.1.0 草案
+
+- **执行者**：workbuddy@zhn-tbxg2iah-win
+- **时间**：2026-11-12 09:25–09:45 UTC+8
+- **规范版本**：v2.0（T2 会话，自检简报已出；tools-scan --check 通过；proxy-check 推送前重跑）
+- **共享仓基线**：`b0964ed`（开工时 local = origin = backup 一致）
+- **授权依据**：人类 09:25「现在创建一个 skill，建立一个我自己的多 agent 协同共享的文档知识库。要求档中的文件名按 zhn-docs-std skill 规范约束。已经编制了一份方案……进行审核，提出改进意见和结论，并列出我需要做那些前置工作」
+
+## 一、任务结论
+
+方案**有条件通过，暂缓执行其 Step 1**。分层思路正确，但存在 3 个硬阻断与 1 个规范冲突：
+
+1. **B1 环境阻断**：百度网盘官方 Skill README 系统支持为 macOS / Linux / Windows WSL，**Windows 原生 ❌**；本机为 Windows 原生，且本次会话 `wsl.exe` 被沙箱程序黑名单拦截（未重试、未绕过），WSL 实况需人类在终端自测。
+2. **B2 架构冲突**：方案未定义与 `~/.agent-docs`（docs://）、NAS `Z:\`（nas://，22T）的关系，有违反 rules.md 二-3 单一原件原则的风险。
+3. **B3 能力未证实**：飞书 MCP 是否覆盖 Drive 上传/下载未实测；Drive `upload_all` 仅 ≤20MB，>20MB 必须分片；md/html 直传不等于在线预览，需导入转换。
+4. **C1 规范冲突**：org.md 2026-11-04 已决议百度网盘冷备改用 NAS 自带云同步；重新引入需人类裁决范围。
+
+核查确认属实项：官方仓库 `BaiduNetdiskAIBot/bdpan-storage`、沙箱仅限 `/apps/bdpan/`、分享有效期 1/7/30 天/永久、支持读取文件正文（txt/md/Office/PDF）、OAuth2 + Token 配置文件 Agent 禁读禁输出、公测 BETA。
+
+## 二、产出
+
+1. 审核报告：`docs://技术资料/261112｜文档｜飞书百度网盘混合存储方案审核.md`（agent-docs，不进 Git；类型段复用既有「文档」，单文件不建批次目录）。
+2. 技能草案 `zhn-docs-kb` v0.1.0：权威原件 `skills/official-doc/zhn-docs-kb/SKILL.md` + 平台副本 `~/.workbuddy/skills/zhn-docs-kb/SKILL.md`（单向复制，SHA256 已比对一致）。内含分层与 URI、单一原件、命名委派 zhn-docs-std、索引两阶段写入、分流判断、安全红线、平台约束、协同与退避；外部后端参数全部 TBD，未授予自动上传/分享权限。
+3. 未安装任何依赖、未创建飞书应用、未操作百度网盘、未修改 rules.md 与设备档案。
+
+## 三、待人类裁决／前置工作
+
+1. 原件归属：维持 agent-docs + NAS 为原件、飞书/网盘仅副本，还是迁移活跃层（后者需改 rules.md 二-3 与设备档案）。
+2. 是否启用飞书在线协作层；索引权威位置选多维表格还是 `~/.agent-docs/kb/` 过渡。
+3. 百度网盘角色限定为对外交付 + 异地冷备是否确认。
+4. 密级分级与分享策略；secret 类文档永不上云。
+5. 是否启用 WSL2 或指定 Linux 设备执行网盘侧操作；请在终端运行 `wsl --status`、`wsl -l -v` 并回传。
+6. 账号凭证：飞书自建应用 app_id/app_secret（secret 入 `~/.agent-shared/config/`）、最小 scope、发布版本；百度网盘扫码授权由本人完成。
+7. 测试素材：≥100MB 无敏感文件、1 个 md、1 个 >20MB 文件；预留测速时间窗。
+
+## 四、挂起任务（跨项目全量快照 · 8 字段 · 继承自「stockdb 归档按 v1.3.0」，本轮无新增无解挂）
+
+| 项目 | 任务ID | 挂起于／裁决出处 | 原因 | 解挂前置（可验证条件） | 现场 | 解挂后动作 | 解挂权 |
+|---|---|---|---|---|---|---|---|
+| prnmgt | **S1** T-059/T-060/T-061 | 2026-11-07 人类 D-4 | v3 三卡暂停，合并为一次 ALTER + 一次部署 | S3 人类裁定 + 新 ADR 批准 + 重编卡面 | 无 worktree；卡面 todo | 重编卡面后重新认领 | 人类 |
+| prnmgt | **S2** P0 二次真机调研 | 2026-11-11 人类确认 | 富士 CWIS 无单双面统计，厂家后台升级中 | 厂家升级完成 + 复跑三台探测 + 更新调研文档 | tmp 快照保留；worktree 已 remove | 续跑不重开卡 | 人类 |
+| prnmgt | **S3** v4 批次 / #18 | 2026-11-07 15:11 | 纸张消耗口径重编，数据可行性未定 | S2 结论 + D-5~D-10 逐条裁定 + 新 ADR | 仅 DRAFT，未写卡面 | 裁定后重编拆卡再认领 | 人类 |
+
+**已解挂/不计入防撞**：prnmgt S4 T-064 已解挂回 todo，trae doing 中。
+
+## 五、边界与留痕
+
+- 全程未触碰他人未提交改动 `M memory/projects/prnmgt.md`；提交仅 `git add` 本任务新增的技能与 handoff 两个路径，未用 `git add -A`。
+- 未执行 `git pull --rebase`（工作区存在他人未提交改动，遵守最小红线⑤）；以只读方式核对 local=origin=backup=`b0964ed`。
+- 工作区日志：`WorkBuddy/2026-11-04-15-28-26/.workbuddy/memory/2026-11-12.md` 已追加。
