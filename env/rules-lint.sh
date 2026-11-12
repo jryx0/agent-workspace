@@ -28,12 +28,14 @@ usage() {
   -h,--help 显示本帮助
 
 检查项：
-  C1 每份分卷 anchors 块内每条锚句：正文恰好 1 次，且 --rules 至少 1 次
+  C1 每份分卷 anchors 块内每条锚句：正文恰好 1 次，且 --rules 至少 1 次；
+     常驻层「- 〔标签〕」锚句壳总数与分卷 anchors 条数一致（防整行删除）
   C2 每份分卷前 6 行含「> **原编号**：」
-  C3 --rules 分流表/内联指针的字符数与分卷实际字符数一致，且每卷至少被引用一次
-  C4 分卷正文指向其他分卷的章节编号必须紧跟「〔spec/目标.md〕」
-  C5 〇⑦③ 最小红线集第 1–5 条核心禁令在 L1 粘贴正文中逐条出现
-  C6 L1 粘贴正文（「粘贴正文」标题下第一个代码块）≤ 1500 字符
+  C3 --rules 分流表/内联指针的字符数与分卷实际字符数一致；所有 spec 指针
+     指向的文件都存在；每卷至少被引用一次
+  C4 分卷正文指向其他分卷的章节编号必须紧跟「〔spec/目标.md〕」（且目标正确）
+  C5 〇⑦③ 最小红线集第 1–5 条：--rules 侧与 L1 侧各自写法都须命中
+  C6 L1 粘贴正文（「粘贴正文」或「### L1」标题下第一个代码块）≤ 1500 字符
 
 退出码：0 全部通过 / 1 存在失败项 / 2 参数或环境错误
 EOF
@@ -127,6 +129,15 @@ anchors_of() {
        ina && index($0," | ")>0 {print substr($0, index($0," | ")+3)}' "$1"
 }
 
+# 提取 anchors 块内「|」前的标签（每行一条，去首尾空白）
+anchors_tags() {
+  awk 'index($0,"<!-- anchors")==1 {ina=1; next}
+       ina && $0=="-->" {ina=0; next}
+       ina && index($0," | ")>0 {
+         t=substr($0,1,index($0," | ")-1); gsub(/^[ \t]+/,"",t); gsub(/[ \t]+$/,"",t); print t
+       }' "$1"
+}
+
 # 去掉 anchors 块后的正文
 body_of() {
   awk 'index($0,"<!-- anchors")==1 {ina=1; next}
@@ -134,9 +145,17 @@ body_of() {
        !ina' "$1"
 }
 
-# 提取「粘贴正文」标题下第一个代码块的内容（不保留末尾换行）
+# 提取 L1 粘贴正文：优先「粘贴正文」标题下第一个代码块；
+# 没有该标题时取「### L1 …」标题下第一个代码块（env/execution-enforcement.md 二-L1 形态）。
+# 内容不保留末尾换行。
 paste_body() {
-  awk 'substr($0,1,1)=="#" && index($0,"粘贴正文")>0 {h=1; next}
+  hp='^#+ .*粘贴正文'
+  if ! grep -qE -- "$hp" "$1"; then
+    hp='^### L1 '
+    grep -qE -- '^### L1$' "$1" && hp='^### L1$'
+  fi
+  awk -v hp="$hp" '
+       $0 ~ hp {h=1; next}
        h && !inb && substr($0,1,3)=="```" {inb=1; next}
        inb && substr($0,1,3)=="```" {exit}
        inb { n++; if (n==1) s=$0; else s=s "\n" $0 }
@@ -144,30 +163,48 @@ paste_body() {
 }
 
 CIRCLED='①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩'
+# 章节编号 + 可选圈号 + 可选 -补N + 必须紧跟〔spec/<目标卷>〕
 valid_ref_pat() {
-  printf '%s( *(%s))*(-补[0-9]+)?〔spec/[A-Za-z0-9._/-]+〕' "$1" "$CIRCLED"
+  printf '%s( *(%s))*(-补[0-9]+)?〔spec/%s〕' "$1" "$CIRCLED" "$2"
 }
 
-# ---------- C3 指针表（先跑，供 C4/C1 之外的整体校验） ----------
+# ---------- C3 指针表（先跑） ----------
 PTR_N=0
-while IFS=' ' read -r name num; do
+while IFS=' ' read -r name num kind; do
   [ -n "${name:-}" ] || continue
   PTR_N=$((PTR_N + 1))
+  if [ "$kind" = "table" ]; then where="分流表"; else where="内联指针"; fi
   if [ ! -f "$SPEC/$name" ]; then
-    bad C3 "分流表引用不存在的分卷: spec/$name"
+    bad C3 "$where 引用不存在的分卷: spec/$name"
     continue
   fi
   actual=$(wc -m < "$SPEC/$name" | tr -cd '0-9')
   want=$(printf '%s' "$num" | tr -cd '0-9')
   if [ "$actual" != "$want" ]; then
-    bad C3 "spec/$name 字符数不符：分流表写 $want，实际 $actual"
+    bad C3 "spec/$name 字符数不符：$where 写 $want，实际 $actual"
   else
-    ok C3 "spec/$name = $actual 字符"
+    ok C3 "spec/$name = $actual 字符（$where）"
   fi
 done < <(
-  sed -nE 's/.*`spec\/([A-Za-z0-9._-]+)`[[:space:]]*\|[[:space:]]*([0-9,]+).*/\1 \2/p' "$RULES"
-  sed -nE 's/.*`global\/spec\/([A-Za-z0-9._-]+)`（([0-9,]+) 字符.*/\1 \2/p' "$RULES"
+  sed -nE 's/.*`(global\/)?spec\/([A-Za-z0-9._-]+)`[[:space:]]*\|[[:space:]]*([0-9,]+).*/\2 \3 table/p' "$RULES"
+  sed -nE 's/.*`(global\/)?spec\/([A-Za-z0-9._-]+)`（([0-9,]+) 字符.*/\2 \3 inline/p' "$RULES"
 )
+
+# C3 存在性：--rules 里所有 spec/*.md 与 global/spec/*.md 指针都必须指向真实分卷
+PTR_MISS=0
+PTR_SEEN=0
+while IFS= read -r name; do
+  [ -n "$name" ] || continue
+  PTR_SEEN=$((PTR_SEEN + 1))
+  if [ ! -f "$SPEC/$name" ]; then
+    bad C3 "指针指向不存在的分卷: spec/$name"
+    PTR_MISS=$((PTR_MISS + 1))
+  fi
+done < <(grep -oE '`(global/)?spec/[A-Za-z0-9._-]+\.md`' "$RULES" \
+           | sed -E 's#.*spec/##; s#`##' | sort -u)
+if [ "$PTR_MISS" -eq 0 ]; then
+  ok C3 "spec 指针 ${PTR_SEEN} 处均指向存在的分卷"
+fi
 
 for f in "$SPEC"/*.md; do
   [ -f "$f" ] || continue
@@ -214,19 +251,19 @@ for f in "$SPEC"/*.md; do
     fi
   fi
 
-  # C4 跨卷引用：指向他卷的章节编号必须紧跟 〔spec/目标.md〕
+  # C4 跨卷引用：指向他卷的章节编号必须紧跟 〔spec/目标.md〕（目标须正确）
   c4_bad=0
   c4_n=0
   for pair in \
     '三-2:memory-compaction.md' '三-6:worktree.md' '三-7:deploy.md' '三-8:accounts.md' \
     '五-2:backup.md' '五-3:backup.md' '六-1:secrets.md' '七-1:projects.md' \
-    '二-[0-9]:layout.md' '四-[0-9]:toolchain.md'; do
+    '二-[0-9](\.[0-9])?:layout.md' '四-[0-9](\.[0-9])?:toolchain.md'; do
     key=${pair%%:*}
     tgt=${pair##*:}
     [ "$base" = "$tgt" ] && continue
     total=$(body_of "$f" | grep -oE -- "$key" | wc -l | tr -cd '0-9')
     [ "${total:-0}" -eq 0 ] && continue
-    valid=$(body_of "$f" | grep -oE -- "$(valid_ref_pat "$key")" | wc -l | tr -cd '0-9')
+    valid=$(body_of "$f" | grep -oE -- "$(valid_ref_pat "$key" "$tgt")" | wc -l | tr -cd '0-9')
     c4_n=$((c4_n + total))
     if [ "${valid:-0}" -ne "$total" ]; then
       c4_bad=$((c4_bad + 1))
@@ -238,11 +275,33 @@ for f in "$SPEC"/*.md; do
   fi
 done
 
+# ---------- C1 补充：锚句壳标签对齐（防整行删除，无单条锚句可查时兜底） ----------
+A_TAGS=0
+A_MISS=0
+for f in "$SPEC"/*.md; do
+  [ -f "$f" ] || continue
+  while IFS= read -r tag; do
+    [ -n "$tag" ] || continue
+    A_TAGS=$((A_TAGS + 1))
+    if ! grep -qF -- "- 〔$tag〕" "$RULES"; then
+      bad C1 "常驻层锚句壳缺失: 〔$tag〕（来自 $(basename "$f")）"
+      A_MISS=$((A_MISS + 1))
+    fi
+  done < <(anchors_tags "$f")
+done
+R_TAGS=$(grep -cE '^[[:space:]]*-[[:space:]]*〔' "$RULES" | tr -cd '0-9')
+if [ "${A_TAGS:-0}" -ne "${R_TAGS:-0}" ]; then
+  bad C1 "锚句壳数量不一致：分卷 anchors $A_TAGS 条，--rules「- 〔标签〕」$R_TAGS 行"
+elif [ "$A_MISS" -eq 0 ]; then
+  ok C1 "锚句壳标签对齐（分卷 $A_TAGS 条 = rules $R_TAGS 行）"
+fi
+
 # ---------- C5 / C6：L1 注入端 ----------
 L1_BODY=$(paste_body "$L1")
 
 if [ -z "$L1_BODY" ]; then
-  bad C6 "未在 $L1 找到「粘贴正文」标题下的代码块"
+  bad C6 "未在 $L1 找到「粘贴正文」或「### L1」标题下的代码块"
+  bad C5 "无法检查：未取到 L1 正文（$L1）"
 else
   L1_CHARS=$(printf '%s' "$L1_BODY" | wc -m | tr -cd '0-9')
   if [ "${L1_CHARS:-0}" -gt 1500 ]; then
@@ -251,23 +310,34 @@ else
     ok C6 "L1 粘贴正文 ${L1_CHARS} 字符（≤1500）"
   fi
 
-  for phrase in \
-    '密钥永不入 Git' \
-    '禁把依赖装进全局或用户级位置' \
-    '不并行修改我正在配置的目录' \
-    '不改 global/ 下规范正文（rules.md 与 spec/）' \
-    '不碰他人未提交改动、不代提交、不强 rebase'; do
-    if printf '%s' "$L1_BODY" | grep -qF -- "$phrase"; then
-      ok C5 "红线: $phrase"
+  # 〇⑦ ③ 最小红线集第 1–5 条（「不做什么」型禁令）。
+  # 来源：候选稿 rules.draft.md 第 44–49 行（〇⑦ ③ 1–5 条，常驻层写法含反引号）；
+  #       L1 侧对应 env/execution-enforcement.md 二-L1【最小红线集】一行（〇⑦ ⑤ 注入端须逐条一致）。
+  # 每条维护「常驻层写法 | L1 写法」一对短语，两侧都须命中；改一侧须同步另一侧。
+  while IFS='|' read -r label rp lp; do
+    [ -n "${label:-}" ] || continue
+    if grep -qF -- "$rp" "$RULES"; then
+      ok C5 "红线$label 常驻层: $rp"
     else
-      bad C5 "L1 粘贴正文缺红线: $phrase"
+      bad C5 "红线$label 常驻层缺: $rp"
     fi
-  done
+    if printf '%s' "$L1_BODY" | grep -qF -- "$lp"; then
+      ok C5 "红线$label L1: $lp"
+    else
+      bad C5 "红线$label L1 缺: $lp"
+    fi
+  done <<'C5'
+1|密钥永不入 Git|密钥永不入 Git
+2|禁把依赖装进全局或用户级位置|禁把依赖装进全局或用户级位置
+3|不并行修改人类正在配置的目录／工具／服务|不并行修改我正在配置的目录/工具/服务
+4|不改 `global/` 下规范正文|不改 global/ 下规范正文
+5|不碰他人未提交改动、不代提交、不强 rebase|不碰他人未提交改动、不代提交、不强 rebase
+C5
 fi
 
 # ---------- 汇总 ----------
 echo "----------------------------------------"
-echo "检查: C1 锚句 / C2 原编号 / C3 指针 $PTR_N 条 / C4 跨卷引用 / C5 红线 5 条 / C6 L1 正文"
+echo "检查: C1 锚句 / C2 原编号 / C3 指针 $PTR_N 条 / C4 跨卷引用 / C5 红线 5 条×2 侧 / C6 L1 正文"
 if [ "$FAILS" -eq 0 ]; then
   echo "结果: 全部通过"
   exit 0
