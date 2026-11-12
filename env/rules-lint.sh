@@ -314,12 +314,36 @@ else
   # 来源：候选稿 rules.draft.md 第 44–49 行（〇⑦ ③ 1–5 条，常驻层写法含反引号）；
   #       L1 侧对应 env/execution-enforcement.md 二-L1【最小红线集】一行（〇⑦ ⑤ 注入端须逐条一致）。
   # 每条维护「常驻层写法 | L1 写法」一对短语，两侧都须命中；改一侧须同步另一侧。
+  #
+  # G1：常驻层一侧只在 〇⑦ ③ 红线块内查——变更记录会永久引用红线原文，
+  #     全文 grep 会被变更记录里的同一句话骗过（二审 G1）。
+  #     块范围：从含「③ 最小红线集」的行起，到下一个非「  N. 」编号行为止；
+  #     第 N 条短语必须出现在以「  N. 」开头的那一行。
+  C5_BLOCK=$(awk '
+       index($0,"③ 最小红线集")>0 {seen=1; next}
+       seen && $0 ~ /^[[:space:]]*[0-9]+\. / {print; got=1; next}
+       seen && got {exit}
+       seen && !got {seen=0}
+    ' "$RULES")
+
+  if [ -z "$C5_BLOCK" ]; then
+    bad C5 "未找到 〇⑦ ③ 最小红线集块（或块内无编号条目）"
+  fi
+
   while IFS='|' read -r label rp lp; do
     [ -n "${label:-}" ] || continue
-    if grep -qF -- "$rp" "$RULES"; then
-      ok C5 "红线$label 常驻层: $rp"
+    if [ -z "$C5_BLOCK" ]; then
+      bad C5 "红线$label 常驻层无法检查：红线块缺失"
     else
-      bad C5 "红线$label 常驻层缺: $rp"
+      item_line=$(printf '%s\n' "$C5_BLOCK" | awk -v n="$label" '$0 ~ "^[[:space:]]*" n "\\.[[:space:]]"')
+      if [ -z "$item_line" ]; then
+        bad C5 "红线$label 常驻层缺：红线块内无「$label.」条目"
+      else
+        case "$item_line" in
+          *"$rp"*) ok C5 "红线$label 常驻层: $rp" ;;
+          *) bad C5 "红线$label 常驻层缺: $rp" ;;
+        esac
+      fi
     fi
     if printf '%s' "$L1_BODY" | grep -qF -- "$lp"; then
       ok C5 "红线$label L1: $lp"
@@ -330,7 +354,7 @@ else
 1|密钥永不入 Git|密钥永不入 Git
 2|禁把依赖装进全局或用户级位置|禁把依赖装进全局或用户级位置
 3|不并行修改人类正在配置的目录／工具／服务|不并行修改我正在配置的目录/工具/服务
-4|不改 `global/` 下规范正文|不改 global/ 下规范正文
+4|不改 `global/` 下规范正文（`rules.md` 与 `spec/`）|不改 global/ 下规范正文（rules.md 与 spec/）
 5|不碰他人未提交改动、不代提交、不强 rebase|不碰他人未提交改动、不代提交、不强 rebase
 C5
 fi
