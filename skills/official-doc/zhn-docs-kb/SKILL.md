@@ -2,7 +2,7 @@
 name: zhn-docs-kb
 description: "多 Agent 协同共享文档知识库的分层存储、命名、索引、备份、批量上传与多设备同步规范。同步范围仅 ~/.agent-shared（走 Git）与 ~/.agent-docs（本机原件 + 网盘备份副本）。当需要存放/检索/备份/分享 Agent 产出文档、建立统一文件索引、判断文件落到哪个后端、批量上传文件夹到百度网盘、或判断其他设备如何感知文件更新与处理冲突时使用本技能。关键词：知识库、文档知识库、多agent协同、文件分流、统一索引、docs://、pan://、feishu://、百度网盘 MCP、baidu-netdisk/mcp、批量上传、文件夹备份、manifest、断点续传、多设备同步、变更感知、版本戳、读前校验、冲突处理、密级、文件命名。文件命名细节一律委派 zhn-docs-std，本技能不重复其规则。"
 agent_created: true
-version: 0.3.0
+version: 0.4.0
 metadata:
   scope: "~/.agent-shared; ~/.agent-docs; 百度网盘（官方 MCP）；飞书云空间（可选）"
   source: "~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md"
@@ -19,6 +19,7 @@ metadata:
   - `~/.agent-docs`：本机为原件；百度网盘为备份/交付副本，飞书为可选预览副本。
 - **内容范围**：多 Agent 工作产出文档 + 人类指定文档。超大视频与大型二进制**不纳入**，由人类自行备份。
 - **外部后端未实测**：上传速度、限流、授权目录范围等均为 TBD（第 12 节）。实测前仅允许本地分层判断、命名、索引设计与只读检索；不自动上传、不自动生成分享链接。
+- **已获人类批准（2026-11-12 10:16）**：第 7 节多设备同步默认策略；第 8 节按平台选通道（Windows 原生用 MCP、Skill 支持的系统用 Skill、Windows 原生待官方支持后迁移 Skill）。
 
 ## 1. 分层与 URI
 
@@ -65,7 +66,7 @@ metadata:
 
 - 先查索引再按后端取回；网盘侧可用 `file_keyword_search` / `file_semantics_search` 辅助定位，但不替代索引。
 - 取回前必须做第 7.2 节的读前校验。
-- **官方 MCP 无下载/转存/读正文工具**：恢复默认由人类在网盘客户端手动完成；如需 Agent 自动恢复，须另行批准 WSL + 官方 Skill。
+- **下载/转存/读正文按第 8 节通道路由**：MCP 通道（Windows 原生）不具备这些能力，恢复默认由人类在网盘客户端手动完成，或由人类指定支持 Skill 的设备承接；Skill 通道可直接执行，但需人类明确指令。
 - 缓存到本会话临时目录，按 sha256 复用，用毕清理。
 
 ### 4.3 对账
@@ -158,16 +159,57 @@ metadata:
 - 后台轮询或飞书事件订阅须人类批准后单独建自动化，限定目录与频率；事件订阅还需常驻进程与签名/重试/离线补拉设计。
 - 若人类要求「飞书一改各设备即时自动同步」，属于把飞书升级为原件的架构迁移，须单独裁决并修订 rules.md 二-3，默认不启用。
 
-## 8. 百度网盘 MCP 接入约束（官方 `baidu-netdisk/mcp`）
+## 8. 网盘通道路由与接入约束（人类 2026-11-12 10:16 批准）
 
-- **两种方式分工**：SSE（`https://mcp-pan.baidu.com/sse?access_token=…`）用于列表/元信息/搜索/复制/移动/重命名/建目录/分享/容量；**上传仅 stdio**（Python SDK + `uv run netdisk.py`，官方含 Windows 配置示例）。
-- 工具清单**无下载、无转存、无读正文、无事件订阅**；不得声称具备这些能力。
-- `file_upload_stdio` 的 `remote_path` 必须以 `/` 开头；不传则默认 `/来自：mcp_server`，本技能要求显式指定目标根路径。
-- 授权目录范围**未声明 `/apps/bdpan` 沙箱**（那是官方 Skill 的限制），以实际开放平台应用与授权为准，首次使用前用 `file_list` 只读探测并记录，不假定能访问全盘。
-- Access Token 属敏感凭证：SSE 模式下出现在 URL query，配置只写本机 `~/.workbuddy/mcp.json`，**禁止入 Git、禁止写入共享仓/日志/handoff/索引**；stdio 模式经 `BAIDU_NETDISK_ACCESS_TOKEN` 环境变量传入。
-- 安装遵守 rules.md 四-1：先 `tools-scan.sh --check`；`uv` 放 `~/.agent-tools/bin/`；官方 Python SDK 源码放 `~/.source-repos/`；禁止全局/用户级安装。
-- 官方 Skill（`BaiduNetdiskAIBot/bdpan-storage`）仅作下载/转存补充，需 WSL2 或 Linux；Windows 原生不得安装。
+### 8.1 按平台选通道
+
+| 平台 | 默认通道 | 说明 |
+|---|---|---|
+| **Windows 原生** | 官方 MCP（`baidu-netdisk/mcp`） | stdio 上传 + SSE 管理检索；官方 Skill 当前不支持 Windows 原生 |
+| **macOS / Linux / Windows WSL** | 官方 Skill（`BaiduNetdiskAIBot/bdpan-storage`） | 能力更全（含下载/转存/读正文），需人类本人扫码授权 |
+| **Windows 原生（未来）** | 官方 Skill 支持 Windows 原生后**改用 Skill** | 见 8.5 迁移预留 |
+
+- 通道只是传输实现，`pan://` URI、索引、manifest、批次记录、版本戳、命名规则**不随通道改变**。
+- 索引/manifest 增加 `channel`（mcp|skill）与 `channel_version` 字段，便于跨设备对账与排障。
+
+### 8.2 能力矩阵（不得伪造能力）
+
+| 能力 | MCP 通道 | Skill 通道 |
+|---|---|---|
+| 上传本地文件 | ✅（仅 stdio） | ✅ |
+| 列表/元信息/搜索/复制/移动/重命名/建目录/容量 | ✅（SSE） | ✅ |
+| 语义搜索 | ✅ | 以官方为准 |
+| 创建分享链接 | ✅ | ✅（1/7/30 天/永久） |
+| 下载 / 转存 / 读取正文 | ❌ | ✅ |
+| 事件订阅 | ❌ | ❌ |
+
+- Windows 原生设备需要下载/转存/读正文时：**默认由人类在网盘客户端手动完成**；确需 Agent 执行，由人类指定一台支持 Skill 的设备承接（走 org.md 认领 + handoff），不自动跨设备调度。
+
+### 8.3 MCP 通道约束
+
+- SSE：`https://mcp-pan.baidu.com/sse?access_token=…`；上传仅 stdio（Python SDK + `uv run netdisk.py`，官方含 Windows 配置示例）。
+- `file_upload_stdio` 的 `remote_path` 必须以 `/` 开头；本技能要求显式指定目标根路径，不用默认的 `/来自：mcp_server`。
+- 授权目录范围**未声明 `/apps/bdpan` 沙箱**（那是 Skill 的限制），首次使用前用 `file_list` 只读探测并记录，不假定能访问全盘。
+- Access Token 只写本机 `~/.workbuddy/mcp.json`（SSE 在 URL query、stdio 走 `BAIDU_NETDISK_ACCESS_TOKEN`），**禁止入 Git、共享仓、日志、handoff、索引**。
+- 安装遵守 rules.md 四-1：先 `tools-scan.sh --check`；`uv` 放 `~/.agent-tools/bin/`；SDK 源码放 `~/.source-repos/`；禁止全局/用户级安装。
 - 新增/修改 MCP Server 后需人类在连接器管理页点「信任」才生效。
+
+### 8.4 Skill 通道约束
+
+- 仅在官方支持的系统使用（当前 macOS / Linux / Windows WSL）；**Windows 原生不得安装或绕行**。
+- 操作范围仅 `/apps/bdpan/`；删除、移动、重命名、覆盖需人类明确确认；公测 BETA，重要操作人工复核。
+- Token 配置文件 Agent 禁读、禁输出、禁转发；授权码经 stdin；更新需人类明确指令。
+
+### 8.5 Windows 原生迁移预留（MCP → Skill）
+
+- **触发条件**：官方 README/CHANGELOG 声明支持 Windows 原生，且人类同意评估；平时不自动轮询官方发布。
+- **切换流程**：① 只读核对官方支持声明与版本；② 在本机做 Skill 冒烟（上传→列表→搜索→下载→转存，分享需人类批准）；③ 暂停网盘写入并对账（索引/manifest vs 后端）；④ 人类确认后切换默认通道，更新 `channel` 字段与本节表格；⑤ 保留 MCP 配置作为回退，不删除。
+- **回退**：Skill 冒烟或运行不达标即继续用 MCP，记录原因，不强行迁移。
+
+### 8.6 每平台首次使用必做冒烟
+
+- 小文件上传 → 列表 → 元信息 → 搜索；Skill 通道加测下载/转存；分享仅经人类批准后测试。
+- 记录速度、失败率、限流、授权目录范围，结果写入当次任务报告并回填第 12 节。
 
 ## 9. 安全红线
 
@@ -195,8 +237,9 @@ metadata:
 |---|---|
 | MCP stdio 上传速度、单文件大小上限、批量限流阈值 | TBD |
 | MCP 授权目录范围、get_quota 容量、分享有效期可选值 | TBD |
+| Skill 通道（macOS/Linux/WSL）下载/转存速度与限流 | TBD |
 | 批量逐文件 vs 打包分卷的默认阈值（暂以 500 文件为建议值） | TBD |
-| 是否需要 Agent 自动下载/转存（决定是否引入 WSL + Skill） | 待人类裁决 |
+| Windows 原生 Skill 支持状态与迁移评估 | 预留，触发条件见 8.5 |
 | 飞书层是否保留；若保留，其 Drive 能力、预览形态、是否启用事件订阅 | 待人类裁决 |
 | 索引权威位置（过渡文件 / 多维表格） | 待人类裁决 |
 
@@ -214,6 +257,7 @@ metadata:
 - 权威原件：`~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md`，随共享仓 Git 同步 origin/backup 双远端。
 - 平台副本：`~/.workbuddy/skills/zhn-docs-kb/SKILL.md`，由权威原件单向复制；修改只改权威原件再复制，用 SHA256 比对一致。
 - 其他设备/agent：`git pull` 共享仓后复制到本机技能目录。
+- 变更记录：**2026-11-12 v0.4.0** —— 人类批准第 7 节同步默认策略；第 8 节改为按平台通道路由（Windows 原生=MCP，macOS/Linux/WSL=官方 Skill），新增能力矩阵、`channel`/`channel_version` 字段、跨设备下载承接规则、8.5 Windows 原生 MCP→Skill 迁移预留（触发条件、切换流程、回退）、8.6 每平台首次冒烟要求。
 - 变更记录：**2026-11-12 v0.3.0** —— 新增第 7 节多设备同步与变更感知（三种得知途径、写后登记、读前校验、会话开始刷新、六态状态机、飞书副本编辑发现与回流、乐观锁、轮询与事件订阅启用门槛）；索引补版本戳字段。
 - 变更记录：**2026-11-12 v0.2.0** —— 采纳人类四点补充：范围收窄为 agent-shared(Git)+agent-docs(原件)、内容限 Agent 产出与指定文档、超大视频排除；百度网盘改用官方 MCP（SSE 管理检索 + stdio 上传，Windows 原生可用，标注无下载/转存）；新增批量文件夹上传规则。
 - 变更记录：**2026-11-12 v0.1.0** —— 初版草案。
