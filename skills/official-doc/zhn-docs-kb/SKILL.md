@@ -1,12 +1,12 @@
 ---
 name: zhn-docs-kb
-description: "多 Agent 协同共享文档知识库的分层存储、命名、索引、备份、批量上传与多设备同步规范。同步范围仅 ~/.agent-shared（走 Git）与 ~/.agent-docs（本机原件 + 网盘备份副本）。当需要存放/检索/备份/分享 Agent 产出文档、建立统一文件索引、判断文件落到哪个后端、批量上传文件夹到百度网盘、或判断其他设备如何感知文件更新与处理冲突时使用本技能。关键词：知识库、文档知识库、多agent协同、文件分流、统一索引、docs://、pan://、feishu://、百度网盘 MCP、baidu-netdisk/mcp、批量上传、文件夹备份、manifest、断点续传、多设备同步、变更感知、版本戳、读前校验、冲突处理、密级、文件命名。文件命名细节一律委派 zhn-docs-std，本技能不重复其规则。"
+description: "多 Agent 协同共享文档知识库的分层存储、命名、索引、备份、批量上传与多设备同步规范。同步范围仅 ~/.agent-shared（走 Git）与 ~/.agent-docs（本机原件 + 网盘备份副本）。当需要存放/检索/备份/分享 Agent 产出文档、建立统一文件索引、判断文件落到哪个后端、批量上传文件夹到百度网盘、判断其他设备如何感知文件更新与处理冲突，或在新设备/新 Agent 上安装本技能时使用本技能。关键词：知识库、文档知识库、多agent协同、文件分流、统一索引、docs://、pan://、feishu://、百度网盘 MCP、baidu-netdisk/mcp、批量上传、文件夹备份、manifest、断点续传、多设备同步、变更感知、版本戳、读前校验、冲突处理、密级、文件命名、一键安装、install-skill。文件命名细节一律委派 zhn-docs-std，本技能不重复其规则。"
 agent_created: true
-version: 0.5.0
+version: 0.6.0
 metadata:
   scope: "~/.agent-shared; ~/.agent-docs; 百度网盘（官方 MCP）；飞书云空间（可选）"
   source: "~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md"
-  install: "~/.workbuddy/skills/zhn-docs-kb/SKILL.md"
+  install: "bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb"
 ---
 
 # zhn-docs-kb — 多 Agent 协同共享文档知识库
@@ -214,6 +214,10 @@ metadata:
 
 ### 8.7 本机双通道与 WSL 互操作（`zhn-tbxg2iah-win`）
 
+> ⚠️ **规范冲突，未获批准前本条不得执行**：`global/rules.md` 三-2 明令「**不使用 WSL**（WSL 会产生第二个 `~`，把工作区劈成两份、破坏唯一工作区约定）」。本小节是 2026-11-12 人类提供 `wsl --status` 实测后按技术可行性写的，**尚未修订规范**。在人类裁决并更新 `rules.md` 之前：WSL 不得用于承载工作区、不得在其中 clone `~/.agent-shared`、不得在其中配置第二套 git 身份；只有人类在当次任务中明确说「用 WSL 跑 bdpan Skill」时，才可按下面的边界执行单次操作。
+>
+> 裁决可选路径（由人类选）：① 修订规范为「禁止把 WSL 当工作区，但允许作为工具运行时」并明确本节边界；② 放弃本机 WSL 通道，下载/转存由人类在网盘客户端完成或指定他机；③ 暂不启用，等官方 Skill 支持 Windows 原生。
+
 - **分工**：Windows 原生 MCP 负责上传/管理/检索（直接读本地文件）；WSL Ubuntu 内官方 Skill 负责下载/转存/读正文。
 - **文件互操作**：WSL 经 `/mnt/c/...` 访问 Windows 文件；大量小文件读写优先在 Windows 原生侧完成，避免 `/mnt/c` 性能瓶颈。下载先落 WSL 原生文件系统，再按需复制到 Windows；不把 `/mnt/c` 当大批量暂存目录。
 - **凭证隔离**：MCP Token（Windows 本机 `mcp.json`）与 Skill Token（WSL 内配置文件）各自独立，均禁入 Git、禁输出。
@@ -267,7 +271,82 @@ metadata:
 
 - 权威原件：`~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md`，随共享仓 Git 同步 origin/backup 双远端。
 - 平台副本：`~/.workbuddy/skills/zhn-docs-kb/SKILL.md`，由权威原件单向复制；修改只改权威原件再复制，用 SHA256 比对一致。
-- 其他设备/agent：`git pull` 共享仓后复制到本机技能目录。
+- 其他设备/agent：见第 15 节一键安装，不再手工复制。
+## 15. 安装与分发（其他 Agent / 新设备）
+
+**唯一权威原件**：`~/.agent-shared/skills/official-doc/zhn-docs-kb/`。任何位置出现的副本都是**单向复制**，禁止手改副本（改了 `--check` 会报 `[DRIFT]`，且下次安装会被备份覆盖）。
+
+### 15.1 一键安装（标准三步）
+
+```bash
+cd ~/.agent-shared && git pull --rebase            # 1. 取最新原件
+bash ~/.agent-shared/env/install-skill.sh --all    # 2. 装到本机已探测到的 agent 技能目录
+bash ~/.agent-shared/env/install-skill.sh --check  # 3. 校验，应全部 [OK]
+```
+
+`--all` 只装 `skills/*/*/SKILL.md` 存在的技能（当前：`zhn-docs-kb`、`zhn-docs-std`）。脚本幂等：原件与副本树哈希一致时只补写标记、不重写文件。
+
+### 15.2 常用变体
+
+```bash
+bash ~/.agent-shared/env/install-skill.sh --list                        # 看清单与安装状态（只读）
+bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb                  # 只装一个
+bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb --dest ~/.claude/skills   # 装到指定目录
+bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb --check          # 漂移检测（exit 1 = 落后/被改/缺失）
+bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb --force          # 覆盖无标记的同名目录（先备份到 ~/.agent-tools/backups/skills/）
+bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb --uninstall --dest ~/.claude/skills   # 卸载需显式目录
+```
+
+### 15.3 目标目录探测顺序
+
+按序探测，**存在才用**；`AGENT_SKILLS_DIR` 或 `--dest` 一旦指定就**只用它**、不叠加：
+
+| 序 | 目录 | 状态 |
+|---|---|---|
+| 0 | `$AGENT_SKILLS_DIR`（环境变量） | 通用入口，任何 agent 都可用 |
+| 1 | `~/.workbuddy/skills/` | ✅ 本机已验证 |
+| 2 | `~/.claude/skills/` | 约定路径（Agent Skills 目录规范），本机未装该 agent，未实测 |
+| 3 | `~/.codex/skills/` | 约定路径，未实测 |
+| 4 | `~/.trae/skills/` | 约定路径，未实测 |
+| 5 | `~/.cursor/skills/` | 约定路径，未实测 |
+| 6 | `~/.gemini/skills/` | 约定路径，未实测 |
+| 7 | `~/.qwen/skills/` | 约定路径，未实测 |
+
+**未实测的目录不要当成结论**：若某 agent 实际不读该目录，用 `--dest` 指向它真实加载的位置；装完让该 agent 复述技能名与 `version`，能复述才算成功。
+
+### 15.4 没有技能机制的 agent（如 trae）
+
+不要复制正文进去（违反单一原件），在它的项目规则文件里加**一行指针**即可：
+
+```text
+涉及文档知识库/文档存放/命名/备份/同步时，读 ~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md 并按其中约束执行。
+```
+
+长文本按需加载，指针常驻、正文不进项目规则文件。
+
+### 15.5 安装标记与对账
+
+每份副本写入 `.zhn-installed.json`：`source` / `source_commit` / `source_hash` / `installed_at` / `installer`。用途：
+
+- `--check` 据此区分 **`[STALE]` 副本落后于原件**（原件已升级，需重装）与 **`[DRIFT]` 副本被本地改过或来源不明**（需人工判断，勿盲目覆盖）。
+- 其他 agent 判断"我这版是不是旧的"，跑 `--check` 即可，不用比对文件内容。
+- 覆盖前的备份写到 `~/.agent-tools/backups/skills/<技能名>.<时间>/`，**不留在技能根目录**（留在 `skills/` 下会被 agent 当成新技能扫描）。
+
+### 15.6 升级流程
+
+改**权威原件** → 提交并 `git sync` → 各设备 `git pull --rebase` → `install-skill.sh <技能名>` → `--check` 全 `[OK]`。副本永远不手工编辑。
+
+### 15.7 不做的事
+
+- 不把技能正文复制到各 agent 的全局指令 / 项目规则文件（单一原件）。
+- 不把技能放进 `~/.agent-docs` 或网盘（文本资产走 Git）。
+- 不覆盖无安装标记的同名目录（可能人工维护），必须 `--force` 且保留 `.bak`。
+- 不在 `~/.agent-shared` 内建 venv / node_modules；安装脚本本身不装任何依赖（纯 bash + coreutils）。
+- 不承诺"装完即生效"：平台是否重新扫描技能目录由各 agent 自己决定，必要时重启会话。
+
+## 16. 变更记录
+
+- **2026-11-12 v0.6.0** —— 新增第 15 节「安装与分发」（一键安装脚本、各 agent 目标目录、无技能机制 agent 的降级用法、漂移检测与卸载、升级流程）；8.7 增补 `rules.md`「不使用 WSL」冲突警示与三条裁决路径，未获批准前不得执行；description 补安装关键词，`metadata.install` 改为安装命令。
 - 变更记录：**2026-11-12 v0.5.0** —— 人类提供 `wsl --status` 实测：本机 WSL2 + Ubuntu-24.04 可用。新增 8.7 本机双通道（Windows 原生 MCP 上传管理检索 + WSL Skill 下载转存读正文）、/mnt/c 互操作与性能约束、凭证隔离、wsl.exe 沙箱黑名单执行边界；设备档案同步更正「不使用 WSL」旧记录。
 - 变更记录：**2026-11-12 v0.4.0** —— 人类批准第 7 节同步默认策略；第 8 节改为按平台通道路由（Windows 原生=MCP，macOS/Linux/WSL=官方 Skill），新增能力矩阵、`channel`/`channel_version` 字段、跨设备下载承接规则、8.5 Windows 原生 MCP→Skill 迁移预留（触发条件、切换流程、回退）、8.6 每平台首次冒烟要求。
 - 变更记录：**2026-11-12 v0.3.0** —— 新增第 7 节多设备同步与变更感知（三种得知途径、写后登记、读前校验、会话开始刷新、六态状态机、飞书副本编辑发现与回流、乐观锁、轮询与事件订阅启用门槛）；索引补版本戳字段。

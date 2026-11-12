@@ -86,3 +86,18 @@
 - **TBD 表**：新增「本机 WSL 内 Skill 安装、授权与冒烟（含 /mnt/c 互操作）」= 待执行，受 `wsl.exe` 沙箱黑名单约束。
 - **设备档案修正**：`memory/devices/zhn-tbxg2iah-win.md` 的 `os` 行从「不使用 WSL」更正为 WSL2 可用 + 执行边界。**注意**：`memory/devices/_devices.md` 总表仍登记「文档同步工具 = WPS 网盘企业版」，与 11-04 更正（方案废弃、载体待定）不一致，尚未修改，待人类裁决同步载体后一并修正。
 - 已更新：技能 v0.5.0（双副本 SHA256 `2a1cc79e…` 一致）、审核报告第十一节、设备档案；仍未装依赖、未写 MCP 配置、未操作网盘/飞书。挂起任务快照同第四节，无变化。
+
+## 十、其他 Agent 一键安装（2026-11-12 10:30 人类提问，技能升 v0.6.0）
+
+- **问题**：其他 agent 怎样一键安装这个 skill？
+- **落地物**：`env/install-skill.sh`（纯 bash + coreutils，无依赖）。权威原件 `skills/<分类>/<技能>/` 单向复制到各 agent 技能目录，幂等、可校验、可卸载。
+- **标准三步**：`cd ~/.agent-shared && git pull --rebase` → `bash env/install-skill.sh --all` → `bash env/install-skill.sh --check`（应全 `[OK]`）。
+- **目标目录探测**：`$AGENT_SKILLS_DIR`（显式指定则**只用它**，不叠加）→ `~/.workbuddy/skills`（✅ 本机已验证）→ `~/.claude|.codex|.trae|.cursor|.gemini|.qwen/skills`（约定路径，本机未装对应 agent，**未实测**）。未命中用 `--dest` 指定。
+- **无技能机制的 agent（如 trae）**：不复制正文（单一原件），只在其项目规则文件加一行指针指向 `~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md`；已写入 `env/new-agent-bootstrap.md` 新增的【3.5 · 共享技能安装】。
+- **对账**：每份副本写 `.zhn-installed.json`（source / source_commit / source_hash / installed_at / installer）；`--check` 用树哈希区分 `[STALE]`（原件已升级，需重装）、`[DRIFT]`（副本被手改或来源不明）、`[MISS]`。
+- **安全设计**：无安装标记的同名目录默认拒绝覆盖，需 `--force`；覆盖前备份到 `~/.agent-tools/backups/skills/<技能名>.<时间>/`（**不能留 `skills/` 下**，否则会被当成新技能扫描）。`--uninstall` 必须显式 `--dest`，探测到多个目录时拒绝执行。
+- **实测**（隔离目录全路径）：全新安装 / 幂等重装 / 篡改→`[DRIFT]` / 无标记→拒绝 / `--force`→备份并覆盖 / 卸载 / 缺失→`[MISS]` exit 1，全部符合预期；真实副本 `--check` 为 `[OK]`。
+- **⚠️ 本轮事故与恢复**：测试时 `AGENT_SKILLS_DIR` 与默认探测叠加，导致 `--uninstall` 误删真实副本 `~/.workbuddy/skills/zhn-docs-kb`。已从权威原件完整恢复（SHA256 一致），并修正脚本为「显式指定即独占」。教训写入脚本注释与本节。
+- **规范冲突（需人类裁决）**：`rules.md` 三-2 第 288 行「**不使用 WSL**（WSL 产生第二个 `~`，破坏唯一工作区约定）」与 v0.5.0 的 8.7 本机双通道直接冲突。已在 8.7 加警示：**未获批准前不得执行**，WSL 不得承载工作区/不得 clone `~/.agent-shared`/不得配第二套 git 身份；三选一裁决见技能 8.7。设备档案 `os` 行亦已改为「WSL2 可用但受限」。
+- **待补**：`rules.md` 二-1 目录树未登记 `env/install-skill.sh` 与 `skills/` 安装约定——规范正文禁改（最小红线④），需人类决定是否批准补登。
+- 已更新：技能 v0.6.0（新增第 15 节安装与分发、第 16 节变更记录、8.7 冲突警示；副本树哈希 `891c9ce51241…`）、`env/install-skill.sh`、`env/new-agent-bootstrap.md`【3.5】、设备档案。挂起任务快照同第四节，无变化。

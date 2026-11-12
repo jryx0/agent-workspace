@@ -79,6 +79,15 @@
   （通用库还要固定版本写入 env/requirements.txt），10 分钟内 commit + git sync。
   未登记的安装视为不合规；禁止用「补一条登记」把违规状态合法化。
 
+【3.5 · 共享技能安装（首次接入做一次）】
+- 共享技能只有一个权威原件（~/.agent-shared/skills/），装到本机只用一条命令，禁止手工复制、禁止把正文抄进项目规则或全局指令（〇⑤ 单一原件）：
+  bash ~/.agent-shared/env/install-skill.sh --all
+  然后 bash ~/.agent-shared/env/install-skill.sh --check，应全部 [OK]。
+- [STALE] = 原件已升级、副本落后 → 重装即可；[DRIFT] = 副本被本地改过或来源不明 → 报告人类，不要手改副本来"修好"。
+- 探测不到你的技能目录时用 --dest <你实际加载技能的目录>；你的 agent 没有技能机制，就只加一行指针到项目规则文件：
+  「涉及文档知识库/文档存放/命名/备份/同步时，读 ~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md」。
+- 技能升级随共享仓走：git pull --rebase → install-skill.sh <技能名> → --check。
+
 【4 · Git、记忆与交接】
 - 只从 origin 拉取；推送必须 git sync（双远端分步 push），禁止只推一个远端（五-1）。
 - 每次 git sync 前跑 bash ~/.agent-shared/env/proxy-check.sh：有全局 http.proxy 漂移、

@@ -1,7 +1,7 @@
 # 设备档案：zhn-tbxg2iah-win
 
 - hostname: Zhn-TBXG2IAH
-- os: win（Windows，Git Bash 为主、PowerShell 为辅；**WSL2 可用**：默认分发 Ubuntu-24.04、默认版本 2，2026-11-12 10:23 人类提供 `wsl --status` 实测输出；WSL 主要用于百度网盘官方 Skill 通道，日常操作仍以 Git Bash/PowerShell 为主）
+- os: win（Windows，Git Bash 为主、PowerShell 为辅；**WSL2 可用但当前受限**：默认分发 Ubuntu-24.04、默认版本 2，2026-11-12 10:23 人类提供 `wsl --status` 实测输出。规范 `rules.md` 三-2 明令「不使用 WSL」，故 **WSL 不得作为工作区、不得在其中 clone `~/.agent-shared`、不得配置第二套 git 身份**；是否允许其作为百度网盘 Skill 的「工具运行时」待人类裁决，见 zhn-docs-kb 第 8.7 节冲突警示）
 - **WSL 执行边界**：当前 WorkBuddy 会话沙箱把 `wsl.exe` 列入程序黑名单（2026-11-12 实测被拦截，未重试未绕过），Agent 不能直接执行 WSL 命令；WSL 内安装/登录/测试由人类在终端执行，或人类在安全中心调整策略并明确授权后再由 Agent 执行。
 - **角色：主设备（2026-11-04 暂定，负责月度记忆压缩；人类注明后续会改）**
 - 运行时: Git 2.55.0 / Python 3.13.14 / Node v22.22.2
