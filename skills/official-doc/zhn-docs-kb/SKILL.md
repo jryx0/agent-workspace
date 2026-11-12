@@ -2,7 +2,7 @@
 name: zhn-docs-kb
 description: "多 Agent 协同共享文档知识库的分层存储、命名、索引、备份、批量上传与多设备同步规范。同步范围仅 ~/.agent-shared（走 Git）与 ~/.agent-docs（本机原件 + 网盘备份副本）。当需要存放/检索/备份/分享 Agent 产出文档、建立统一文件索引、判断文件落到哪个后端、批量上传文件夹到百度网盘、或判断其他设备如何感知文件更新与处理冲突时使用本技能。关键词：知识库、文档知识库、多agent协同、文件分流、统一索引、docs://、pan://、feishu://、百度网盘 MCP、baidu-netdisk/mcp、批量上传、文件夹备份、manifest、断点续传、多设备同步、变更感知、版本戳、读前校验、冲突处理、密级、文件命名。文件命名细节一律委派 zhn-docs-std，本技能不重复其规则。"
 agent_created: true
-version: 0.4.0
+version: 0.5.0
 metadata:
   scope: "~/.agent-shared; ~/.agent-docs; 百度网盘（官方 MCP）；飞书云空间（可选）"
   source: "~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md"
@@ -171,6 +171,7 @@ metadata:
 
 - 通道只是传输实现，`pan://` URI、索引、manifest、批次记录、版本戳、命名规则**不随通道改变**。
 - 索引/manifest 增加 `channel`（mcp|skill）与 `channel_version` 字段，便于跨设备对账与排障。
+- **本机实测（2026-11-12 10:23）**：`zhn-tbxg2iah-win` 的 WSL2 可用，默认分发 Ubuntu-24.04、默认版本 2（人类提供 `wsl --status` 输出）。因此本机可采用**双通道**（见 8.7），下载/转存/读正文不必交给其他设备。
 
 ### 8.2 能力矩阵（不得伪造能力）
 
@@ -183,7 +184,7 @@ metadata:
 | 下载 / 转存 / 读取正文 | ❌ | ✅ |
 | 事件订阅 | ❌ | ❌ |
 
-- Windows 原生设备需要下载/转存/读正文时：**默认由人类在网盘客户端手动完成**；确需 Agent 执行，由人类指定一台支持 Skill 的设备承接（走 org.md 认领 + handoff），不自动跨设备调度。
+- Windows 原生设备需要下载/转存/读正文时：**默认由人类在网盘客户端手动完成**；确需 Agent 执行，由人类指定一台支持 Skill 的设备承接（走 org.md 认领 + handoff），不自动跨设备调度。**若本机 WSL 可用（如 `zhn-tbxg2iah-win`），优先按 8.7 在本机 WSL 内用 Skill 完成，无需跨设备。**
 
 ### 8.3 MCP 通道约束
 
@@ -210,6 +211,15 @@ metadata:
 
 - 小文件上传 → 列表 → 元信息 → 搜索；Skill 通道加测下载/转存；分享仅经人类批准后测试。
 - 记录速度、失败率、限流、授权目录范围，结果写入当次任务报告并回填第 12 节。
+
+### 8.7 本机双通道与 WSL 互操作（`zhn-tbxg2iah-win`）
+
+- **分工**：Windows 原生 MCP 负责上传/管理/检索（直接读本地文件）；WSL Ubuntu 内官方 Skill 负责下载/转存/读正文。
+- **文件互操作**：WSL 经 `/mnt/c/...` 访问 Windows 文件；大量小文件读写优先在 Windows 原生侧完成，避免 `/mnt/c` 性能瓶颈。下载先落 WSL 原生文件系统，再按需复制到 Windows；不把 `/mnt/c` 当大批量暂存目录。
+- **凭证隔离**：MCP Token（Windows 本机 `mcp.json`）与 Skill Token（WSL 内配置文件）各自独立，均禁入 Git、禁输出。
+- **写冲突不放宽**：双通道不等于双写者；同一文件仍单 owner + 乐观锁，通道写入都登记 `channel`。
+- **执行边界**：当前 WorkBuddy 会话沙箱把 `wsl.exe` 列入程序黑名单，Agent 不得直接执行 WSL 命令、不得绕过；WSL 内安装/登录/冒烟由人类在终端执行，或人类调整安全策略并明确授权后再由 Agent 执行。
+- **WSL 内环境**：Node/Python/网络代理由首次接入时探测记录；安装遵守 rules.md 四-1，禁全局/用户级安装。
 
 ## 9. 安全红线
 
@@ -238,6 +248,7 @@ metadata:
 | MCP stdio 上传速度、单文件大小上限、批量限流阈值 | TBD |
 | MCP 授权目录范围、get_quota 容量、分享有效期可选值 | TBD |
 | Skill 通道（macOS/Linux/WSL）下载/转存速度与限流 | TBD |
+| 本机 WSL Ubuntu-24.04 内 Skill 安装、授权与冒烟（含 /mnt/c 互操作实测） | 待执行，受 wsl.exe 沙箱黑名单约束（8.7） |
 | 批量逐文件 vs 打包分卷的默认阈值（暂以 500 文件为建议值） | TBD |
 | Windows 原生 Skill 支持状态与迁移评估 | 预留，触发条件见 8.5 |
 | 飞书层是否保留；若保留，其 Drive 能力、预览形态、是否启用事件订阅 | 待人类裁决 |
@@ -257,6 +268,7 @@ metadata:
 - 权威原件：`~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md`，随共享仓 Git 同步 origin/backup 双远端。
 - 平台副本：`~/.workbuddy/skills/zhn-docs-kb/SKILL.md`，由权威原件单向复制；修改只改权威原件再复制，用 SHA256 比对一致。
 - 其他设备/agent：`git pull` 共享仓后复制到本机技能目录。
+- 变更记录：**2026-11-12 v0.5.0** —— 人类提供 `wsl --status` 实测：本机 WSL2 + Ubuntu-24.04 可用。新增 8.7 本机双通道（Windows 原生 MCP 上传管理检索 + WSL Skill 下载转存读正文）、/mnt/c 互操作与性能约束、凭证隔离、wsl.exe 沙箱黑名单执行边界；设备档案同步更正「不使用 WSL」旧记录。
 - 变更记录：**2026-11-12 v0.4.0** —— 人类批准第 7 节同步默认策略；第 8 节改为按平台通道路由（Windows 原生=MCP，macOS/Linux/WSL=官方 Skill），新增能力矩阵、`channel`/`channel_version` 字段、跨设备下载承接规则、8.5 Windows 原生 MCP→Skill 迁移预留（触发条件、切换流程、回退）、8.6 每平台首次冒烟要求。
 - 变更记录：**2026-11-12 v0.3.0** —— 新增第 7 节多设备同步与变更感知（三种得知途径、写后登记、读前校验、会话开始刷新、六态状态机、飞书副本编辑发现与回流、乐观锁、轮询与事件订阅启用门槛）；索引补版本戳字段。
 - 变更记录：**2026-11-12 v0.2.0** —— 采纳人类四点补充：范围收窄为 agent-shared(Git)+agent-docs(原件)、内容限 Agent 产出与指定文档、超大视频排除；百度网盘改用官方 MCP（SSE 管理检索 + stdio 上传，Windows 原生可用，标注无下载/转存）；新增批量文件夹上传规则。
