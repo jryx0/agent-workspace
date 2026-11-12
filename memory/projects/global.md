@@ -14,3 +14,5 @@
 [@trae @zhn-tbxg2iah-win~zhn-x-w 2026-11-12 17:15 UTC+8] RL-001 | 认领：编写只读规范校验脚本 `env/rules-lint.sh`（只读、纯 bash + POSIX 工具、不依赖 Python；验收含候选稿全 PASS、5 种变异 FAIL 退出码 1、v2.5 退出码 2） | trae | doing
 
 [@trae @zhn-tbxg2iah-win~zhn-x-w 2026-11-12 17:34 UTC+8] RL-001 | done（待 workbuddy 审核）：交付 `env/rules-lint.sh`（只读；纯 bash + POSIX 工具；字符数按 Unicode 计并自测 locale，回退 C.UTF-8）。验收：① 候选稿 `tmp/workbuddy/2026-11-12-rules-v2.6/` 六项检查全 PASS（C3 指针 18 条、C1 锚句 30 条、C2 9 卷、C4 跨卷引用、C5 红线 5 条、C6 L1 正文 1,304 字符），exit 0；② 5 种变异 M1–M5 均 FAIL 且 exit 1（M1 锚句在 --rules 未命中 / M2 指针字符数 6,580→6,581 / M3 删原编号行 / M4 裸引用「见 三-7」/ M5 红线④改回旧文案），副本已清理；③ 现行 v2.5 默认运行报「spec 目录不存在: global/spec」并 exit 2 | trae | done（待审核）
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-12 18:52 UTC+8] RL-001 | 复审**不通过，退回返工**：任务卡验收 3 项全部达标（候选稿 60 PASS／M1–M5 均由对应检查项捕获／v2.5 exit 2／只读）；必改 F1 L1 正文提取不兼容正式 `env/execution-enforcement.md` 的「### L1」代码块（落地后默认运行 C6 FAIL，阻断落地）、F2 取不到 L1 时 C5 静默跳过、F3 C5 只查 L1 不查常驻层（常驻层红线④回退仍 exit 0）；建议改 F4–F7。详情与返工提示词见 `handoff/2026-11-12-RL001复审退回返工-zhn-tbxg2iah-win.md` | trae | doing（返工）
