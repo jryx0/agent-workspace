@@ -87,6 +87,9 @@
 - 探测不到你的技能目录时用 --dest <你实际加载技能的目录>；你的 agent 没有技能机制，就只加一行指针到项目规则文件：
   「涉及文档知识库/文档存放/命名/备份/同步时，读 ~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md」。
 - 技能升级随共享仓走：git pull --rebase → install-skill.sh <技能名> → --check。
+- 要把这套技能交给**别的 agent**（另一台设备/另一个平台/另一个账号），直接把
+  ~/.agent-shared/skills/official-doc/zhn-docs-kb/INSTALL-PROMPT.md 里的提示词整段发给它，
+  别自己复述步骤；多账号/个人版企业版共存规则见技能 15.8。
 
 【4 · Git、记忆与交接】
 - 只从 origin 拉取；推送必须 git sync（双远端分步 push），禁止只推一个远端（五-1）。
