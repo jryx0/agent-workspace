@@ -26,3 +26,6 @@
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-12 21:25 UTC+8] RL-001 | 三审**通过**（`58add17`）：G1 红线块内逐条定位（只改第 1–5 条各自报缺，第 75 行变更记录不再掩盖）、G2 第 4 条完整短语均已修；F1–F8 无回退；模拟落地默认运行 exit 0；v2.5 exit 2；只读。遗留不阻断建议 H1（标题后空行会 fail-closed 误报）、H2（块内条目数未校验）。详见 `handoff/2026-11-12-RL001三审通过与v2.6待落地-zhn-tbxg2iah-win.md` | trae | done
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-12 21:25 UTC+8] RL-002 | 前置（RL-001 审核通过）已满足；建议待 v2.6 落地后派单，提示词见 `handoff/2026-11-12-规范v2.6订正与RL-002任务卡-zhn-tbxg2iah-win.md` 4.2 | （待认领） | todo
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 08:25 UTC+8] v2.6 落地 | 人类 08:19 确认；global/rules.md v2.6 + global/spec/ 9 份 + 迁出 2 份 + 归档 v2.5 原文与优化清单；L1 两处同步（1,304 字符）；rules-lint 默认参数 exit 0（67 PASS）。**待人类重粘全局指令并新开任务 〇④ 验收**。详见 `handoff/2026-11-13-规范v2.6落地-zhn-tbxg2iah-win.md` | workbuddy | done
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 08:25 UTC+8] RL-002 | v2.6 已落地，可派单；基线改为 `global/` 正式版（不再以 tmp 候选稿为准） | （待认领） | todo
