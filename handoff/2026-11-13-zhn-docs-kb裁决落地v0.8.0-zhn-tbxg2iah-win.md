@@ -2,7 +2,8 @@
 
 - **设备**：zhn-tbxg2iah-win（简标 `x`／OS 段 `w`）
 - **执行者**：workbuddy（`~zhn-x-w`，已登记已启用）
-- **时间**：2026-11-13 16:5x UTC+8
+- **时间**：2026-11-13 16:53–17:11 UTC+8
+- **提交**：`4a628ed`（`docs: 落地 zhn-docs-kb v0.8.0 三批裁决 by workbuddy@zhn-tbxg2iah-win~zhn-x-w`），已 `git sync` 推 origin/backup 双远端
 - **依据**：人类 16:05／16:15／16:25 三批裁决 + 16:51「按建议落地」指令；`docs://技术资料/261112｜文档｜飞书百度网盘混合存储方案审核.md` 第十二节
 - **档位**：T2 协作档（写共享仓 + git sync），写前已出第八节 10 步自检简报
 
@@ -18,7 +19,7 @@
 | `~/.agent-docs/技术资料/261112｜文档｜飞书百度网盘混合存储方案审核.md` | 追加第十二节「2026-11-13 人类裁决落地」，不改上文历史内容 |
 | `memory/org.md` | append-only 追加本轮留痕 |
 | `memory/devices/_devices.md` | append-only **追加更正注释行**（不改表格第 10 行原文） |
-| `~/.workbuddy/skills/zhn-docs-kb/` | 用 `env/install-skill.sh zhn-docs-kb` 重装平台副本（原 `--check` 报「过期」），重装后 `--check` 应为「最新」 |
+| `~/.workbuddy/skills/zhn-docs-kb/` | 用 `env/install-skill.sh zhn-docs-kb` 重装平台副本（原 `--check` 报「过期」），重装后 `--check` **实测显示「最新」**（v0.8.0，树哈希 `71f6b03a…`；旧副本已备份到 `~/.agent-tools/backups/skills/zhn-docs-kb.20261113-171019`） |
 
 **核心口径**：飞书＝只读预览副本 + 飞书多维表格（唯一权威索引）；变更均由人类指令触发、均有效；同步＝**写后登记元数据 + 读前查表按需拉取**，不主动同步、不广播、不建常驻机制；删除＝本地标记（tombstone + `.trash/`，云侧删除交人类 UI）；原件＝本地 `~/.agent-docs`，云端永不作原件；网盘＝仅对外交付，冷备由 NAS 独占；WSL 通道选 ③ 暂不启用；密级四级沿用、未标注按 internal、分享默认关闭。
 
@@ -41,7 +42,8 @@
 
 ## 四、自检与并发保护
 
-- 规范 v2.7；`tools-scan.sh --check` ✅（stamp 11-08 20:26，未满 30 天）；`proxy-check.sh` ✅（无全局 http.proxy、10808 可连、写前 local=origin=backup=`d89b95b`）；推送前重跑。
+- 规范 v2.7；`tools-scan.sh --check` ✅（stamp 11-08 20:26，未满 30 天）；`proxy-check.sh` ✅（无全局 http.proxy、10808 可连、写前 local=origin=backup=`d89b95b`）；推送前重跑 ✅（本地领先属正常）。
+- **推送后线上自检（17:11）**：local = origin = backup = `4a628ed`；`install-skill.sh --check` 显示 `zhn-docs-kb v0.8.0 → 最新`、`zhn-docs-std v1.3.0 → 最新`；`git status` 仅剩他人两处未提交改动，本轮 6 个路径均已入库。
 - `memory/.compact-lock` 不存在；`config/` 5 项齐、ACL 仅当前用户 + SYSTEM + Administrators；`~/.agent-docs` 可达、无冲突/同步残留文件；本会话不需要共享 MCP 9101（offline 沿用已知，不阻塞）；不使用 Python venv、不装依赖、不涉及 `~/source/` 项目。
 - **并发保护**：他人未提交的两处改动 `handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md`、`memory/projects/prnmgt.md` 全程未触碰、未代提交、未强 rebase；`git pull --rebase` 因该未提交改动跳过（本地与双远端 HEAD 一致，无需同步）；commit 只显式 `git add` 本轮自己产出的路径，禁止 `git add -A`。
 
