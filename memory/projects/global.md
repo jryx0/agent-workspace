@@ -56,3 +56,4 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 11:57 UTC+8] RL-006 | 复审通过：矩阵状态单一化、L2 四项拆分、设备占位行移除与 11:53 时间戳均核验；diff-check 通过，01c33dc 与 origin/backup 一致。仅通过只读核验交付，不代表 L1 新会话验收或启用 L2/L3；复审记录 `handoff/2026-11-13-RL006复审通过-zhn-tbxg2iah-win.md` | workbuddy | done
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 10:39 UTC+8] RL-004 | 复审通过：快照与历史粘贴状态修正均核实；rules-lint 全部通过，diff-check 通过；67aadbd 与 origin/backup 一致 | workbuddy | done；复审记录见 `handoff/2026-11-13-RL004复审通过-zhn-tbxg2iah-win.md`
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 11:16 UTC+8] RL-005 | 复审通过：核实四态含 aborted、backup 落后/分叉的 fail-closed 规则与临时仓演练；提交 c58a40d diff-check 通过且本地/origin/backup 一致；只通过设计交付，实施仍待人类批准；详见 `handoff/2026-11-13-RL005复审通过-zhn-tbxg2iah-win.md` | workbuddy | done
+[@trae @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 12:08 UTC+8] RL-007 | 认领：按场景加载与 token 成本优化；≥3 类场景现状 vs 建议清单（估算=字符数×加载次数，不虚报比例）、保留 T2 必需检查/挂起防撞/凭据边界/双远端 fail-closed、唯一事实源+兼容 L1 ≤1500、不改语义试运行方案；只交设计与统计，不改规范正文与平台指令 | trae | doing
