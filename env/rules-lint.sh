@@ -122,27 +122,31 @@ FAILS=0
 ok()  { printf 'PASS %-2s %s\n' "$1" "$2"; }
 bad() { printf 'FAIL %-2s %s\n' "$1" "$2"; FAILS=$((FAILS + 1)); }
 
+# 统一读入：去掉 CRLF 的 \r（本仓 core.autocrlf=true，Windows 检出为 CRLF；
+# 仓库内容为 LF。不去 \r 会让 C3 字符数把换行符计入而误报，见 RL-003）。
+norm() { tr -d '\r' < "$1"; }
+
 # 提取 anchors 块内「|」后的锚句文本（每行一条）
 anchors_of() {
-  awk 'index($0,"<!-- anchors")==1 {ina=1; next}
+  norm "$1" | awk 'index($0,"<!-- anchors")==1 {ina=1; next}
        ina && $0=="-->" {ina=0; next}
-       ina && index($0," | ")>0 {print substr($0, index($0," | ")+3)}' "$1"
+       ina && index($0," | ")>0 {print substr($0, index($0," | ")+3)}'
 }
 
 # 提取 anchors 块内「|」前的标签（每行一条，去首尾空白）
 anchors_tags() {
-  awk 'index($0,"<!-- anchors")==1 {ina=1; next}
+  norm "$1" | awk 'index($0,"<!-- anchors")==1 {ina=1; next}
        ina && $0=="-->" {ina=0; next}
        ina && index($0," | ")>0 {
          t=substr($0,1,index($0," | ")-1); gsub(/^[ \t]+/,"",t); gsub(/[ \t]+$/,"",t); print t
-       }' "$1"
+       }'
 }
 
 # 去掉 anchors 块后的正文
 body_of() {
-  awk 'index($0,"<!-- anchors")==1 {ina=1; next}
+  norm "$1" | awk 'index($0,"<!-- anchors")==1 {ina=1; next}
        ina && $0=="-->" {ina=0; next}
-       !ina' "$1"
+       !ina'
 }
 
 # 提取 L1 粘贴正文：优先「粘贴正文」标题下第一个代码块；
@@ -150,16 +154,16 @@ body_of() {
 # 内容不保留末尾换行。
 paste_body() {
   hp='^#+ .*粘贴正文'
-  if ! grep -qE -- "$hp" "$1"; then
+  if ! norm "$1" | grep -qE -- "$hp"; then
     hp='^### L1 '
-    grep -qE -- '^### L1$' "$1" && hp='^### L1$'
+    norm "$1" | grep -qE -- '^### L1$' && hp='^### L1$'
   fi
-  awk -v hp="$hp" '
+  norm "$1" | awk -v hp="$hp" '
        $0 ~ hp {h=1; next}
        h && !inb && substr($0,1,3)=="```" {inb=1; next}
        inb && substr($0,1,3)=="```" {exit}
        inb { n++; if (n==1) s=$0; else s=s "\n" $0 }
-       END { printf "%s", s }' "$1"
+       END { printf "%s", s }'
 }
 
 CIRCLED='①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩'
@@ -178,7 +182,7 @@ while IFS=' ' read -r name num kind; do
     bad C3 "$where 引用不存在的分卷: spec/$name"
     continue
   fi
-  actual=$(wc -m < "$SPEC/$name" | tr -cd '0-9')
+  actual=$(norm "$SPEC/$name" | wc -m | tr -cd '0-9')
   want=$(printf '%s' "$num" | tr -cd '0-9')
   if [ "$actual" != "$want" ]; then
     bad C3 "spec/$name 字符数不符：$where 写 $want，实际 $actual"
@@ -186,8 +190,8 @@ while IFS=' ' read -r name num kind; do
     ok C3 "spec/$name = $actual 字符（$where）"
   fi
 done < <(
-  sed -nE 's/.*`(global\/)?spec\/([A-Za-z0-9._-]+)`[[:space:]]*\|[[:space:]]*([0-9,]+).*/\2 \3 table/p' "$RULES"
-  sed -nE 's/.*`(global\/)?spec\/([A-Za-z0-9._-]+)`（([0-9,]+) 字符.*/\2 \3 inline/p' "$RULES"
+  norm "$RULES" | sed -nE 's/.*`(global\/)?spec\/([A-Za-z0-9._-]+)`[[:space:]]*\|[[:space:]]*([0-9,]+).*/\2 \3 table/p'
+  norm "$RULES" | sed -nE 's/.*`(global\/)?spec\/([A-Za-z0-9._-]+)`（([0-9,]+) 字符.*/\2 \3 inline/p'
 )
 
 # C3 存在性：--rules 里所有 spec/*.md 与 global/spec/*.md 指针都必须指向真实分卷
@@ -200,7 +204,7 @@ while IFS= read -r name; do
     bad C3 "指针指向不存在的分卷: spec/$name"
     PTR_MISS=$((PTR_MISS + 1))
   fi
-done < <(grep -oE '`(global/)?spec/[A-Za-z0-9._-]+\.md`' "$RULES" \
+done < <(norm "$RULES" | grep -oE '`(global/)?spec/[A-Za-z0-9._-]+\.md`' \
            | sed -E 's#.*spec/##; s#`##' | sort -u)
 if [ "$PTR_MISS" -eq 0 ]; then
   ok C3 "spec 指针 ${PTR_SEEN} 处均指向存在的分卷"
@@ -209,7 +213,7 @@ fi
 for f in "$SPEC"/*.md; do
   [ -f "$f" ] || continue
   base=$(basename "$f")
-  if grep -qF -- "spec/$base" "$RULES"; then
+  if norm "$RULES" | grep -qF -- "spec/$base"; then
     ok C3 "$base 已被 --rules 引用"
   else
     bad C3 "$base 未被 --rules 引用"
@@ -222,7 +226,7 @@ for f in "$SPEC"/*.md; do
   base=$(basename "$f")
 
   # C2 原编号（前 6 行）
-  if head -n 6 "$f" | grep -qF -- '> **原编号**：'; then
+  if norm "$f" | head -n 6 | grep -qF -- '> **原编号**：'; then
     ok C2 "$base 前 6 行含原编号"
   else
     bad C2 "$base 前 6 行缺「> **原编号**：」"
@@ -235,7 +239,7 @@ for f in "$SPEC"/*.md; do
     [ -n "$needle" ] || continue
     c1_n=$((c1_n + 1))
     nb=$(body_of "$f" | grep -oF -- "$needle" | wc -l | tr -cd '0-9')
-    nr=$(grep -oF -- "$needle" "$RULES" | wc -l | tr -cd '0-9')
+    nr=$(norm "$RULES" | grep -oF -- "$needle" | wc -l | tr -cd '0-9')
     if [ "$nb" -ne 1 ]; then
       bad C1 "$base 锚句在本卷正文出现 ${nb:-0} 次（应为 1）: $needle"
     fi
@@ -283,13 +287,13 @@ for f in "$SPEC"/*.md; do
   while IFS= read -r tag; do
     [ -n "$tag" ] || continue
     A_TAGS=$((A_TAGS + 1))
-    if ! grep -qF -- "- 〔$tag〕" "$RULES"; then
+    if ! norm "$RULES" | grep -qF -- "- 〔$tag〕"; then
       bad C1 "常驻层锚句壳缺失: 〔$tag〕（来自 $(basename "$f")）"
       A_MISS=$((A_MISS + 1))
     fi
   done < <(anchors_tags "$f")
 done
-R_TAGS=$(grep -cE '^[[:space:]]*-[[:space:]]*〔' "$RULES" | tr -cd '0-9')
+R_TAGS=$(norm "$RULES" | grep -cE '^[[:space:]]*-[[:space:]]*〔' | tr -cd '0-9')
 if [ "${A_TAGS:-0}" -ne "${R_TAGS:-0}" ]; then
   bad C1 "锚句壳数量不一致：分卷 anchors $A_TAGS 条，--rules「- 〔标签〕」$R_TAGS 行"
 elif [ "$A_MISS" -eq 0 ]; then
@@ -318,16 +322,23 @@ else
   # G1：常驻层一侧只在 〇⑦ ③ 红线块内查——变更记录会永久引用红线原文，
   #     全文 grep 会被变更记录里的同一句话骗过（二审 G1）。
   #     块范围：从含「③ 最小红线集」的行起，到下一个非「  N. 」编号行为止；
+  #     标题与第 1 条之间允许空行（H1）；块内条目数须为 5（H2）。
   #     第 N 条短语必须出现在以「  N. 」开头的那一行。
-  C5_BLOCK=$(awk '
+  C5_BLOCK=$(norm "$RULES" | awk '
        index($0,"③ 最小红线集")>0 {seen=1; next}
+       seen && !got && $0 ~ /^[[:space:]]*$/ {next}
        seen && $0 ~ /^[[:space:]]*[0-9]+\. / {print; got=1; next}
        seen && got {exit}
        seen && !got {seen=0}
-    ' "$RULES")
+    ')
 
   if [ -z "$C5_BLOCK" ]; then
     bad C5 "未找到 〇⑦ ③ 最小红线集块（或块内无编号条目）"
+  else
+    C5_N=$(printf '%s\n' "$C5_BLOCK" | grep -cE '^[[:space:]]*[0-9]+\. ' | tr -cd '0-9')
+    if [ "${C5_N:-0}" -ne 5 ]; then
+      bad C5 "红线块条目数 ${C5_N:-0}（应为 5）"
+    fi
   fi
 
   while IFS='|' read -r label rp lp; do
