@@ -43,3 +43,4 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 10:05 UTC+8] RL-005 | 设计并验证跨设备任务认领防竞态机制；RL-004 完成后开展，不未经批准改格式或实施；详见 `handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md` 第三节 | （待认领） | todo
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 10:05 UTC+8] RL-006 | 核验 L1 注入、L2 凭证抽查、L3 命令门禁在各设备/Agent 的实际状态；RL-004 完成后开展；详见 `handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md` 第三节 | （待认领） | todo
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 10:05 UTC+8] RL-007 | 提出不削弱协作控制的按场景加载与 token 优化方案；依赖 RL-004，保留 RL-005/006 控制要求；详见 `handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md` 第三节 | （待认领） | todo
+[@trae @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 10:19 UTC+8] RL-004 | 认领：统一入口版本/10 步自检/注入验收状态/L1-L3 状态；先只读差异清单，env 修改待人类批准；计划见 `~/source/prnmgt/.trae/documents/RL-004入口一致性核对计划.md` | trae | doing
