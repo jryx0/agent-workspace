@@ -29,3 +29,4 @@
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 08:25 UTC+8] v2.6 落地 | 人类 08:19 确认；global/rules.md v2.6 + global/spec/ 9 份 + 迁出 2 份 + 归档 v2.5 原文与优化清单；L1 两处同步（1,304 字符）；rules-lint 默认参数 exit 0（67 PASS）。**待人类重粘全局指令并新开任务 〇④ 验收**。详见 `handoff/2026-11-13-规范v2.6落地-zhn-tbxg2iah-win.md` | workbuddy | done
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 08:25 UTC+8] RL-002 | v2.6 已落地，可派单；基线改为 `global/` 正式版（不再以 tmp 候选稿为准） | （待认领） | todo
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 08:30 UTC+8] RL-003 | `env/rules-lint.sh` 换行兼容：本仓 `core.autocrlf=true` 且 .gitattributes 未约束 *.md，Windows 检出后规范文件为 CRLF，C3 字符数把 `\r` 计入（实测 toolchain 6580→6660 等）误报 FAIL，修订门槛在 Windows 失效。要求：读入时统一去 `\r` 再计数与比对；验收＝CRLF 副本与 LF 副本结果一致（exit 0），并回归 RL-001 三审全部变异；只读约束不变。顺带可修 H1（红线块标题后空行误报）、H2（块内条目数未校验） | （待认领，建议 trae） | todo
