@@ -12,3 +12,11 @@
 - **生命周期**：会话结束即 remove，成果靠分支保留而非残留目录；月度压缩时主设备顺带 prune 并清理已合并的 `agent/*` 本地分支（三-2〔spec/memory-compaction.md〕 第 8 步）。**挂起例外**：任务挂起时默认 remove worktree、成果留在分支，并在 handoff 挂起快照「现场」栏登记分支名与基座；确需保留 worktree 须写明路径并禁止其他会话复用（三-4 ②）。
 - **依赖**：Python venv 位于 `~/.agent-tools/venvs/`，跨 worktree 直接复用；`node_modules` 每 worktree 独立安装，依赖共享缓存 `~/.agent-tools/cache` 降低代价（pnpm 项目 store 天然共享）。
 
+<!-- anchors：以下每行「|」后的文本须在本文件正文（本注释之外）与 global/rules.md 原位摘要壳中各逐字出现一次；改任一侧须同步另一侧（〇⑤ 受控例外二、第十节）。
+三-6 | **单人单任务直接 clone 到 `repos.md` 登记路径，不启用 worktree**
+三-6 | **`~/.agent-shared` 禁用 worktree**
+三-6 | **禁止用裸 `git config user.name/user.email`**
+三-6 | 会话结束即 remove，成果靠分支保留而非残留目录
+三-6 | 任务挂起时默认 remove worktree、成果留在分支
+-->
+
