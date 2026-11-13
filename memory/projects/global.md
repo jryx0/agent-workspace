@@ -39,3 +39,7 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 09:55 UTC+8] RL-003 | 审核通过：只读性不变；CRLF 正式检出默认运行 exit 0、LF 副本 exit 0、H1 标题后空行 PASS | trae | done
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 09:55 UTC+8] RL-002 | 审核退回小改 R1–R5（R1 〇⑦ 违反「不改」硬约束且 ④ 丢失其他 IDE 注入通道→恢复原文；R2 〇⑥③ 丢「必须」；R3 三处悬空/错误指针；R4 三-4② 删「首列项目必填」；R5 PROGRESS 称 〇⑥① 已改实未改）；建议 S1–S4；待裁决 1–3 workbuddy 均同意；详见 `handoff/2026-11-13-RL002审核退回与RL003通过-zhn-tbxg2iah-win.md` | trae | doing（返工）
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 09:57 UTC+8] RL-002 | 复审通过并落地 v2.7（返工 c11a4c9；常驻 23,506 字符；锚句 66；正式路径 lint 全 PASS）；见 `handoff/2026-11-13-规范v2.7落地-zhn-tbxg2iah-win.md` | trae | done
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 10:05 UTC+8] RL-004 | 统一协作入口中的版本、步骤数与验收状态；先做差异清单，修改须人类批准；详见 `handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md` 第三节 | （待认领） | todo
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 10:05 UTC+8] RL-005 | 设计并验证跨设备任务认领防竞态机制；RL-004 完成后开展，不未经批准改格式或实施；详见 `handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md` 第三节 | （待认领） | todo
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 10:05 UTC+8] RL-006 | 核验 L1 注入、L2 凭证抽查、L3 命令门禁在各设备/Agent 的实际状态；RL-004 完成后开展；详见 `handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md` 第三节 | （待认领） | todo
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 10:05 UTC+8] RL-007 | 提出不削弱协作控制的按场景加载与 token 优化方案；依赖 RL-004，保留 RL-005/006 控制要求；详见 `handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md` 第三节 | （待认领） | todo
