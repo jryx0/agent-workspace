@@ -1,6 +1,6 @@
 # RL-005 跨设备任务认领防竞态方案（设计交付，待批准）
 
-[@trae @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 10:54 UTC+8]　项目: 全局
+[@trae @zhn-tbxg2iah-win~zhn-x-w 2026-11-13 11:00 UTC+8]　项目: 全局
 
 > 任务：`handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md` 第三节 RL-005。
 > 本文件只做设计与临时副本演练；**未改现有任务登记格式、未新增 `memory/claims/`、未实现锁服务、未改规范**。
@@ -33,7 +33,8 @@
 | 6 | 写错远端 | 向 backup 或本地分支 push claim | origin 无锁，仲裁失效 | `git ls-remote origin` 与本地不一致 | 只允许 `git push origin HEAD:main` + `git push backup HEAD:main`；backup 只读镜像 |
 | 7 | 本地 main 领先／工作区脏 | 本地已有无关提交或未提交改动 | 直接 push 会把无关改动一并发布 | `HEAD != origin/main` 或 `git status --porcelain` 非空 | **停**；改用临时 worktree；不 reset/stash/代提交 |
 | 8 | 推送边界混入其他文件 | 用了 `git add -A`／`commit -a` | 无关改动随 claim 发布 | `git diff --name-only origin/main..HEAD` 不是仅 claim | 立即停、不推送、丢弃临时 worktree |
-| 9 | backup 推送失败 | GitHub 不可达/凭据失效 | origin 占锁但未完成双写 | `ls-remote backup` != origin | 不开工；重试 backup；人类可标 `aborted` |
+| 9 | backup 推送失败 | GitHub 不可达/凭据失效 | origin 占锁但未完成双写 | `ls-remote backup` != origin | 不开工；backup 恢复后补推同一 commit；不标 `aborted` |
+| 10 | backup 落后或分叉 | backup 未同步／被写 | claim 无法双写或可能误推 | 认领前 `origin/main != backup/main` | **停**；落后仅快进补推；分叉交人类；禁止 force-push |
 
 ## 四、方案比较
 
@@ -45,23 +46,33 @@
   project: global
   task_id: RL-005
   owner: trae@zhn-tbxg2iah-win~zhn-x-w
-  status: active            # active | released | abandoned
+  status: active            # active | released | abandoned | aborted
   claimed_at: 2026-11-13T10:46:00+08:00
   base_commit: <认领时 origin/main 的 SHA>
   note: <可选，一句话>
   ```
+- **claim 状态枚举（唯一四种，禁止自造）**：
+  - `active`：当前持有中；他人不得认领、不得开工。
+  - `released`：正常完成或主动释放；可再次认领。
+  - `abandoned`：owner 失联，由**人类**裁定并写入；再次认领须人类明确放行。
+  - `aborted`：**开工前** owner 主动撤回本轮认领（计划变更、已占锁但决定不继续等）；写入后本轮作废，可再次认领。
+- 状态写入规则：`active → released/abandoned/aborted` 的提交**必须 origin、backup 双推成功**才生效；backup 不可达时**不得写** `released/abandoned/aborted`，保持 `active`、不开工并升级人类。`aborted` 不是「backup 失败」的自动结果，而是双远端可用时的显式撤回。
+- 再次认领条件：读到 `released/abandoned/aborted`，且 `origin/main == backup/main`；写入新 `active` 覆盖同一路径，历史留在 Git log。
 - 认领协议（必须按序，**隔离推送边界**）：
-  1. `git fetch origin`；失败 → **停**。确认 `origin/main` 为唯一仲裁基线。
-  2. 读 `git show origin/main:memory/claims/<项目>/<任务ID>.claim`：
+  1. `git fetch origin` **和** `git fetch backup`；任一失败 → **停**。
+  2. 计算 `O0=origin/main`、`B0=backup/main`；**必须 `O0 == B0`**。不相等时：
+     - 若 `B0` 是 `O0` 祖先（backup 落后）→ **停**，只允许快进补推 `git push backup origin/main:main`，补推后重新 fetch 核验；未相等前不认领。
+     - 若两者分叉 → **停**，交人类对账，禁止 force-push、禁止 rebase 后硬推。
+  3. 读 `git show O0:memory/claims/<项目>/<任务ID>.claim`：
      - `active` 且 owner 不是自己 → **停**；
-     - `released` / `abandoned` / 不存在 → 可继续。
-  3. **隔离工作区**：`git worktree add --detach <tmp> origin/main`，不直接在本地 `main` 上提交；进入后确认 `git status --porcelain` 为空。
-  4. 只写 claim（固定路径），`git add -- <claim路径>`，用 `git commit --only -- <claim路径>`；**禁止** `git add -A`、`git commit -a`、无 refspec 的 `git push`、`git push --all`、`git-sync.sh`（后者会推所有分支/标签）。
-  5. 推送前自检：`git rev-parse HEAD^` 必须等于 `origin/main`，且 `git diff --name-only origin/main..HEAD` **只有 claim 一个文件**；任一不满足 → **停，不推送**。
-  6. `git push origin HEAD:main`；被拒 → **停**，不自动 rebase 重试。
-  7. `git push backup HEAD:main`；失败 → claim 仅在 origin 生效，**不得开工**，重试 backup 或交人类处理；不放宽为单远端。
-  8. 双远端 `git ls-remote` 均等于本地 HEAD，且回读 claim 的 owner/base 是自己；全部一致才在 `memory/projects/<项目>.md` 追加认领行并开工。
-  9. 移除临时 worktree。
+     - `released` / `abandoned` / `aborted` / 不存在 → 可继续（`abandoned` 还须人类放行）。
+  4. **隔离工作区**：`git worktree add --detach <tmp> O0`，不直接在本地 `main` 上提交；进入后确认 `git status --porcelain` 为空。
+  5. 只写 claim（固定路径），`git add -- <claim路径>`，用 `git commit --only -- <claim路径>`；**禁止** `git add -A`、`git commit -a`、无 refspec 的 `git push`、`git push --all`、`git-sync.sh`（后者会推所有分支/标签）。
+  6. 推送前自检：`git rev-parse HEAD^` 必须等于 `O0`，且 `git diff --name-only O0..HEAD` **只有 claim 一个文件**；任一不满足 → **停，不推送**。
+  7. `git push origin HEAD:main`；被拒 → **停**，不自动 rebase 重试。
+  8. `git push backup HEAD:main`；被拒/失败 → **停**：不得 force、不得标 `aborted`（此时 backup 不可用，写不了双推状态）；origin 上的 claim 保持 `active` 占锁，owner **不得开工**，报告人类并在 backup 恢复后补推同一 `HEAD:main`。
+  9. 双远端 `git ls-remote` 均等于本地 HEAD，且回读 claim 的 owner/base 是自己；全部一致才在 `memory/projects/<项目>.md` 追加认领行并开工。
+  10. 移除临时 worktree。
 - 若本地 `main` 领先 `origin/main`、或工作区有未提交改动：**不 reset、不 stash、不提交他人改动**，直接改用临时 worktree；无法隔离 → **停**。
 - 释放：owner 把 claim 改为 `status: released`，同样只在隔离 worktree 中提交，`git push origin HEAD:main` + `git push backup HEAD:main`；不删除文件（保留最后一次状态，历史在 Git log）。
 - 异常：owner 失联时，由人类把 claim 改 `abandoned` 并写明原因/时间；**其他 agent 不得自行接管**。
@@ -72,7 +83,8 @@
 ### 与现行双远端规则的兼容（不改规则）
 
 - claim 是共享仓写入，**默认仍遵守现行「五-1 双远端」**：先 `origin`、后 `backup`，两者都成功才算认领生效。origin 只承担仲裁，backup 只做镜像，不参与仲裁。
-- **backup 推送失败**时：origin 上的 active claim 已占锁，其他设备会保守地停；owner **不得开工**，必须补推 backup，或由人类把 claim 标 `aborted` 后再释放。这样不违反「禁止只推一个远端」——因为未双推成功前不算认领完成。
+- **backup 落后或分叉**：认领前就要求 `origin/main == backup/main`；不相等即停，不进入 claim 流程。落后只允许快进补推（`git push backup origin/main:main`），分叉交人类对账；两者都禁止 force-push。
+- **backup 推送失败**时：origin 上的 active claim 已占锁，其他设备会保守地停；owner **不得开工**，在 backup 恢复后补推同一 `HEAD:main`。此时**不写 `aborted`**（backup 不可达，无法双推状态）；`aborted` 只用于双远端可用时的显式撤回。这样不违反「禁止只推一个远端」——未双推成功前不算认领完成。
 - `git-sync.sh` 用 `push --all`，会带出无关分支/标签，**不用于 claim**；claim 只用显式 refspec `HEAD:main` 分别推两个远端。
 - 若希望「backup 不可用时仍允许认领」，那是**规则例外**，需人类明确批准修改 五-1 或 三-5 ⑤；本方案不默认采用。
 
@@ -106,7 +118,9 @@
 | 双认领已发生 | 双方立即停写共享仓 | 人类按 claim 时间/commit/证据裁决，败者回滚未提交改动 |
 | 本地 main 领先或工作区脏 | 不在本地 main 上提交；改用临时 worktree | 无法隔离 → 停；不 reset/stash/代提交 |
 | claim 提交混入其他文件 | 不推送；丢弃临时 worktree | 重新从 `origin/main` 建隔离 worktree |
-| backup 推送失败 | origin claim 已占锁，但**不开工** | 重试 backup；人类可把 claim 标 `aborted` 后释放 |
+| backup 推送失败 | origin claim 已占锁，但**不开工**；不标 `aborted` | backup 恢复后补推同一 commit；人类不得为绕锁改写历史 |
+| backup 落后或分叉 | 认领前即停 | 落后仅快进补推；分叉交人类对账；禁止 force |
+| 写入 `aborted/released/abandoned` | 必须 origin+backup 双推成功才生效 | backup 不可达 → 保持 `active`，升级人类 |
 
 ## 六、并发演练（可重复）
 
@@ -122,7 +136,8 @@
 6. **并发轮**：A/B 同时写 T-002 并同时 push；统计退出码，预期恰好一个 0、一个非 0；读取远端 winner。
 7. **推送边界轮**：在本地 `main` 先造一个无关提交，协议必须检测 `HEAD != origin/main` 并停止；随后用 `git worktree add --detach origin/main` 隔离，确认 `HEAD^ == origin/main` 且 `diff --name-only` 只有 claim。
 8. **双远端轮**：隔离 worktree 中先后 `git push origin HEAD:main`、`git push backup HEAD:main`，确认两边 SHA 相同；再把 backup URL 指向不存在路径，确认 backup 失败后必须停、不得开工。
-9. 清理临时目录。
+9. **backup 一致性轮**：先让 origin 领先 backup，确认 `origin/main != backup/main` 且 backup 是 origin 祖先 → 只允许快进补推；再制造两边各自新提交的分叉，确认双向 `merge-base --is-ancestor` 均为否 → 停、交人类。
+10. 清理临时目录。
 
 ### 实际结果（2026-11-13 10:49–10:53，本机临时副本）
 
@@ -148,16 +163,22 @@ origin claim push OK
 backup claim push OK
 origin=f11caddc backup=f11caddc head=f11cadd
 backup failure -> claim on origin only, agent must NOT start
+
+backup 一致性轮：
+behind round: equal=no
+backup behind: allow fast-forward only
+diverged round: equal=no
+backup_ancestor_of_origin=no origin_ancestor_of_backup=no -> diverged: STOP, human reconcile
 ```
 
 ### 通过／失败判据
 
-- **通过**：同一任务同一时刻只有一个 push 成功；失败方 fetch 后检测到他人 active 并停止，无共享仓写入；释放后他人可重新认领；并发轮退出码恰好一个 0；本地领先时协议停止；claim 提交仅含一个文件；origin/backup SHA 一致；backup 失败时不开工。
-- **失败**：两个 push 都成功；失败方继续开工；失败方自动 rebase 重试覆盖 winner；claim 路径不固定导致两条记录并存；直接向 backup 先写或只写 backup；claim 提交混入其他文件；本地领先仍直接 push。
+- **通过**：同一任务同一时刻只有一个 push 成功；失败方 fetch 后检测到他人 active 并停止，无共享仓写入；释放后他人可重新认领；并发轮退出码恰好一个 0；本地领先时协议停止；claim 提交仅含一个文件；origin/backup SHA 一致；backup 失败时不开工；backup 落后只快进、分叉即停。
+- **失败**：两个 push 都成功；失败方继续开工；失败方自动 rebase 重试覆盖 winner；claim 路径不固定导致两条记录并存；直接向 backup 先写或只写 backup；claim 提交混入其他文件；本地领先仍直接 push；backup 落后仍认领，或分叉时 force-push。
 
 ## 七、需人类批准的事项（未实施）
 
-1. 在规范 三-5 ⑤／三-4 增加「认领 claim 协议」：固定路径、**origin 唯一仲裁入口 + backup 镜像（仍按 五-1 双推）**、隔离 worktree、推送边界只含 claim、push 被拒即停、禁止自动 rebase 重试、释放/abandoned 规则。
+1. 在规范 三-5 ⑤／三-4 增加「认领 claim 协议」：固定路径、**origin 唯一仲裁入口 + backup 镜像（仍按 五-1 双推）**、**认领前 `origin/main == backup/main` 前置校验**、隔离 worktree、推送边界只含 claim、push 被拒即停、禁止自动 rebase 重试、四状态（active/released/abandoned/aborted）与再认领规则、`aborted` 仅在双远端可用时写入。
 2. 新增目录 `memory/claims/<项目>/`（首次使用时由认领者创建）。
 3. 是否增加极简 `env/claim.sh`（只封装 fetch→读→写→push→校验）——属新增脚本，需批准。
 4. 是否在 origin 开分支保护（禁止 force-push、要求线性历史）——服务器设置，需人类操作。
@@ -168,7 +189,7 @@ backup failure -> claim on origin only, agent must NOT start
 - 未创建 `memory/claims/`，未改任何任务登记行格式，未改规则正文，未加脚本或依赖，未改远端设置。
 - 未把演练用的临时仓留在共享仓或工作区。
 
-## 九、挂起任务（当前全量快照，2026-11-13 10:54 UTC+8）
+## 九、挂起任务（当前全量快照，2026-11-13 11:00 UTC+8）
 
 | 项目 | 任务ID | 挂起于／裁决出处 | 原因 | 解挂前置（可验证条件） | 现场 | 解挂后动作 | 解挂权 |
 |---|---|---|---|---|---|---|---|
@@ -181,6 +202,8 @@ backup failure -> claim on origin only, agent must NOT start
 ## 十、返工记录（2026-11-13 10:54 UTC+8，按审查意见）
 
 1. **push 边界**：改为在 `git worktree add --detach origin/main` 的隔离工作区认领，只提交固定 claim 路径；推送前强制校验 `HEAD^ == origin/main` 且 `diff --name-only origin/main..HEAD` 只有 claim；禁止 `add -A`／`commit -a`／无 refspec push／`push --all`／`git-sync.sh`。本地 main 领先或工作区脏时直接停，不 reset/stash/代提交。
-2. **与双远端规则兼容**：claim 仍按 五-1 双推 origin→backup，两者都成功才算认领生效；origin 只仲裁、backup 只镜像。backup 失败时 claim 留在 origin 占锁但**不得开工**，补推或由人类标 `aborted`；「backup 不可用仍可认领」属规则例外，需人类批准，不默认。
+2. **与双远端规则兼容**：claim 仍按 五-1 双推 origin→backup，两者都成功才算认领生效；origin 只仲裁、backup 只镜像。backup 失败时 claim 留在 origin 占锁但**不得开工**，恢复后补推同一 commit；「backup 不可用仍可认领」属规则例外，需人类批准，不默认。
 3. **时间戳**：快照与文件头由 10:52 更正为实际生成时间 **10:54 UTC+8**。
 4. 任务卡中「819438」串字为他人未提交改动，本 agent 未修改、未纳入提交。
+5. **aborted 状态（11:00 补）**：状态枚举统一为 `active | released | abandoned | aborted`；`aborted` 表示开工前显式撤回，**必须 origin+backup 双推成功才写入**；backup 不可达时保持 `active`、不开工、升级人类。再次认领须读到 `released/abandoned/aborted` 且双远端 SHA 相等；`abandoned` 另需人类放行。
+6. **backup 落后/分叉（11:00 补）**：认领前强制 `origin/main == backup/main`；落后只允许快进补推，分叉交人类对账，二者均禁止 force-push。推送 backup 被拒时不得强推、不得为补推绕过双远端；补测结果见第六节「backup 一致性轮」。
