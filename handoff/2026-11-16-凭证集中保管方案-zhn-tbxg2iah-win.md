@@ -43,3 +43,5 @@
 2. 批准后按方案第七节阶段 0–9 实施（◆ 项需你亲手）。
 3. 启动 v2rayN 后跑 `bash ~/.agent-shared/env/git-sync.sh`（或通知 agent 代跑），把 d29b6cd 与本轮提交一起推双远端。
 4. 遗留旧项不变：飞书 app_id/app_secret、网盘 Access Token（见 11-13 handoff 第五节）——建库时一并录入 vault 即可闭环。
+
+- 09:45 人类批准第五节两条规则（Agent 操作边界 + 查询交互约定），已并入方案第五/六节；新增第八节 Oracle 服务器评估：定位=密文冷备第三站点+应急恢复通道，禁止明文凭证上服务器，Vaultwarden 自托管暂缓；实施阶段 8 增补 rsync→Oracle 与「从 Oracle 拉回」演练项。仍未实施阶段 0-9，等人类启动。
