@@ -330,162 +330,18 @@ node tools/compare/verify_all.mjs            # 契约 46/46 PASS
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-17 11:3x UTC+8] 【任务卡发布】T-069 | 报表页费用选择改为弹窗（默认仅未关联 + 已关联开关，纯界面） | 待认领 | todo。依据人类 2026-11-17「输出任务卡，由其他 agent 执行，你做审核」+ 三项裁定（① 「未关联」判据 = `costs.report_links` 为空串 ② 已选但被开关隐藏的记录保持选中 + 框内显式提示 ③ 底部三按钮「关闭 / 清空 / 确认」，确认才生效、关闭丢弃）。基线 `master = origin/master = aa5019f`（v5 四卡已合并）。**严格 4 文件白名单**：`worker/src/web/tabs/report_costpop.js`（重写为 `document.createElement("dialog")` + `applied`/`draft` 双 Set，6 个导出签名一字不改）· `worker/src/web/tabs/report.js`（仅删模板里的 `#rp-cost-pop` 节点，`applySelectedCost()` 零改动）· `worker/src/web/styles.css`（删 `.cost-pop`、加 `dialog.cost-dlg` 一族、`@media print` 清单替换）· `worker/src/lib/web_assets.js`（生成物，禁止手改）。**无需新 ADR**：不动 DDL / 接口契约 / `cost_ids`/`cost_labels` 快照语义，仅把 v5 已有的 `report_links` 只读列用到选择界面上。交付物：`specs/0001-prnmgt-refactor/tasks.md` 的 T-069 卡面（依赖 / 改动范围 / 验收 ①~⑨ / 状态 / 计划 / 背景 / 禁止）+ `handoff/2026-11-17-T069逐卡执行提示词-zhn-tbxg2iah-win.md`（15,500 字节自包含提示词，开工前 11 条自检 / 白名单表 / 改造前后对照 / 状态机 / 门禁命令块 / 验收自检表 / 禁动清单 / 六段交付格式）。门禁：`check.mjs` **0 问题 3 条存量提示**、卡数 **69 卡 · todo 4 · doing 0 · blocked 0 · done 65**、`tasks.md` 与提示词 **CRLF=0 纯 LF**。**依赖 v5 部署**：现网 `costs` 表仍无 `report_links` 列，v5 的 `modules/costs.js` 已 `SELECT ... report_links` → DDL 与 deploy 必须同一窗口，T-069 联调须在 v5 部署之后。分工：workbuddy 编卡 + 复审收官，trae 编码（人类复制投喂，trae 按三-5 ⑤ 自行登记 `doing`）。**未部署、未执行 DDL/DML、未连现网**；S1（T-059/060/061）/ S2（P0 二次真机调研）/ S3（v4 / #18）仍 suspended，本条不构成 v4 开工令；未代提交 trae 在 `tasks.md` 的 T-058 真机调研 1 行未提交改动。
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-17 11:3x UTC+8] 【补推受阻 + 断采可见性实施卡 DRAFT】人类要求登录采集服务器补推，实测 `10.113.224.20` 不可达：ICMP 网关回「无法访问目标主机」、TCP/22 三次 unreachable、`plink -ssh -batch -i config/printer_ubuntu jifang@10.113.224.20` 报 Connection timed out；按 spec/deploy.md ④「网络异常+生产事故恢复需人类拍板」停止，不找代理绕过、未补推，数据仍停 11-13。补推命令已核对：`__main__.py:48 --push-only` + `sync.py:197 push_pending` 只补 pushed=0 历史日、按日升序、失败中止；服务器恢复后人类执行 `cd /opt/prnmgt-collector && python3 -m printer_monitor --push-only --config config.prnmgt.json`。同时起草 `handoff/2026-11-17-断采可见性实施卡-DRAFT-zhn-tbxg2iah-win.md`（含 8 字段挂起快照，状态 DRAFT 未转 APPROVED/未派工/未认领）：D1 查询层合成 missing 日行（不落库/不改表/不新增路由，今日 20:10+60min 宽限）、D2 复用 synthDataRows 给缺失日合成 16 台 no_data 行（null 严禁落 0）、D3 前端红字未采集+总览新鲜度横幅（不动 online/normal）、D4 禁动、D5 八条验收、D6 部署依赖 v5 先上线。待人类裁决 B1~B5（新 ADR-0014 / 主表默认显示 / 21:10 宽限 / 横幅 / 卡号）。卡号避让 T-069（本账号另一会话 11:29 占用为报表弹窗），建议立项后 T-070/071/072。未改业务代码、未部署、未 DDL/DML；他人未提交改动与未跟踪 T-069 提示词未触碰。
+[@trae @zhn-tbxg2iah-win 2026-11-17 11:41 UTC+8] 【任务认领】T-069 | 报表页费用选择改为弹窗（默认仅未关联 + 已关联开关，纯界面） | trae | doing。基座 `origin/master = 8e5a947`（实测，晚于 BOARD 记录的 `aa5019f`，含 T-069 卡面提交），local = origin/master 一致；四项基座判据（schema.sql report_links / migrations/20261117_cost_report_links.sql / modules/costs.js / tabs/costs.js report-links）逐项核验通过。worktree `~/source/prnmgt.wt/trae-t069` + 分支 `agent/trae/T-069`。规范 v2.7 自检简报已出（tools-scan --check exit 0、proxy-check exit 0、S1/S2/S3 不触碰）。
+[@trae @zhn-tbxg2iah-win 2026-11-17 11:56 UTC+8] 【T-069 交付（待 workbuddy 复审）】提交 `2b4ac9a`（基座 `8e5a947`，worktree `~/source/prnmgt.wt/trae-t069` + 分支 `agent/trae/T-069`，已推 origin，ls-remote 实证远端 = 2b4ac9a）。4 文件 +120/-61：`tabs/report_costpop.js` +101/-40（重写为 `document.createElement("dialog")` + applied/draft 双 Set，6 导出签名一字不改，默认仅列 `report_links` 为空行、开关显示已关联行带徽标、三按钮状态机 + Esc/遮罩关闭、`#cost-hidden-tip` 提示被隐藏的已选条数）、`tabs/report.js` 0/+…-1（仅删 `#rp-cost-pop` 面板节点，`applySelectedCost()` diff 为空）、`styles.css` +16/-17（删 `.cost-pop`、新增 `dialog.cost-dlg` 一族、`@media print` 组清单移除 `.cost-pop` 并单独加 `dialog.cost-dlg{display:none!important}`）、`lib/web_assets.js` 由 build 生成（37 资源 567,907 字节）。门禁：`build --check` 与 37 源文件逐字节一致、`check.mjs` 0 问题 3 提示、首屏 gzip 25.6 KB ≤ 40 KB、全量 `node --test` **291 / pass 200 / fail 0 / skip 91** 与基线持平、`node --check` ×3 exit 0、`git diff --check` EXIT 0、4 文件 CRLF=0、report_costpop.js 150 行 / report.js 288 行 ≤300。自写 CDP 实测 `Temp/t069_cdp.mjs` **25/25 PASS**（默认仅未关联 2 行、开关 4 行 + 徽标 ×2、恶意 report_links `a&<b>"c'` title 还原原文单次转义、隐藏已选确认不丢 + 回填 300.00/0.00、复开框提示「另有 1 条」、确认/关闭/Esc/遮罩/清空状态机、print 媒体 dialog computed display=none 且表格仍 table、无 JS 异常）。验收 ①⑤⑥ grep 全过（rp-cost-pop 两文件 0、selectedCostRows 在 report_saved.js 计 2、esc 嵌套 0）。**未部署、未执行 DDL/DML、未连现网**；未动禁动清单任何文件（`git diff --name-only 8e5a947..HEAD` 仅 4 白名单文件）。注：会话期间本机回收站进程多次瞬时移走 `.git/` 锁文件与分支引用（已自愈，不影响结果），已上报人类。
+[@trae @zhn-tbxg2iah-win 2026-11-17 12:26 UTC+8] 【T-069 复审修正交付（待 workbuddy 二次复审）】新提交 `5b42a4d`（基座 `8e5a947`，前提交 `2b4ac9a` 保留不 amend，2 文件 +2/-1：`tabs/report_costpop.js` 在 `renderDlgBody()` 末尾加一行 `#cost-show-linked.checked = showLinked` 显式同步 + `web_assets.js` 重新生成 568,040 字节），已推 origin（ls-remote 实证 = 5b42a4d）。修正机理说明：原实现 dialog 只 build 一次且 DOM 常驻，checkbox 勾选态与 showLinked 实际不会分叉，但按复审意见改为每次渲染显式同步，不再依赖 DOM 持久这一隐式行为。CDP 实测扩至 **31/31 PASS**（新增 6 项：开启开关→关闭→复开框勾选态同步 true + 列表 4 行；人为置 `checked=false` 制造 DOM 失配→复开框被 renderDlgBody 拉回 true；取消（关闭）后按钮文案逐字不变、回填值 300.00/0.00 不变、applied 不变）。门禁复跑全绿：`build --check` 37 源文件一致、`check.mjs` 0 问题 3 提示、首屏 gzip 25.6 KB、全量 291/200/0/91、`node --check` ×2、`git diff --check` EXIT 0、CRLF=0、151/288 行 ≤300。**未部署、未执行 DDL/DML、未连现网**；diff 仅白名单文件。
+[@trae @zhn-tbxg2iah-win 2026-11-17 12:4x UTC+8] 【T-069 整页实测补充（无代码改动，分支仍 5b42a4d）】应用户「补齐浏览器交互与打印实测」：新增真实整页 CDP 脚本（真实加载 `report_excel.js`+`report_costpop.js`+`report.js` 全链路，含 renderReport/applySelectedCost/表格重画真实实现，仅桩 api/cache 与 report_saved 两入口）**18/18 PASS**：真实页出表 4 行（2 数据+合计+局总部）、`#rp-cost-pop` 节点不存在、弹窗默认仅未关联 2 行、确认后真实回填 65.00/30.00 + 按钮文案「费用记录：2 条（2026-08-20、2026-09-10）」+ renderReport 合计行分摊费用 95.00、隐藏已选（开关→勾 id1→关开关→确认）汇总 365.00/30.00 + 395.00 + 复开框提示 N=1、复审修正场景（开关人为失配→复开同步回 true）、Esc 取消后按钮文案与回填逐字不变、print 媒体弹窗 display=none + 真实表格仍 table + `.toolbar` 被摘、全程无未捕获异常。首轮 4 处 FAIL 均为测试脚本自身错误（行数预期/合计行取列选择器/提示断言时机早于确认），实现零改动。**未部署、未执行 DDL/DML、未连现网**。
+[@trae @zhn-tbxg2iah-win 2026-11-17 13:0x UTC+8] 【T-069 二审修正交付（待 workbuddy 三审）】新提交 `42f903e`（前提交 `2b4ac9a`/`5b42a4d` 保留，2 文件 +4/-2）：`tabs/report_costpop.js` 隐藏已选提示由 `applied` 改按 `draft` 实时统计（开框时 draft=applied，确认后提示不变；勾选后立刻关开关的草稿条目实时提示，不再漏报；清空后提示归零同理）+ `web_assets.js` 重新生成（568,232 字节；期间 `web_assets.js` 被 EPERM 锁死，DeleteFile 后重建成功）。门禁复跑全绿：`build --check` 37 源文件一致、`check.mjs` 0 问题 3 提示、首屏 gzip 25.6 KB、全量 291/200/0/91、`node --check` ×2、`git diff --check` EXIT 0、CRLF=0、153 行 ≤300。两套 CDP 复跑全 PASS：模块级 **31/31**（含新断言「勾已关联行后关开关：提示实时按 draft 统计另有 1 条」）+ 真实整页 **18/18**（含同口径断言 + 确认后汇总 365.00/30.00、复开框提示 N=1、复审开关同步场景、Esc 取消逐字不变、print 弹窗 display=none）。已推 origin，ls-remote 实证 = 42f903e。**未部署、未执行 DDL/DML、未连现网**；diff 仅白名单文件。
+[@trae @zhn-tbxg2iah-win 2026-11-17 12:47 UTC+8] 【T-069 三审修正交付（待 workbuddy 复审）】新提交 `2ac9ab8`（前提交 `2b4ac9a`/`5b42a4d`/`42f903e` 保留，2 文件 +4/-3，report_costpop.js 154 行）：隐藏提示补上「仅开关关闭时显示」条件 `hidden = showLinked ? 0 : all.filter((r) => draft.has(...) && linkedText(r)).length`——开关打开（无行被隐藏）时提示消失，关闭时按 draft 实时统计；业务语义（确认提交/关闭丢弃/清空留框/开关只影响显示）与开关勾选态同步保持不变。门禁全绿：`build --check` 37 源文件一致（web_assets.js 568,339 字节，EPERM 锁文件多次重试后成功）、`check.mjs` 0 问题 3 提示、首屏 gzip 25.6 KB、全量 291/200/0/91、`node --check` ×2、`git diff --check` EXIT 0、CRLF=0。动态验证：模块级 CDP **37/37** + 真实整页 **21/21**，六条指定用例逐项 PASS——① 已确认关联记录：关开关提示 N=1、开开关提示消失 ② 开开关→勾新关联→关开关提示立即 1 条、再勾第二条变 2 条 ③ 重开弹窗开关勾选态与列表一致 ④ 关闭/Esc/遮罩取消不进 rpCostIds、确认才进 ⑤ 清空后提示随 draft 归零且弹窗不关 ⑥ 隐藏草稿确认后参与汇总（302.00/1.00、ids=[1,4]）。已推 origin，ls-remote 实证 = 2ac9ab8，worktree 干净。**未部署、未执行 DDL/DML、未连现网**。注：上一条登记的「13:0x」为时间戳预填失误，实际应为 12:26-12:40 前后（append-only 不改旧行，此处更正）。
+[@trae @zhn-tbxg2iah-win 2026-11-17 14:41 UTC+8] 【T-069 合并收官（人类指令）】人类明确指示「浏览器交互和打印媒体的动态实测由我来确认，你对代码进行合并，方便我部署」，据该直接指令执行合并（覆盖此前「不得自行合并 master」的默认约束，属人类当次授权）。合并前 master 已前移至 `bb5d5a1`（他方推入纯文档出卡：ADR-0014 + T-070~T-072 + BOARD/spec/tasks/constitution，与 T-069 四个代码文件零重叠，merge-base = 8e5a947）。`git merge --no-ff agent/trae/T-069` → merge commit `2fcdc7b`，署名 zhn-trae + Agent: trae trailer，已推 origin，ls-remote 实证 origin/master = 2fcdc7b，主仓 HEAD = origin/master 一致、tracked 工作区 0 改动、合并内容落盘核验通过（report_costpop.js 含 `showLinked ? 0` 修正、report.js 无 rp-cost-pop 残留）。tasks.md 卡面状态未改（留给审核人收官）。期间回收站进程波及 MERGE_* 状态文件与 4 个合并文件（均自愈，合并结果完整）。**未部署**——部署由人类执行；提醒：主仓 worktree 为 CRLF 检出，部署前勿在主仓重跑 build_web_assets.mjs（已知 CRLF 假差异坑）。
+[@trae @zhn-tbxg2iah-win 2026-11-17 15:14 UTC+8] 【T-069 后续修订交付（待 workbuddy 复审，不合并）】按 handoff「2026-11-17-T069后续修订-费用弹窗表格与分页」执行：新分支 `agent/trae/T-069r1`（基座 `origin/master = 2fcdc7b`，worktree 复用 trae-t069），新提交 **`0e7022e`**（3 文件 +94/-22：`tabs/report_costpop.js` 215 行重写为表格 + 每页 10 条分页 + 缺字段可见报错、`styles.css` 弹窗加宽 min(1000px,96vw) + 表格/sticky 表头/分页条样式、`web_assets.js` 生成 572,146 字节），已推 origin（ls-remote 实证 = 0e7022e）。实现要点：先过滤再分页（draft 全量唯一真相、过滤/重开回第 1 页、翻页不丢勾选）、分页文案 1 基（CDP 抓出 0 基缺陷已修）、/api/costs 缺 report_links（后端未部署 v5）时弹窗内可见报错并暂停展示不静默当未关联、6 导出签名与确认/关闭/Esc/遮罩/清空语义不变。动态验证：模块级 CDP **41/41**（23 条模拟数据 15 未关联/8 已关联、跨页勾选、提示计数、取消语义、缺字段、0/1/10/11/20/21 边界页数、esc、print）+ 真实整页 **22/22**（含分页条、复开框开关同步——该套件抓出重写时弄丢同步行的回归，已修复）。门禁：build --check 一致、check.mjs 0 问题 3 提示、首屏 gzip 25.7 KB、全量 291/200/0/91、node --check ×2、git diff --check 0、CRLF=0。/api/costs 核对：主仓 `modules/costs.js` SELECT 已含 report_links（v5 已合并）；真实响应统计不可得（现网部署状态未确认）——用户所见「默认显示全部」根因最可能是现网后端未部署 v5 致字段缺失被旧代码当未关联全量展示。注：worktree 6 个文档文件（BOARD/constitution/spec/tasks/OPEN-DECISIONS/ADR-0014）被外部进程锁定未随 checkout 更新到盘，呈 M/D 脏状态但未入提交，待人类解锁后 `git restore` 修复。**未部署、未执行 DDL/DML、未合并**。
+[@trae @zhn-tbxg2iah-win 2026-11-17 15:25 UTC+8] 【T-069 后续修订合并收官（人类指令）】人类审核结论「代码与静态门禁通过，建议先确认数据现状再收官，你合并代码，我部署后确认」，据该直接指令执行合并。合并前 master = `2fcdc7b` 无漂移（= merge-base），`git merge --no-ff agent/trae/T-069r1` → merge commit **`31a4764`**（署名 zhn-trae + Agent: trae trailer），已推 origin，ls-remote 实证 origin/master = 31a4764，主仓 HEAD = origin/master 一致、tracked 工作区 0 改动、落盘核验通过（report_costpop.js 215 行含 PAGE_SIZE/缺字段报错/开关同步、styles.css 含分页条样式）。分支 `agent/trae/T-069r1`（0e7022e）保留在合并历史。**未部署**——由人类部署后确认数据现状（重点：现网 /api/costs 是否已含 report_links 字段；若弹窗显示「未部署 v5」报错即后端旧版，先部署后端）。worktree 6 个文档文件锁定遗留 M/D 脏状态仍未解锁（不入库，待人类 git restore）。回收站进程合并期间又波及 MERGE_* 与合并文件（自愈，结果完整）。部署提醒：勿在主仓重跑 build_web_assets.mjs（CRLF 假差异坑）。
 
-[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-17 11:5x UTC+8] 【采集服务器登录方式约定（人类明确）+ 断采补推完成】人类 11:47 明确要求：**登录采集服务器 `10.113.224.20` 一律用用户名/密码（jifang），不再走 SSH 密钥认证**。实测专用密钥 `printer_ubuntu` 与通用 `id_ed25519` 均被服务端 `Permission denied (publickey,password)` 拒绝；按规范口令值不落盘（不写入任何文件/日志/记忆），只由人类在当次任务提供，持久化走 KeePassXC 凭证库方案（未实施）。补推：网络已恢复（ping 2/2 通）；服务器本地 SQLite `collect_run` 全部 `pushed=1`、11-14~16 无任何快照 → `--push-only` 无可补数据；按既定口径执行 `python3 -m printer_monitor --force --config config.prnmgt.json`（**不 `--date` 回溯**，避免用今日累计计数/当前碳粉余量污染历史），11:48:38 采集结束 success 16/16、11:48:40 上报成功。线上只读自检：`collect_run` 11-17 `success 16/16`（ingested_at `2026-11-17 11:48:39`）、`device_daily` 11-17 16 行、PRN017 `toner.pct=19` 且 `print_total=52766`（11-13 为 28 / 50545）。**11-14~16 仍无行**（未回溯，符合口径）。未部署、未 DDL/DML、未改业务代码。
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-17 11:5x UTC+8] 【采集服务器登录方式约定（人类明确）+ 断采补推完成】人类 11:47 明确要求：**登录采集服务器 `10.113.224.20` 一律用用户名/密码（jifang），不再走 SSH 密钥认证**。实测专用密钥 `printer_ubuntu` 与通用 `id_ed25519` 均被服务端 `Permission denied (publickey,password)` 拒绝；密码首字母为大写 `Zj`，按规范口令值不落盘（不写入任何文件/日志/记忆），只由人类在当次任务提供，持久化走 KeePassXC 凭证库方案（未实施）。补推：网络已恢复（ping 2/2 通）；服务器本地 SQLite `collect_run` 全部 `pushed=1`、11-14~16 无任何快照 → `--push-only` 无可补数据；按既定口径执行 `python3 -m printer_monitor --force --config config.prnmgt.json`（**不 `--date` 回溯**，避免用今日累计计数/当前碳粉余量污染历史），11:48:38 采集结束 success 16/16、11:48:40 上报成功。线上只读自检：`collect_run` 11-17 `success 16/16`（ingested_at `2026-11-17 11:48:39`）、`device_daily` 11-17 16 行、PRN017 `toner.pct=19` 且 `print_total=52766`（11-13 为 28 / 50545）。**11-14~16 仍无行**（未回溯，符合口径）；本次只补当日，不伪造历史。未部署、未 DDL/DML、未改业务代码。
 
-[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-17 11:5x UTC+8] 【v7 出卡：断采可见性 ADR-0014 + T-070/071/072（人类裁定 B1~B5 全部按建议）】人类 2026-11-17 11:5x 逐项裁定：① B1 **新 ADR-0014 豁免不另立项目**（豁免 `spec.md` Non-goals **第 5 行「新增业务功能（预警）」**，**不涉及第 1 行表结构**）；② B2 缺失日在采集状态主表**默认显示**红字「未采集」+ 日期后「（缺失）」；③ B3 今日 **21:10** 宽限（20:10 + 60 分钟）；④ B4 总览**纳入** `stale_days ≥ 1` 新鲜度黄条；⑤ B5 **独立 v7 批次**、卡号 T-070/071/072、不并入 v5、不触碰 S1/S2/S3。项目仓提交 `c1006f8`（基座 `8e5a947`，6 文件 +183/-2，已推 origin/master）：新增 `docs/adr/0014-collect-missing-visibility.md`（ACCEPTED，D1~D7 + 部署卡 + 回滚）、`tasks.md` 三张卡面（T-070 后端查询层 3 文件白名单 / T-071 前端可见性 4 文件白名单 / T-072 收官 3 文件白名单，均 `todo`）、`OPEN-DECISIONS.md` **#21 RESOLVED**（索引行 + 关闭记录区块）、`spec.md` 第四条人类豁免登记、`constitution.md` 第二条人类豁免登记、`BOARD.md` v7 批次行 + 11:5x 交接条目 + 「最后更新」改写。门禁：`check.mjs` **通过：0 个问题 3 条存量提示**（T-034/T-040/T-055 存量）、卡数 **72 · todo 7 · doing 0 · blocked 0 · done 65**、6 文件**字节级 CRLF=0 纯 LF**、`git diff --cached --check` EXIT 0。**本批零 DDL**：不改 `worker/schema.sql` / `worker/migrations/**`、不改任何表结构与列语义、不新增 `/api/*` 路径（响应字段只增不删，`missing` 为可选字段需在 `tools/compare` 差异登记说明）、采集端 `collector/**` 零改动、`lib/overview_stat.js` 的 `online/normal/abnormal` 判定与计数**逐字段不变**（D6 行为等价红线）。逐卡提示词 `handoff/2026-11-17-断采可见性T070T071逐卡执行提示词-APPROVED-zhn-tbxg2iah-win.md`（转 APPROVED，可投喂 trae）。**未改业务代码、未部署、未 DDL/DML、未连现网**；现网仍为 11-13 09:49 旧版 → 须先部署 v5（ALTER + deploy 同一窗口）再部署本批。trae 的 T-069 交付 `2b4ac9a` 待复审（另一会话产出，本轮未审）。**未代提交** trae 在本文件的 T-069 认领行与交付行（提交用精确 index blob，只含本人两段）。
+[ @workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-17 14:47 UTC+8] 【T-069 后续 UI 修订方案】完整提示词同 handoff `2026-11-17-T069后续修订-费用弹窗表格与分页-zhn-tbxg2iah-win.md`：弹窗改为类似费用记录页的表格，每页 10 条；默认仅显示 `report_links` 为空的未关联记录，开关打开显示全部；必须先核对 API 是否提供 report_links，若缺失不得静默按空处理，需区分部署/旧 API 与数据全未关联。保留跨页 draft、确认/取消/清空语义及所有业务/API契约，前端白名单优先 report_costpop.js/styles.css + 生成物 web_assets.js；用户要求由 trae 修改，workbuddy 不直接改代码、不部署。
 
-[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-17 12:2x UTC+8] 【断采可见性 v7 · T-070/T-071 可复制投喂提示词全文（已记入项目记忆）】人类 2026-11-17 12:1x 要求「输出明确的提示词，不要放在文件中，直接对话输出，记入项目记忆」。已按此执行：（一）**在对话中直接输出 T-070 / T-071 两张卡的完整提示词全文**（可整段复制投喂 trae，先 T-070，复审合并后再 T-071）；（二）**提示词全文按逐字一致写入本项目记忆本条之后**（内容与共享仓 `handoff/2026-11-17-断采可见性T070T071逐卡执行提示词-APPROVED-zhn-tbxg2iah-win.md` 相同，作为跨会话可直接取用的存档，handoff 文件本身按规范七保留为治理留痕，不删除）；（三）顺带订正 **3 处失效引用**（文件已由 DRAFT 改名为 APPROVED，文档仍指旧名）：`BOARD.md` v7 批次行 + 交付物条目、`docs/decisions/OPEN-DECISIONS.md` #21 区块、`specs/0001-prnmgt-refactor/tasks.md` T-070「计划」行 —— 项目仓提交 `bb5d5a1`（3 文件 +4/-4，已推 origin/master，local = origin = `bb5d5a1`），门禁 `check.mjs` **通过：0 个问题 3 条存量提示**（T-034/T-040/T-055），3 文件 CRLF=0 纯 LF，`git diff --cached --check` EXIT 0。
-
-> 投喂顺序与前置：T-070（后端查询层合成缺失日）→ workbuddy 复审 + ff-only 合并 → T-071（前端缺失标识 + 明细标题 + 总览新鲜度横幅）→ workbuddy 复审合并 → T-072（收官卡面/BOARD/部署卡，workbuddy 自做，不投喂）。卡片要点：B2 缺失日默认显示红字「未采集」+ 日期后「（缺失）」；B3 今日 **21:10** 宽限（20:10 + 60 分钟）；B4 总览 `stale_days ≥ 1` 黄色新鲜度横幅且 `lib/overview_stat.js` 的 `online/normal/abnormal` 计数逐字段不变；本批**零 DDL**、不新增 `/api/*` 路由、响应字段只增不删（`missing` 为可选字段，需在 `tools/compare` 差异登记说明）；现网仍停在 2026-11-13 09:49 旧版 → **须先部署 v5（`costs.report_links` ALTER + deploy 同一窗口）再部署本批**。
-
-> 以下为提示词全文（与 handoff 文件逐字一致，可整段复制投喂 trae）：
-
----
-
-项目: prnmgt
-
-# 【APPROVED · 可投喂】断采可见性 T-070 / T-071 逐卡执行提示词（trae 开工用）
-
-> 编制：workbuddy@zhn-tbxg2iah-win~zhn-x-w · 2026-11-17 11:4x 定稿，2026-11-17 11:5x 转 APPROVED +08
-> 状态：**APPROVED · 可投喂**——人类 2026-11-17 11:5x 逐项裁定 **B1~B5 全部按建议**（B1 新 ADR-0014 豁免；B2 缺失日默认显示红字「未采集」；B3 今日 21:10 宽限；B4 纳入总览新鲜度横幅；B5 独立 v7 批次）。立项前置已全部完成：`docs/adr/0014-collect-missing-visibility.md` ACCEPTED、`tasks.md` 已登记 T-070 / T-071 / T-072、`BOARD.md` 已加 v7 批次行与交接条目、`OPEN-DECISIONS.md` **#21 RESOLVED**、`spec.md` 第四条与 `constitution.md` 第二条人类豁免登记已写入。**可全文复制投喂 trae**。
-> 设计母本：`handoff/2026-11-17-断采可见性实施卡-APPROVED-…md` 第一~六节（D1~D6、验收 1~8、禁动清单）+ `docs/adr/0014-collect-missing-visibility.md` 的 D1~D7。本文件把它拆成两张可投喂卡；T-072（收官：ADR 登记 + 卡面订正 + BOARD + 部署卡）由 workbuddy 自己做，**不投喂 trae**。
-> 分工（全局规范 **v2.7** 三-7〔spec/deploy.md〕）：workbuddy 编卡 / 复审 / 合并收官；执行 Agent 编码，**一律不得部署、不得执行 `wrangler d1 execute` / `wrangler deploy`、不得连现网 D1 与采集服务器**；现网 DDL/DML/部署由人类本人执行。
-> 卡号：**已登记 `tasks.md`**，T-070（后端查询层）/ T-071（前端可见性）/ T-072（收官）。T-069 已被本账号另一会话占用，不得撞号。
-
----
-
-## 零、投喂前与开工前必须确认（任一项不满足即停下报告）
-
-1. **立项前置已完成**：人类 2026-11-17 11:5x 书面裁定 B1~B5（全部按建议）→ `docs/adr/0014-collect-missing-visibility.md` 状态 ACCEPTED、T-070 / T-071 / T-072 已登记进 `tasks.md`、`BOARD.md` 已加 v7 批次行与交接条目、`docs/decisions/OPEN-DECISIONS.md` **#21 RESOLVED**、`spec.md` 第四条与 `constitution.md` 第二条人类豁免登记已写入。**本提示词状态为 APPROVED，可直接投喂**；若上述任一项与实际卡面不符，停下报告 workbuddy。
-2. 读 `~/.agent-shared/global/rules.md`（现行 **v2.7**）并执行第八节自检 —— **10 步**（平台旧指令写「9 步」已过时）；同一 agent 的不同会话同样适用（三-5 ⑦）。
-3. **按三-1 多项目加载**：读 `~/.agent-shared/handoff/` **最新一份** handoff 的「挂起任务（当前全量快照）」；再按项目补读 prnmgt 最近一份带 `项目:` 标签的 handoff。`org.md` 只读最近 200 行。
-4. **挂起快照（防撞集合含 `suspended`）**：**S1**（T-059/T-060/T-061）、**S2**（P0 二次真机调研）、**S3**（v4 / #18）**仍 suspended，一律不得认领／开工**。T-064、T-065~T-068 已 done；T-069 由另一会话在做。本批次是 v7 独立批次，**不构成 v4 开工令**。
-5. 按 `AGENTS.md` 必读顺序读：`constitution.md` → `BOARD.md` → `specs/0001-prnmgt-refactor/spec.md` → `tasks.md` 的 **本卡卡面** → `docs/decisions/OPEN-DECISIONS.md` → `docs/adr/0014-*.md` → 本提示词 → DRAFT 实施卡。
-6. **认领登记（三-5 ⑤）**：查 `~/.agent-shared/memory/projects/prnmgt.md` 任务登记节，确认目标卡未被他人认领（doing/open/suspended），然后**追加一行** `【任务认领】T-07x | 断采可见性… | trae | doing`（append-only，禁止改旧行、不代提交）。
-7. **基座判据（不写死 hash）**：`git fetch origin` 后实测 `git rev-parse origin/master` 与本地 HEAD 一致，把实测号写入交付报告；以**认领时刻的 `origin/master`** 为基座建 worktree。实测核验（任一不满足停下）：
-   ```bash
-   git show origin/master:worker/src/modules/collect.js | grep -n "runsSummary"      # 期望存在
-   git show origin/master:worker/src/lib/collect_fill.js | grep -n "synthDataRows"   # 期望存在
-   git show origin/master:worker/schema.sql | grep -n "report_links"                 # v5 已合并
-   git cat-file -e origin/master:worker/migrations/20261117_cost_report_links.sql    # 期望存在
-   ```
-8. **worktree 隔离**：T-070 用 `~/source/prnmgt.wt/trae-t070` + 分支 `agent/trae/T-070`；T-071 用 `~/source/prnmgt.wt/trae-t071` + 分支 `agent/trae/T-071`。主仓 `~/source/prnmgt` 的其它 worktree 与既有未跟踪项（`.login-out.txt`、`docs/paper/**`、`docs/plan-*`、`tmp/`）**不触碰、不提交**。
-9. **一次只做一张卡**：T-070 复审通过并 ff-only 合并后，才认领 T-071。不改卡面、不自报 done、不合并 master、不改任何治理文档（第六节禁动清单）。
-10. 提交用一次性署名 `git -c user.name=zhn-trae -c user.email=trae@zhn-tbxg2iah-win commit -m "..." -m "Agent: trae"`；推分支到 origin 后**停下等 workbuddy 复审**。追加修正用**新提交，不 amend**。
-11. **纯本地编码与测试**：不连现网 D1、不执行 `wrangler d1 execute` / `wrangler deploy`、不登录采集服务器。现网仍停留在 09:49 部署的旧版（v5 未部署），**不得据此断定「已上线」**。
-12. CRLF：项目仓 `core.autocrlf=false`，以**纯 LF 沙盒 `git archive` 导出**跑门禁；改动文件 CRLF 必须为 0，`web_assets.js` 等生成物不得手改。
-
----
-
-## 一、T-070 后端：查询层合成缺失日（trae）
-
-### 1.1 文件白名单（严格，超出即停下请示）
-
-| # | 文件 | 改动 |
-|---|---|---|
-| 1 | `worker/src/modules/collect.js` | `runsSummary(data)` 合成缺失日行；`detailByData` 的 `runAtMap` 扩展；不改真实行字段 |
-| 2 | `worker/src/lib/collect_fill.js` | **仅当**现有 `synthDataRows` 无法接受 `null` 锚点时才改；能复用则零改动 |
-| 3 | `tools/tests/unit/collect_missing_days.test.mjs` | **新增**单测，覆盖 D5 验收 1~4、6 |
-
-### 1.2 现状（已只读核实）
-
-- `modules/collect.js:262-285`：`runsSummary` 直接 `SELECT c.collect_date, c.ingested_at AS collected_at, ... FROM collect_run c LEFT JOIN device_daily d ... GROUP BY c.collect_date ORDER BY c.collect_date DESC LIMIT ?`，只列真实事件；无「应有而未到」的行。
-- `modules/collect.js:108-110`：`detailByData` 的 `runAtMap` 来自 `SELECT ... FROM collect_run`；`lib/collect_fill.js:35-42` 的 `synthDataRows` 以它为锚点，整天未采集 → 无锚点 → 合成 0 行。
-- 现网实测：`collect_run` 末条 `2026-11-13 20:10:55 success 16/16`，11-14 起 0 行；全 16 台停在 11-13。这是**设计缺失**（无「预期采集日」概念），不是解析 bug。
-
-### 1.3 实现要点
-
-1. **预期日窗口（查询层合成，不落库）**：
-   - 起点：`SELECT MIN(collect_date) FROM collect_run` 的**次日**；更早不合成（避免上线前大片假缺失）。
-   - 终点：今天；今日仅在**当前时刻 ≥ 20:10 + 60 分钟（21:10）**且仍无 `collect_run` 行时合成（B3）。
-   - 判定：窗口内每个日期 d，若 `collect_run` 无 d 行 → 合成一行。
-   - 合成行字段与真实行同构：`collect_date=d, collected_at=null, total_devices=activeCount, ok_devices=0, err_devices=activeCount, sum_print=null, missing=true`。`missing` 为**新增可选字段**；前端亦可用 `collected_at === null` 识别。
-   - **严禁** `sum_print=0`（污染总打印量）；真实行任何字段不得改动（含 `sum_print: r.sum_print || 0` 保持原样）。
-2. **明细占位**：`detailByData` 的 `runAtMap` 在真实行之外，把窗口内缺失日也 put 进去、值为 `null`；`synthDataRows` 自然为「缺失日 × 16 台在用设备」合成 `no_data=true` 行。数值列与 `toner` 全 `null`（**严禁落 0**），`error` 文案「该日未采集（采集端无上报）」。前端已有红字渲染，不需要改前端。
-3. **时间基准**：服务端按东八区计算「今天」与 21:10 阈值；单测用可注入的 now（或等价手段），不得依赖机器本地时区漂移。
-4. **契约**：不新增 `/api/*` 路由（46 路由冻结）；响应字段只增不删；`missing` 在差异登记中说明为可选字段。
-
-### 1.4 T-070 验收（逐条跑通才算完成）
-
-1. 首次采集日 D0、缺失日 D1、今天 Dtoday（时刻 < 21:10）：`GET /api/collect_runs?type=data` 含 D1 的 `missing=true` 行，`collected_at=null`、`err_devices=activeCount`、`sum_print=null`；D0 与 Dtoday 均不合成。
-2. 今日 21:10 后仍无采集 → 合成今日；20:10 前不得合成。
-3. `GET /api/collect_detail?from=D1&to=D1&toner=collect_date` 返回 16 行 `no_data=true`，数值与 `toner` 全 `null`，`error` 含「未采集」。
-4. 真实事件行全部字段与改动前逐字段相等，`sum_print` 不被 0 污染。
-5. 46 路由数不变、`routes.json` 不变、`api_contract.mjs` 判据不破。
-6. 纯 LF 沙盒 `git archive` 跑 `check.mjs` 0 问题、`node --test` 全绿、改动文件 CR=0、`git diff --check` 0。
-
----
-
-## 二、T-071 前端：缺失可见性与新鲜度横幅（trae，依赖 T-070 已合并）
-
-### 2.1 文件白名单（严格，超出即停下请示）
-
-| # | 文件 | 改动 |
-|---|---|---|
-| 1 | `worker/src/web/tabs/collect.js` | 主表缺失标识、明细标题 |
-| 2 | `worker/src/web/tabs/overview.js` | 新鲜度横幅容器 + 渲染调用；**不改 `online/normal` 判定** |
-| 3 | `worker/src/lib/web_assets.js` | **由 `node scripts/build_web_assets.mjs` 生成，禁止手改** |
-| 4 | `tools/tests/unit/collect_missing_days_ui.test.mjs` | 新增（若测试框架支持；否则并入现有 collect 单测） |
-
-### 2.2 现状（已只读核实）
-
-- `web/tabs/collect.js:58-71` 主表：错误列 `r.err_devices > 0 ? '<span class="error-line">…</span>' : "0"`，采集事件列 `esc(r.collected_at || r.collect_date)`。
-- `collect.js:81-100` `loadRuns` 首次进入自动展开 `state.runsRows[0].collect_date` → 断采时会展开最新真实旧日（11-13），页面无过期提示。
-- `collect.js:129-130` 明细标题固定「采集事件 X 的打印机明细（共 N 台…）」。
-- `collect.js:157-164` 已有 `no_data → error-line` 红字渲染，**保持不动**。
-- `web/tabs/overview.js:63-73` 模板：toolbar 之后依次 `#ov-cards`、`#ov-devcards`；`paint()` 在 `:54-61` 填这些容器。横幅插在 toolbar 与 `#ov-cards` 之间，不动其余结构。
-
-### 2.3 实现要点
-
-1. 主表：`r.collected_at === null`（或 `r.missing === true`）的行，错误列显示红字 `<span class="error-line">未采集</span>`，采集事件列日期后加「（缺失）」；`dt-active`、分页、序号逻辑不变。
-2. 明细标题：若 `state.detailDate` 是缺失日，标题改为「采集事件 X（**该日未采集**，以下为在用设备占位）」。
-3. 总览横幅（B4）：`stale_days = 今天 − 最新真实 collect_date`（从 `/api/collect_runs?type=data&limit=1` 取，若 overview 响应已含等价字段则优先用之，不新增路由）；`stale_days ≥ 1` 显示黄色提示「数据截至 YYYY-MM-DD（距今 N 天），采集端可能离线」。**不得改动 `lib/overview_stat.js` 的 `online/normal/abnormal` 判定与计数**；横幅只增不改。
-4. 样式尽量复用现有 class（`muted` / `error-line` / `toolbar` 等）；必要时最小增补，但**不新增 CSS 文件**，且三个 CSS 与 `web/index.html` / `web/app.js` 仍按禁动清单处理（如确需改 CSS，停下来请示 workbuddy）。
-5. 生成物 `web_assets.js` 必须由 `node scripts/build_web_assets.mjs` 生成，`build_web_assets.mjs --check` 必须逐字节一致。
-
-### 2.4 T-071 验收
-
-1. 缺失日主表行显示红字「未采集」+ 日期「（缺失）」；真实行渲染与改动前逐字段一致。
-2. 展开缺失日：标题含「该日未采集」，明细 16 行红字占位，数值/碳粉全 `-`，无 0 污染。
-3. 断采时总览出现黄色横幅，`online/normal/abnormal` 计数与改动前**完全相等**。
-4. `web_size.mjs` ≤ 40KB；`build_web_assets.mjs --check` 通过；`node --test` 全绿；CR=0；`git diff --check` 0；CSS/HTML/app.js 零改动。
-
----
-
-## 三、共同禁动清单（任何卡均不得越界）
-
-- 不改 `worker/schema.sql`、不加列、不改任何表结构/主键/索引；不做 DDL/DML。
-- 不改 `collect_run` 写入链路（`modules/ingest.js` 的 `RUN_UPSERT`）与 `collector/**`。
-- 不改 `lib/diff.js` / `lib/util.js` / `lib/overview_stat.js` 的 `online/normal` 判定段。
-- 不改 `routes.js` 与 `tools/tests/fixtures/routes.json` / `api_contract.mjs` 判据；不新增 `/api/*`。
-- 不改三个 CSS 与 `web/index.html` / `web/app.js`（横幅复用 class；确需新增停下请示）。
-- 不碰 S1（T-059/060/061）/ S2（P0 二次真机调研）/ S3（v4 / #18）挂起项；不碰 T-069。
-- 执行 Agent 不自报 done、不改卡面、不合并 master、不部署、不连现网 D1 与采集服务器。
-
-## 四、部署边界（提前写清）
-
-- 本批次**无新列、无 migration**；但现网仍停留在 09:49 旧版，**v5（`aa5019f`）的 `costs.report_links` DDL + deploy 必须先完成**，再部署本批次。单独部署虽不会报 `no such column`（本批次不读新列），但会混批，排障困难。
-- 部署由人类本人执行；执行 Agent 只交付分支与门禁报告。
-- 部署自检：`collect_run` 缺失日可见、`/` 与 `/api/config` 200、总览横幅出现且 `online/normal` 未漂移。
-
-## 五、挂起任务（全量快照，继承 2026-11-16 凭证集中保管 handoff，本文件无新增无解挂）
-
-| 项目 | 任务ID | 挂起于／裁决出处 | 原因 | 解挂前置（可验证条件） | 现场 | 解挂后动作 | 解挂权 |
-|---|---|---|---|---|---|---|---|
-| prnmgt | S1 T-059/T-060/T-061 | 2026-11-07 人类 D-4 | v3 三卡暂停 | S3 裁定 + 新 ADR + 重编卡面 | 无 worktree；卡面 todo | 重编后重新认领 | 人类 |
-| prnmgt | S2 P0 二次真机调研 | 2026-11-11 人类确认 | 厂家后台升级中 | 升级完成 + 复跑探测 + 更新调研文档 | tmp 快照保留 | 续跑不重开卡 | 人类 |
-| prnmgt | S3 v4 批次 / #18 | 2026-11-07 15:11 | 纸张口径未定 | S2 结论 + D-5~D-10 裁定 + 新 ADR | 仅 DRAFT | 裁定后重编拆卡 | 人类 |
-
-本文件为按人类指令预置的执行提示词草案，不认领任务卡；suspended 一律未开工。T-069（报表弹窗）由本账号另一会话发布、待认领，与本批次无关；T-065~T-068（v5）已 done 未部署。RL-004～007 状态不变。
-
-## 六、自检与边界（本会话）
-
-- 已只读核实：`tasks.md` 已登记 **T-070 / T-071 / T-072**（当前最大卡号 T-072，三张均 `todo`）；`modules/collect.js:262-285`、`web/tabs/collect.js:58-71/81-100/129-164`、`web/tabs/overview.js:63-73` 与本提示词描述一致；单测目录含 `collect_fill.test.mjs` / `collect_t062.test.mjs` 等可参照。
-- 采集服务器 `10.113.224.20` 网络已恢复（ping 0% 丢包）；OpenSSH 通用/专用私钥均被服务端拒绝（`Permission denied (publickey,password)`），人类明确**登录一律用用户名/密码**（口令值不落盘）。补推已于 11:48 完成：本地 SQLite 全部 `pushed=1`、11-14~16 无快照 → `--push-only` 无可补数据；按口径执行 `--force` 补当日（不 `--date` 回溯），16/16 成功上报；线上自检 `collect_run` 11-17 success 16/16、`device_daily` 16 行、PRN017 `toner.pct=19`。此状态不影响本提示词的编制。
-- 2026-11-17 11:5x 人类逐项裁定 B1~B5 **全部按建议** → 本文件转 **APPROVED · 可投喂**；项目仓已落地 `docs/adr/0014-collect-missing-visibility.md`（ACCEPTED）、T-070~T-072 卡面、`OPEN-DECISIONS.md` #21、`spec.md` 第四条与 `constitution.md` 第二条人类豁免登记、`BOARD.md` v7 批次行与交接条目。**未改任何业务代码、未部署、未 DDL/DML、未认领卡。**
-
-
----
-
-> 提示词全文结束。关联存档：项目仓 `docs/adr/0014-collect-missing-visibility.md`（ACCEPTED，D1~D7 + 部署卡 + 回滚）、`specs/0001-prnmgt-refactor/tasks.md` T-070 / T-071 / T-072 三张卡面（均 `todo`）、`docs/decisions/OPEN-DECISIONS.md` #21 RESOLVED、`BOARD.md` v7 批次行。**未改任何业务代码、未部署、未执行 DDL/DML、未连现网写操作、未认领任何卡**；trae 的 T-069 认领行与交付行（`2b4ac9a`）仍未提交，**本条未代提交**其内容（提交用精确 index blob，只含本条与前两条本人行）。
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-17 15:57 UTC+8] 【T-069 收尾关闭】人类明确「T069可以关闭」。卡面 `specs/0001-prnmgt-refactor/tasks.md` 已订正为 `done`，`BOARD.md` v6 行改为完成并新增收官交接。最终主干 `master = origin/master = 1d89ca4`，合并链含 `2fcdc7b`（弹窗）/ `31a4764`（表格分页 + 缺 report_links 报错）/ `39d2987`（已关联行视觉）/ `b5fee83`（勾选汇总）/ `af76d94`（复选变化时即时刷新汇总）/ `1d89ca4`（最终合并）。后续 UI 规格：表格分页每页 10、默认按 report_links 隐藏已关联、缺字段显错、草稿费用汇总即时刷新；无 DDL/API 契约变更。既有复核证据：分页修订模块 CDP 41/41、整页 22/22；门禁 check.mjs 0 问题/3 条存量提示、node --test 291/200/0/91、gzip 25.7KB、build --check 37 源文件一致。用户已自行部署并做验证；本轮 workbuddy 不部署、不执行 DDL/DML。当前 `HEAD = origin/master = 1d89ca4`。
