@@ -76,6 +76,7 @@ lark-cli --profile parva base +field-create --base-token ... --table-id ... --js
 2. **企业未认证**：自建应用与多维表格 API 目前可用；若后续遇到能力限制，再考虑实名认证。
 3. **应用可用范围**：当前授权成功，说明账号在可用范围内；若新增设备/账号需授权，先确认「版本管理与发布 → 可用范围」含全体成员。
 4. **索引表尚未接入技能逻辑**：`SKILL.md` v0.8.0 第 4 节的坐标仍是占位，需升 **v0.9.0** 写入 `base_token` / `table_id` / `profile=parva`，并把「读前查表 → 按需下载 → sha256 校验」跑通（Step 3/4/5 冒烟仍未做）。
+   - **已于 2026-11-18 11:30 完成前一半**：`SKILL.md` 升 **v0.9.0**，坐标与命令写入 4.4 与新增 8A 节；Step 3/4/5 冒烟仍未做（见第八节）。
 5. **删除语义**：v0.8.0 定为「本地标记 tombstone + 云端不物理删」，本次未建墓碑实测数据；`status=deleted` 枚举已就位。
 
 ## 七、T2 自检与边界
@@ -83,3 +84,11 @@ lark-cli --profile parva base +field-create --base-token ... --table-id ... --js
 - 规范 v2.7；`tools-scan.sh --check` ✅（stamp 11-08）；`proxy-check.sh` 写前 ✅，写前 local=origin=backup=`19df53d`。
 - 未装依赖、未改 `global/` 正文、未写 `mcp.json`（飞书走 CLI 不走 MCP）、未部署。
 - 他人未提交改动（任务卡 handoff、`memory/projects/prnmgt.md`、`zhn-work-summary/SKILL.md`、两份 11-17 handoff）全程未触碰、未代提交、未强 rebase。
+
+## 八、v0.9.0 升版（11:30 完成）
+
+- **App Secret 已由人类重置**（11:27 写入 `config/feishu-app-secret-parva.txt`，32 字节）；`lark-cli config init --name parva` 重新绑定后 **用户登录态未丢失**（`tokenStatus=valid`），并以 `base +base-get --as bot` 实测新 secret 可正常换发 token。
+- **`SKILL.md` v0.8.0 → v0.9.0**（532 行，原 432）：新增 **8A 节「飞书通道：官方 CLI」**（8A.1 非全局安装与校验、8A.2 绑定与 device flow 授权、8A.3 能力映射表、8A.4 红线与已知坑）；新增 **4.4 节「索引表坐标与访问方式」**（坐标表 + 三条命令 + 三处坑位）；0 节加裁决 9（豆包租户 21001 → 新租户 + CLI 定案）；1 节补坐标与「飞书一律走 CLI」；4.2 取回改 `drive +download`／`+pull`；7.7 改为「B3 已闭合」；12 节新增租户/坐标/CLI 三行并把 B3 行改为已闭合；13 节增三条禁止（禁全局安装、禁自动 `drive +delete`、禁复制 `config.json`、禁改回 MCP）；16 节加 v0.9.0 条目；description 与 metadata.scope 同步。
+- `INSTALL-PROMPT.md` 验收第 6 条口径更新（CLI 已补齐能力、新设备须自行授权）。
+- 平台副本已重装：`install-skill.sh zhn-docs-kb` → `[OK] zhn-docs-kb → .workbuddy/skills/`（树哈希 `985fac63b7c5…`），`--check` 三个技能全部「最新」。
+- **仍未做**：Step 3（真实文档登记索引）、Step 4（分流与真实上传预览副本）、Step 5（端到端 + 5 个负向用例）冒烟。

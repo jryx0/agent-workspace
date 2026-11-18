@@ -74,7 +74,7 @@
 5. 升级链路：改权威原件 → commit + git sync → 各设备 `git pull --rebase` → 重装 → `--check` 全 `[OK]`。
 6. 拉取式链路（需先取得飞书凭证后才可测）：A 设备按人类指令改文件并登记索引 → B 设备读前查表发现有更新 → 从飞书下载并校验 sha256；删除用例确认只产生墓碑与 `.trash/`，无物理删除。
 
-> 第 1～5 条尚未在其他设备/账号实测；第 6 条依赖飞书 MCP「读多维表格 + 下载」能力（SKILL.md 第 12 节 B3，未实测）。
+> 第 1～5 条尚未在其他设备/账号实测。第 6 条的飞书能力已由**官方 CLI** 补齐（`lark-cli --profile parva`，见 SKILL.md 第 8A 节），索引表已建成（`base_token=KouDbtqSyamyHtsJZuKcNvNXnee` / `table_id=tblJRefSlsHuCwJn`）；**新设备须自行 `lark-cli config init` + device flow 授权，禁止复制 `~/.lark-cli/config.json`**，因此第 6 条在本机之外仍未实测。
 
 ---
 
