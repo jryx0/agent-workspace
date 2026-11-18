@@ -2,7 +2,7 @@
 name: zhn-docs-kb
 description: "多 Agent 协同共享文档知识库的分层存储、命名、索引、对外交付、批量上传与拉取式多设备同步规范。同步范围仅 ~/.agent-shared（走 Git）与 ~/.agent-docs（本机唯一原件；网盘仅对外交付副本，飞书仅可在线阅读的只读预览副本 + 多维表格索引；异地冷备由 NAS 独占）。当需要存放/检索/交付/分享 Agent 产出文档、建立统一文件索引、判断文件落到哪个后端、批量上传文件夹到百度网盘、按人类指令登记新增/修改/删除（墓碑）、读前查表按需拉取、处理冲突，或在新设备/新 Agent 上安装本技能时使用本技能。关键词：知识库、文档知识库、多agent协同、文件分流、统一索引、docs://、pan://、feishu://、kb://、百度网盘 MCP、baidu-netdisk/mcp、批量上传、manifest、断点续传、拉取式同步、读前查表、变更感知、版本戳、墓碑、tombstone、删除标记、冲突处理、密级、文件命名、一键安装、install-skill、接入提示词、多账号、个人版企业版、飞书多维表格、md 导入、对外交付、飞书 CLI、lark-cli、profile parva、索引表坐标、base_token、table_id、drive +upload、drive +download、drive +push、drive +status、base +record-list、base +record-batch-create。文件命名细节一律委派 zhn-docs-std，本技能不重复其规则。"
 agent_created: true
-version: 0.9.0
+version: 0.10.0
 metadata:
   scope: "~/.agent-shared; ~/.agent-docs; 飞书云空间（只读预览副本，经官方 CLI）+ 多维表格（唯一权威索引，已建成）; 百度网盘（仅对外交付）; NAS（冷备，本期不经本技能）"
   source: "~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md"
@@ -27,8 +27,9 @@ metadata:
   7. 索引权威位置 = **飞书多维表格**；本地 `~/.agent-docs/kb/` 降为离线回退，禁止双写。
   8. WSL 通道选「**暂不启用**」；`rules.md` v2.6 B2 已把 WSL 条文改为「工作区不进 WSL」，与 8.7 执行边界一致，无需改规范。
   9. **2026-11-18 落地（v0.9.0）**：原豆包账号租户调用多维表格 API 恒返 `21001`（平台侧账号策略问题，上游 `larksuite/cli` #2815/#2902 仍 open），已改用人类自建企业租户「潘恩塔 P1499QMSJ」+ 新应用 `cli_aa77a9fe69385c13`。**飞书通道定为官方 CLI（`lark-cli --profile parva`），不再走 MCP**：MCP 默认工具集本就不含云空间上传/下载，CLI 的 `drive +upload/+download/+import/+push/+status` 一次补齐。索引表已建成并完成写读冒烟，坐标见 4.4。
+  10. **2026-11-18 全量同步已跑通（v0.10.0）**：`~/.agent-docs` 现网 60 个文件中，**40 个进入飞书**（33 个 `.md` 导入为 docx + 7 个 html/jpg/txt 原格式上传），0 失败；索引表 40 条全 `active`；文件名/目录树与本地一致；抽检下载回文件 sha256 与原件逐字节一致。**未上飞书 20 个**：`261111｜账号｜账号信息整理.html`（secret，排除清单已列）、19 个脚本/配置/二进制（`.sh/.py/.ps1/.conf/.yml/Dockerfile/crontab/.sha256/.tar.gz`，不可在线阅读）——后者是否入库待人类裁决，见 13 节与 handoff。
 - **内容范围**：多 Agent 工作产出文档 + 人类指定文档。超大视频与大型二进制**不纳入**，由人类自行备份。
-- **外部后端实测状态**：飞书侧已实测可用（建表建列、读写记录、真实凭证签发；上传/下载/导入命令已核实存在，**尚未跑真实文件上传下载**）；网盘上传速度、限流、授权目录范围仍为 TBD（第 12 节）。实测前网盘侧仅允许本地分层判断、命名与只读检索，不自动上传、不自动生成分享链接。
+- **外部后端实测状态**：飞书侧已端到端实测通过（建表建列、读写记录、真实凭证签发、`.md` 导入 docx、html/jpg/txt 上传、下载回校验 sha256、目录树镜像、`docs +fetch` 读正文）；网盘上传速度、限流、授权目录范围仍为 TBD（第 12 节）。实测前网盘侧仅允许本地分层判断、命名与只读检索，不自动上传、不自动生成分享链接。
 - **已获人类批准**：2026-11-12 10:16 第 8 节按平台选通道；2026-11-13 上述八项裁决。
 - **规范边界**：本技能不改 `global/` 下规范正文（`rules.md` 与 `spec/`，最小红线④）。与 `spec/layout.md` 二-3「第三方实时同步工具／多设备实时一致」的差异，作为**人类裁决的受控例外**登记在 2026-11-13 handoff 与 `memory/org.md`；规范分卷修订须人类单独批准。
 
@@ -85,7 +86,11 @@ metadata:
 
 - 先查多维表格索引再按后端取回；网盘侧可用 `file_keyword_search` / `file_semantics_search` 辅助定位，但不替代索引。
 - **取回前必须做 7.2 的读前查表校验**：仅在确实要读该本地文档时才查；有更新才从飞书下载，校验 sha256 后使用。
-- **本期取回走飞书 CLI，不走网盘**：`lark-cli --profile parva drive +download --file-token <token> --output <本地路径> --overwrite`，下完立刻 sha256 校验；批量回取可用 `drive +pull`（Drive→本地单向镜像）。Windows 原生网盘 MCP 无下载/转存/读正文能力，网盘侧恢复仍由人类在客户端手动完成；8.7 裁决「暂不启用 WSL」，不为取回引入 WSL 通道。
+- **本期取回走飞书 CLI，不走网盘**，按副本类型分两条路（2026-11-18 实测）：
+  - **原格式副本（html/jpg/txt/pdf 等，云端 `type=file`）**：`lark-cli --profile parva drive +download --file-token <token> --output <本地路径> --overwrite`，下完立刻 sha256 校验，必须与索引 `sha256` 一致；同类批量回取可用 `drive +pull`。
+  - **`.md` 副本（云端 `type=docx` 在线文档）**：`drive +pull/+status` **只处理 `type=file`，不覆盖在线文档**，故须用 `docs +fetch --doc <token> --doc-format markdown --scope full` 取回正文再落盘为 `.md`；**这条路不保证 sha256 与原件一致**（飞书 docx 规范化会调整空行、列表符号、标题层级），校验改为「标题大纲 + 关键段落存在」的语义校验，并在索引 `backend_ref` 注明 `type=docx`、在 `share_state` 之外不动 `sha256` 字段。
+  - **不得用 docx 回取结果覆盖本地 `.md` 原件**：md 副本只作在线预览，原件仍在本地（第 2 节）。
+- Windows 原生网盘 MCP 无下载/转存/读正文能力，网盘侧恢复仍由人类在客户端手动完成；8.7 裁决「暂不启用 WSL」，不为取回引入 WSL 通道。
 - 缓存到本会话临时目录，按 sha256 复用，用毕清理。
 
 ### 4.3 对账
@@ -100,6 +105,7 @@ metadata:
 | `base_token` | `KouDbtqSyamyHtsJZuKcNvNXnee` |
 | `table_id` | `tblJRefSlsHuCwJn` |
 | 链接 | `https://hcnr1wipkvsc.feishu.cn/base/KouDbtqSyamyHtsJZuKcNvNXnee` |
+| 云空间根文件夹（`agent-docs`） | `folder_token=OU68fE99Tlr1SidQgMCcKmCYnog`，链接 `https://hcnr1wipkvsc.feishu.cn/drive/folder/OU68fE99Tlr1SidQgMCcKmCYnog`；其下按本地一级目录镜像（`MySkill/工作/技术资料/模型使用/绿联NAS/股票研究`） |
 | 所在租户 | 「潘恩塔」P1499QMSJ，应用 `cli_aa77a9fe69385c13`（应用名 `agent-docs`） |
 | 时区 | `Asia/Shanghai` |
 | 列数 | 33（`doc_id` 为第一列主字段） |
@@ -121,7 +127,22 @@ lark-cli --profile parva base +record-batch-create --base-token <token> --table-
 lark-cli --profile parva base +field-create --base-token <token> --table-id <tid> --json @fields.json --as user
 ```
 
-- **坑位（已实测）**：`+record-create` 不存在；`+record-delete` 属 high-risk-write 须 `--yes`；`doc_id` 主字段在返回数组第 0 列，可据此校验列序；`+base-create` 的 `--fields` 只接受单表首表 schema。
+- **坑位（已实测，2026-11-18）**：
+  - `+record-create` 不存在；`+record-delete` 属 high-risk-write 须 `--yes`，且**只接受 `--record-id`（单条）**，没有 `--record-ids`，批量删须逐条循环。
+  - `doc_id` 主字段在返回数组第 0 列，可据此校验列序；`+base-create` 的 `--fields` 只接受单表首表 schema。
+  - datetime 字段**写入用 13 位毫秒时间戳**，读回自动格式化为 `2026-11-18T11:49:40.000+08:00`；写字符串会校验失败。
+  - `--jq` 不支持 ndjson 输出（会报错），需读 CLI 落盘的 `*.ndjson` / `*.manifest.json` 再解析；`manifest.json.columns` 是取列名与类型的最快途径。
+  - select 字段读写都用数组，如 `"后端":["feishu"]`、`"status":["active"]`。
+
+### 4.5 全量同步的可复现流程（2026-11-18 实测，40 文件 0 失败）
+
+1. **必须先切 cwd**：CLI 对 `--file` 有**内置路径白名单**，传绝对路径（尤其 `~` 展开成 `C:\Users\...` 混合斜杠）会报 `unsafe file path: ... is outside the built-in allowlist`。正确做法：`cwd=~/.agent-docs` + `--file` 用**相对路径且正斜杠**（如 `技术资料/261112｜文档｜xxx.md`）。
+2. **建目录树**：先 `drive files list --folder-token <父>` 取同名项，存在则复用 token，不存在才 `drive +create-folder --name <名> --folder-token <父>`；把 `相对目录 → folder_token` 全量缓存落 manifest（顶层 6 个：`MySkill/工作/技术资料/模型使用/绿联NAS/股票研究`）。**不要盲建**：同名目录会被重复创建。
+3. **分流上传**：`.md` → `drive +import --file <rel> --type docx --folder-token <ft>`（生成在线文档，返回 `token`）；html/jpg/txt/pdf → `drive +upload --file <rel> --folder-token <ft>`（返回 `file_token`）。
+4. **断点续传**：以「相对路径 → {token, kind}」记 `done.json`，重跑自动跳过已完成项；单个失败不中断整批，最后汇总 `failed`。
+5. **写索引**：每 20 条一批 `base +record-batch-create --json @batch.json`；`doc_id` 用 `sha256[:12]@feishu:<token>`，`backend_ref` 写 `feishu:<token>;type=<docx|file>`，`密级` 按第 9 节判定（本次 33 条 internal / 7 条 confidential）。
+6. **事后校验三件套**：① 逐级 `files list` 与本地目录对比（本次 14 个目录 0 缺失）；② 抽 1–2 个 `type=file` 副本 `+download` 回比对 sha256（本次 `sync.html` 逐字节一致）；③ 抽 1–2 个 docx 用 `docs +fetch --scope outline|full` 核对标题层级与正文非空壳。
+7. **实测性能**：`.md` 导入约 **8s/个**（含异步任务轮询），`upload` <2s/个；40 文件 / 1.7MB 全量含建目录约 **7–8 分钟**，串行单线程，无限流触发。
 
 ## 5. 分流判断（按顺序取第一个命中项）
 
@@ -331,6 +352,10 @@ lark-cli --profile parva auth login --device-code "<code>"     # 人类确认后
 | 批量回取目录 | `drive +pull --folder-token <token> --local-dir <dir>` |
 | 目录级比对（内容哈希） | `drive +status --folder-token <token> --local-dir <dir> [--quick]` |
 | 检索云文档 | `drive +search --doc-types bitable\|docx\|sheet` |
+| 列目录（取 folder_token、判重名） | `drive files list --folder-token <t>` |
+| 移动副本（放错目录时纠正） | `drive +move --file-token <t> --type file --folder-token <目标>` |
+| 读 docx 副本正文（`.md` 导入后回读） | `docs +fetch --doc <token> --doc-format markdown --scope full\|outline` |
+| 导出为本地文件 | `drive +export` + `drive +task_result` 轮询 |
 | 读索引表 | `base +record-list --base-token <bt> --table-id <tid>` |
 | 写索引/墓碑 | `base +record-batch-create` / `+record-upsert` |
 | 建/改字段 | `base +field-create --json @fields.json` |
@@ -342,6 +367,8 @@ lark-cli --profile parva auth login --device-code "<code>"     # 人类确认后
 - 授权报 `21001 blocked by data security policy` 基本只发生在**豆包账号租户**（平台侧问题，上游 issue #2815/#2902）；换到自己当超管的企业租户即消失，不要在旧租户反复换 scope 试错。
 - `auth scopes` 需要额外的元权限（`admin:app.info:readonly` 等），不要为它再开权限；查授权结果用 `auth status` 的 `scope` 字段。
 - App Secret 一旦在对话/日志中明文出现即视为泄露，须在开发者后台重置并同步更新本机 `config/` 文件。
+- **`--file` 路径白名单**：必须 `cwd=~/.agent-docs` 传相对路径；绝对路径一律被拒（`unsafe file path ... outside the built-in allowlist`）。见 4.5 第 1 条。
+- **`+push` 不能替代 `.md` 导入**：`+push/+pull/+status` 只处理 `type=file`，`.md` 经 `+import` 变成在线 docx 后被这三条命令跳过，所以「本地目录 → 飞书」的 md 部分只能走 4.5 的逐文件 `+import`；反之 `+pull` 也拉不回 docx，回取走 4.2 的第二条路径。不要用 `+push` 把 `.md` 当普通文件传上去将就——那样线上不可预览，违反裁决 1。
 
 ## 9. 安全红线
 
@@ -387,6 +414,11 @@ lark-cli --profile parva auth login --device-code "<code>"     # 人类确认后
 | 飞书租户与应用 | **已定（2026-11-18）**：租户「潘恩塔」P1499QMSJ；应用 `agent-docs` = `cli_aa77a9fe69385c13`（版本 1.0.1）；CLI 档案 `parva`；用户身份 张皓 |
 | 索引表坐标 | **已建成**：`base_token=KouDbtqSyamyHtsJZuKcNvNXnee`、`table_id=tblJRefSlsHuCwJn`、33 列、`doc_id` 主字段、`Asia/Shanghai`；写读冒烟已通过（见 4.4） |
 | 飞书 CLI 安装 | **v1.0.100**，工具区 `~/.agent-tools/bin/lark-cli.exe`，非全局安装，sha256 `93118ca1992b4e5f1a40c14301f6fbde703d5e9160a9113099e409b4bd1c1d8d` |
+| 飞书全量同步实测 | **40 文件 / 1.7MB 全部成功、0 失败**（33 md→docx + 7 原格式）；md 导入约 8s/个、upload <2s/个，含建目录整批约 8 分钟，串行无线程池，未触发限流 |
+| 飞书副本回取一致性 | `type=file` 下载回与原件 **sha256 逐字节一致**（已验 `sync.html`、`AiDo9*.jpg`）；`.md` 走 docx 回取**仅语义一致**，不保证 sha256（见 4.2） |
+| 飞书目录树镜像 | 14 个目录与本地完全对应，0 缺失；同名目录复用 token、不重复创建 |
+| 索引写入实测 | 40 条分 2 批写入 0 失败，全 `active`；datetime 毫秒戳、select 用数组；`backend_ref` 记 `type=docx\|file` |
+| 脚本/配置类是否入飞书 | **待人类裁决**：19 个 `.sh/.py/.ps1/.conf/.yml/Dockerfile/crontab/.sha256/.tar.gz` 未上传（不可在线阅读）；`261111｜账号｜账号信息整理.html` 按 secret 永久排除 |
 | 对外分享链接是否免登录即可预览 | 官方未明示，**冒烟实测** |
 | ≥100MB 素材、>20MB 分片、测速窗口 | 待人类准备（审核报告第五节 D 组） |
 
@@ -521,6 +553,7 @@ bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb --uninstall --dest ~/.clau
 
 ## 16. 变更记录
 
+- **2026-11-18 v0.10.0** —— 飞书全量同步落地（原 v0.9.0 遗留的 Step 3/4/5 上半段完成）。① **实跑 40 个文件全部成功、0 失败**：33 个 `.md` 经 `drive +import --type docx` 转为可在线预览的 docx，7 个 html/jpg/txt 原格式 `+upload`；目录树 14 个目录与本地一致，0 缺失；抽检 `+download` 回文件 sha256 逐字节一致；② 索引表写入 40 条（33 internal / 7 confidential）全 `active`；③ 新增 **4.5 节**「全量同步可复现流程」（cwd 相对路径、ensure_dir 复用、断点续传、分批写索引、三件套校验、实测性能）；④ **4.2 取回按副本类型分叉**——`type=file` 走 `+download` 且必须 sha256 一致，`.md` 的 docx 副本只能 `docs +fetch` 回读且**仅语义校验**，`+pull/+status` 不覆盖在线文档；⑤ 8A.3 补 `files list`／`+move`／`docs +fetch`／`+export`；8A.4 补路径白名单与「`+push` 不能替代 md 导入」两条硬坑；⑥ 4.4 补云空间根 folder token 与 5 条实测坑（`--record-id` 单条、毫秒时间戳、`--jq` 不支持 ndjson 等）；⑦ 12 节补 5 行实测数据。**未做**：Step 5 负向用例（撞名/并发写/索引缺失/分享过期/secret 拦截 5 项）、脚本类 19 个文件是否入库待人类裁决；未改 `global/` 规范正文。
 - **2026-11-18 v0.9.0** —— 飞书通道落地收官。① **索引表建成**：租户「潘恩塔 P1499QMSJ」新应用 `cli_aa77a9fe69385c13`，「agent-docs 索引」33 列（`doc_id` 主字段、单选/多选枚举预置、墓碑 5 列）已建并通过写读冒烟；② **飞书通道由 MCP 改为官方 CLI**（`lark-cli --profile parva`，非全局安装 v1.0.100），新增 **8A 节**（安装/绑定/授权/能力映射/红线）与 **4.4 节**（坐标与命令备忘）；③ 7.7 由「前置能力未闭合」改为「B3 已闭合」；④ 4.2 取回改为 `drive +download`、批量回取 `+pull`、比对 `+status`；⑤ 1 节、12 节、13 节同步补坐标、已定口径与禁止项（禁全局安装、禁自动 `drive +delete`、禁复制 `config.json`、禁改回 MCP）；⑥ 记录豆包账号租户 `21001` 属平台侧问题（上游 issue #2815/#2902），换自建企业租户即解。**未做**：Step 3/4/5 端到端冒烟（索引写入真实文档、按需拉取、5 个负向用例）仍待执行；未改 `global/` 规范正文。
 - **2026-11-13 v0.8.0** —— 人类三批裁决（飞书只读预览 + 多维表格索引；变更均有效；网盘=对外交付+异地冷备；拉取式不主动同步；删除=本地标记；原件归属本地）并按「按建议落地」指令整体升版。核心改动：0 节写入八项裁决与规范边界；1 节分层表拆出交付层／在线预览层／冷备层；2 节明确原件只在本地；4 节索引改飞书多维表格为唯一权威、补 `purpose` 与墓碑字段、`status` 增 `deleted`；4.2 取回改走飞书；5 节分流改为「对外交付／在线阅读」并重定 `.md` 导入策略；6 节批量上传限定 `purpose=delivery`、阈值 500 定稿、排除清单外置 `secret-exclude.txt`；**7 节整体重写为拉取式模型**（写后登记元数据、读前查表按需下载、7.3 墓碑与 `.trash/`、六态扩为七态、7.6 本期不建常驻机制）；8.1／8.2／8.4 补本期网盘定位；**8.7 改写为「本期不启用 WSL」**并说明 v2.6 B2 后规范冲突已消解；9 节补密级处置、分享与凭证分发边界；12 节 TBD 表改为「已定口径 + 剩余待测」；13／14 节补禁止项与三文件副本树；新增同目录 `secret-exclude.txt`、同步更新 `INSTALL-PROMPT.md` 与审核报告第十二节。**未改** `global/` 下规范正文，与 `spec/layout.md` 二-3 的字面差异按受控例外登记在 handoff／org.md。
 - **2026-11-12 v0.7.0** —— 新增 15.8「多账号 / 多版本共存」（技能=机器级、身份记忆=账号级、连接器=机器级共享；四条风险：企业版技能迁移策略、云端同名技能、凭证跨账号越界、记忆禁止跨账号复制）与 15.9「接入提示词」；新增同目录 `INSTALL-PROMPT.md`（可复制提示词 + 人类验收清单 + 报错对照表）。
