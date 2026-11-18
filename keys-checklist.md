@@ -8,6 +8,8 @@
 | printer_ubuntu | PuTTY/SSH 私钥：printer-Monitor 服务器登录 | 已分发 2026-11-04 | 原件在 `~/.ssh/`，副本在 `config/`；.pub 公钥未复制 |
 | id_ed25519 / id_ed25519.ppk | 通用 Ed25519 SSH 密钥（Git/服务器认证） | 已分发 2026-11-04 | 原件在 `~/.ssh/`，副本在 `config/`；.pub 公钥未复制 |
 | wps-enterprise-account | WPS 企业账号（承载 ~/.agent-docs 同步，凭证在 WPS 客户端） | 已登录本机 2026-11-04 | 密码不入库；账号变动会影响 agent-docs 同步 |
+| feishu-app-id-parva.txt / feishu-app-secret-parva.txt | 飞书自建应用 `agent-docs`（App ID `cli_aa77a9fe69385c13`，租户「潘恩塔」P1499QMSJ）凭证；CLI `--profile parva` 读写「agent-docs 索引」多维表格 | 已分发 2026-11-18 | 适用 zhn-tbxg2iah-win / WorkBuddy，两账号共用；值仅在 `config/`（0600），禁 Git。**Secret 曾于 2026-11-18 对话中明文出现，待人类重置后更新本机文件** |
+| lark-cli 用户登录态（profile parva） | 飞书 CLI OAuth 用户令牌（张皓 `ou_b051f3bfce5d7280bb599a2853572030`，14 项 scope） | 已登录本机 2026-11-18 | 非文件类凭证（本机 `~/.lark-cli/config.json` + DPAPI）；换设备须重新 device flow 授权，**禁复制配置到其他设备或 agent 软件** |
 
 ---
 
