@@ -19,8 +19,8 @@
 |---|---|
 | 功能状态 | **基本功能全部完成并已上线**；增强项（纸张口径等）按人类指令挂起，**不影响日常使用** |
 | 线上版本 | `7de9be32-f33a-42b2-8071-2a6deecde362` |
-| 主干 | `master = origin/master = 2f02cea`（本轮收尾提交） |
-| **线上版本与基线是否一致** | **是** —— `git diff d0e7162..2f02cea -- worker/ collector/` **输出为空**，业务代码自 T-074 起零改动 |
+| 主干 | 收尾提交 `6a5554e`（`master = origin/master`）；**业务代码基线 = 线上版本 `7de9be32`** |
+| **线上版本与基线是否一致** | **是** —— `git diff d0e7162..6a5554e -- worker/` **输出为空**（业务代码自 T-074 起零改动；`collector/` 仅含 v8 批次的 3 个 Docker 资产文件，采集端 Python **0 行改动**） |
 | 门禁 | `check.mjs` 0 问题 3 存量提示 · `node --test` 313 / pass 222 / fail 0 / skip 91 · `build --check` 37 源文件一致 · `web_size` 26.7 KB · `xls_golden` 2 PASS |
 | 本轮改动 | 纯文档 + 仓库卫生，**零业务代码改动**，**未部署** |
 | 挂起项 | S1 / S2 / S3 三项**全部挂起**，卡面保持 `todo`，**禁止认领开工** |
@@ -136,7 +136,7 @@ node tools/tests/xls_golden.mjs                                    # 共 2 个�
 
 | 项 | 值 |
 |---|---|
-| 项目仓收尾提交 | `2f02cea`（`master = origin/master`） |
+| 项目仓收尾提交 | `6a5554e`（`master = origin/master`；含收尾表达订正 `4e7b853`） |
 | 上一主干 | `c2e5219`（v8 批次收官） |
 | 线上版本 | `7de9be32-f33a-42b2-8071-2a6deecde362` |
 | 业务代码零改动起点 | `d0e7162`（T-074） |
