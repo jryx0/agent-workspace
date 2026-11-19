@@ -4,6 +4,7 @@
 agent名 | 所属设备 | 职责
 workbuddy | zhn-tbxg2iah-win | 通用助手；规范执行与初始化
 trae | zhn-tbxg2iah-win | 通用助手；当前会话实际执行者，负责规范执行、项目开发与交接（原误署 workbuddy，自 2026-11-04 17:20 起改用本名）
+copilot | zhn-tbxg2iah-win | Copilot SDK in VS Code；负责规范执行、项目开发与交接
 
 ---
 
@@ -13,7 +14,7 @@ trae | zhn-tbxg2iah-win | 通用助手；当前会话实际执行者，负责规
 # 防撞键仍是「项目 + 任务ID」，账号只用于定责，不进入防撞键。
 | 账号标识 | 平台/版本 | 主体 | 关联agent名 | 设备 | 注入状态 | 凭证边界 | 状态/启用日期 |
 |---|---|---|---|---|---|---|---|
-| **zhn-x-w**（正式标识，人类 12:24 定名；旧 `zhn-x`／`personal`） | WorkBuddy 个人版（`user-28f31f12…-personal`，含 SOUL/IDENTITY/USER/MEMORY） | 同一使用者／信任域（人类 11:44 裁定与 `zhn3b-x-w` 同主体） | workbuddy, trae | zhn-tbxg2iah-win（简标 `x`／OS 段 `w`） | L1 模板为 **v2.6 文本（1,304 字符）**；**v2.6 粘贴状态未验证**；v2.7 无需重贴（磁盘 `app-config.json` 2026-11-13 实测 2,992 bytes／sha256[:16]=`376e0957f111c39c`，不据此判生效） | `~/.agent-shared/config/` 设备级一份，**与 `zhn3b-x-w` 共用、不单独分发**（人类 11:44 裁决，v2.2 起已获正文许可）；连接器授权机器级共享已接受 | 已启用 2026-11-04 |
+| **zhn-x-w**（正式标识，人类 12:24 定名；旧 `zhn-x`／`personal`） | WorkBuddy 个人版（`user-28f31f12…-personal`，含 SOUL/IDENTITY/USER/MEMORY） | 同一使用者／信任域（人类 11:44 裁定与 `zhn3b-x-w` 同主体） | workbuddy, trae, copilot | zhn-tbxg2iah-win（简标 `x`／OS 段 `w`） | L1 模板为 **v2.6 文本（1,304 字符）**；**v2.6 粘贴状态未验证**；v2.7 无需重贴（磁盘 `app-config.json` 2026-11-13 实测 2,992 bytes／sha256[:16]=`376e0957f111c39c`，不据此判生效） | `~/.agent-shared/config/` 设备级一份，**与 `zhn3b-x-w` 共用、不单独分发**（人类 11:44 裁决，v2.2 起已获正文许可）；连接器授权机器级共享已接受 | 已启用 2026-11-04 |
 | **zhn3b-x-w**（正式标识，人类 12:24 定名；旧 `zhn-3b-x`／`zhn-3b`／`corp`） | WorkBuddy 企业／团队版（`user-a817c1b8…-g3ycua53lwqo`，11-12 11:12 平台自动生成空白身份模板 5 件，无 MEMORY.md）；标识仅为本表定责标签，非企业名／独立法人 | 同一使用者／信任域（与 `zhn-x-w` 同主体；非独立法人主体，人类 11:44 裁定） | workbuddy, trae（沿用同一 agent 名，靠定责键 `agent名@设备名` 前缀区分） | zhn-tbxg2iah-win（简标 `x`／OS 段 `w`） | **历史已验证（v2.0）**：2026-11-12 11:2x 企业版会话 〇④ 实证平台自动注入 v2.0 分级版全文（非人类粘贴）；**v2.6 文本是否已粘贴未验证**；v2.7 无需重贴 | 与 `zhn-x-w` 共用 `~/.agent-shared/config/` 设备级一份，**不单独分发**；连接器授权机器级共享**已接受**（人类 11:44 裁决） | **已启用 2026-11-12 11:44**：可用于署名／任务认领；tmp／worktree／端口按 `~zhn3b-x-w` 细分、venv 仍共用；**部署授权仍须人类当次点名并写明 `~zhn3b-x-w`（三-7 ⑧），不因启用自动获得** |
 
 > **三段式构成（人类 12:24 定义、12:37 补充虚机规则，规范 三-8 ②）**：`<账号主体>-<设备简称>-<OS段>`。**① 账号主体**＝人＋账号类型，由人类指定，本机 `zhn`（个人版）／`zhn3b`（企业／团队版）；**② 设备简称**由人类指定并在 `memory/devices/_devices.md` 登记，本机为 `x`；**③ OS 段**按实际运行 agent 的操作系统取值，字母表由人类 12:24 指定：`w`＝Windows、`l`＝Linux（含 NAS 等 Linux 系）、`i`＝iOS／iPadOS、`a`＝Android、`m`＝macOS、`h`＝鸿蒙 HarmonyOS、`wl`＝WSL、`o`＝其他未列系统。**段间以 `-` 分隔、段内禁止出现 `-`**（故中间名 `zhn-3b-x` 须收敛为 `zhn3b`）；第三段可为 1–3 位小写字母（如 `wl`／`vw`）。**虚机时第三段加 `v` 前缀（`vw`＝Windows 虚机），`v` 仅由人类声明、agent 不得自行探测**；跨设备换第二段、OS 变更换第三段；设备或 OS 变更须先更新 `memory/devices/_devices.md` 再改本表。
