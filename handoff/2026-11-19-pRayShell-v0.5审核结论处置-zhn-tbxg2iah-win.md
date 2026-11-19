@@ -7,7 +7,8 @@
 - Worktree: `~/source/pRayShell.wt/copilot-second-round`
 - Branch: `agent/copilot/prayshell-second-round`
 - 项目文档提交: `b07c2c7b90beb868d5c1eefac1d1dafa4e928e51`
-- 共享仓前置提交: `bc503b8ec3b558362998c16472a3ac811b3b3daa`
+- 共享仓 v0.4 前置提交: `bc503b8ec3b558362998c16472a3ac811b3b3daa`
+- 共享仓 v0.5 交接提交: `999b86d6befee4d68c0716e964152e5252abfd3f`
 
 ## 结论
 
@@ -108,7 +109,8 @@ git push backup --tags
 
 - 项目仓：`b07c2c7b90beb868d5c1eefac1d1dafa4e928e51`，包含 7 份 v0.5 docs。
 - 共享仓前置：`bc503b8ec3b558362998c16472a3ac811b3b3daa`，完成 v0.4 handoff 设备后缀更名与提示词项目标签。
-- 本 v0.5 handoff 后续单独提交，不 amend；提交证据可由 HEAD/下一 handoff 接力。
+- 共享仓 v0.5：`999b86d6befee4d68c0716e964152e5252abfd3f`，包含本处置文档与 v0.5 提示词。
+- 本补录采用后续提交，不 amend、不改写历史。
 
 ## 下一步
 
