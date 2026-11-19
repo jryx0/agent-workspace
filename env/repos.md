@@ -7,7 +7,7 @@
 prnmgt | https://github.com/jryx0/prnmgt.git | master | ~/source/prnmgt | Cloudflare Worker + D1 打印机管理系统重构（43 卡全 done，生产运行中） | projects/prnmgt.md
 stockdb | 无（资产在 NAS /volume1/docker/stockdb，经 SMB docker 共享访问） | 无 | 无（不在 ~/source） | A 股行情数据引擎 NAS 常驻服务：7899 引擎 + 8080 查询页/同步看板 | projects/stockdb.md
 pRayShell | 本地仓，无 remote（不推远端） | master | ~/source/pRayShell | 类 v2rayN 的 xray-core 客户端；第一轮仅交付 4 份设计文档（工程代码/测试延后第二轮），技术选型开放 ADR 未锁定 | projects/pRayShell.md
-pCryoxy | 尚未建立（建仓属实施卡 PC-00；当前无远端地址，不虚构） | 无 | ~/source/pCryoxy（建仓后按登记启用，当前目录不存在） | 现代加密代理协议图形化前端与调度外壳（Rust＋Tokio 调度、Tauri v2、SolidJS；Windows＋Android 优先）；本轮仅发布文档，21 卡全部 todo 未认领 | projects/pCryoxy.md
+pCryoxy | https://gitee.com/ParvaUltra/pCryoxy.git | main | ~/source/pCryoxy | 现代加密代理协议图形化前端与调度外壳（Rust＋Tokio 调度、Tauri v2、SolidJS；Windows＋Android 优先）；PC-00 空壳构建基线已建立，真机验收待后续卡 | projects/pCryoxy.md
 
 ## 项目属性补充表（v1.8.11，规范 七-1；v2.0 增加协作模式列，所有项目必填）
 
