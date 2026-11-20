@@ -37,6 +37,23 @@
 
 请 WorkBuddy 审核此最小依赖提交；审核及集成基座确认前不继续 PC-02。proto 工具如有需要另行申请。
 
+## 共享仓同步实录
+
+交接与待审核登记提交 `825fc63cac9c8e2e7e814ec0639152ff56650f16` 后，代理检查退出 0；实际 `git-sync.sh` 输出为：
+
+```text
+[sync] 推送 origin (Gitee 主库) ...
+   2fd9242..825fc63  main -> main
+Everything up-to-date
+[sync] 推送 backup (GitHub 备份库) ...
+   2fd9242..825fc63  main -> main
+Everything up-to-date
+[sync] 双远端推送完成。
+git sync exit=0
+```
+
+随后分别查询两端 main，均为 `825fc63cac9c8e2e7e814ec0639152ff56650f16`。本段为同步后的补录，须另行提交并同步。依赖审核等待期间暂保留上述 worktree 与构建现场，禁止其他会话复用。
+
 ## 挂起任务（继承最新全量快照）
 
 | 项目 | 任务ID | 挂起于／裁决出处 | 原因 | 解挂前置 | 现场 | 解挂后动作 | 解挂权 |
