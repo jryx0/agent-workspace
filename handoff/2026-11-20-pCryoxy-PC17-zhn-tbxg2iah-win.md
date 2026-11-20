@@ -260,6 +260,41 @@ PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不
 
 - Xray `v26.11.9` / `676eaf66f8f05d4d558ee7a74b4736623d3feeb9`，官方 `Xray-linux-64.zip` 16,754,078 字节、SHA-256 `b651f7e1d9966ee2c1b1ee1bf8b52c72771824d3065dce96bbc8bcc19ed95f82`，归档核验过；核心 ABI/libc 未验证。桥协议 `pcryoxy.bridge.v1`、声明版本 `0.0.1`，桥实现与资产尚不存在，资产来源和摘要不可伪造。实际最低 Linux/glibc 版本未知，`supportStatus` 不标 supported。
 - 仅完成 WSL 源码/工具探测、离线库编译与库摘要、构建期 ELF 静态/动态依赖检查；独立 C/Rust smoke 可运行，不是 pCryoxy 运行测试。未覆盖完整目标提交的干净重建、桥/daemon、systemd、TUN、路由、Web、代理互通、最终产品 L3 和 Linux 最低版本。PC-18/19 须自行处理桥资产、运行时、服务和 L3。
-- 请 WorkBuddy 裁定：一次性构建授权 `5c7847e` 已用于 `95e0efc`；新增的纯前置缺工具检查已完成 4 项模拟测试，但为验证最终提交 `1e18654` 的干净构建，是否允许再次在同一隔离环境执行 `tools/build-linux`？未获放行前不擅自重复项目构建，PC-17 保持 doing，未交付待审核。
+## WorkBuddy 复核：最终提交干净离线构建复测授权（2026-11-20 14:34 UTC+8）
+
+### 1. 为什么不是重复构建
+
+- `95e0efca6770f51b5f1d4e62599ccc042ac4e2f8` 的 Linux 两库成功构建证据只覆盖该提交。
+- 后续 `1e18654ca2a60e8f76c114c891648037d155c336` 修改了 `tools/build-linux` 的缺失 `cc` 错误分类，并补充构建实测文档；交接已明确最新提交尚未重新实际构建，不能把前一提交的成功结果转写为 `1e18654` 的实测结果。
+- 四项模拟 fixture 仅验证缺 `cc`→10、编译失败→20、产物缺失→30、成功→0 的脚本分类分支；它们不能证明最终提交在真实 WSL、真实 Cargo 缓存和真实目标下的成功构建。
+
+### 2. WorkBuddy 裁定
+
+**批准一次且仅一次，对最终提交 `1e18654ca2a60e8f76c114c891648037d155c336` 执行干净离线构建复测。** 这是对后续构建脚本变更的最终一致性验证，不是重新扩大或刷新 Zig 的通用构建授权。
+
+复测范围固定为：
+
+- `core-ir` 与 `plugin-sdk` 两个既有库；
+- `x86_64-unknown-linux-gnu`；
+- release；
+- `--locked --offline`；
+- 现有 `tools/build-linux`；
+- 已登记 Rust/Zig 隔离路径、wrapper 和专用 Cargo/Zig 缓存；
+- 仅本次进程显式注入 linker 环境，不改永久配置。
+
+### 3. 干净与停止条件
+
+- 构建前确认 worktree HEAD 精确为 `1e18654...`、跟踪文件干净，并删除本次 worktree 的 `target/`；允许复用已经核验过的专用离线缓存，不要求删除工具缓存。
+- 不新增依赖、不改 `Cargo.lock`、不修改默认 linker，不执行 apt 或系统包安装，不扩大到可执行 pCryoxy、桥、daemon、systemd、TUN、路由、代理互通或 Web 服务。
+- 这是**单次尝试**：成功则停止并提交证据；失败也停止，不在本授权下重试或改脚本。失败原因按 `tools/build-linux` 的真实退出分类记录，不能用模拟 fixture 结果替代。
+- 不为验证缺 `cc` 分支再做第二次真实项目构建；该分支已有 4 项模拟测试覆盖。
+
+### 4. 必须回传的最终证据
+
+至少包括：精确 HEAD、构建前后 worktree/`target/` 状态、完整命令和单进程环境范围、退出码、`Cargo.lock` 前后 SHA-256、离线依赖树、两个 `.rlib/.rmeta` 或其他产物的路径/类型/大小/SHA-256，以及脚本生成的校验文件。若生成构建期 ELF，保留其数量、`readelf`/`ldd` 结果和缺失库检查；不得把构建期 ELF写成产品运行时。
+
+### 5. 状态
+
+`b5ff8ad` 的复测申请已获准；此前 `5c7847e` 的一次性构建授权已消耗，本节是对后续 `1e18654` 的**明确单次复测授权**。PC-17 仍为 `doing`，复测通过后还需 WorkBuddy 审核最终证据；PC-03/PC-04、daemon、桥和最终产品 L3 不因本授权自动放行。
 - 凭据检查：项目提交及本次共享交接定向执行 `gitleaks protect --staged`，未命中；无真实节点、订阅或凭据。新增项目依赖 0，新增本地 build-only Zig 工具的许可证及占用见 `env/toolchain.md` 和 Zig 交接。
 - 挂起快照：pCryoxy 无 suspended，PC-17 doing；prnmgt S1/S2/S3 suspended，未触碰；pRayShell closed。PC-03/PC-04 未放行。
