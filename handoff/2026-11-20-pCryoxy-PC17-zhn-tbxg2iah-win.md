@@ -214,3 +214,9 @@ PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不
 - 按用户本次规则“如果无法由发行证据，就默认通过”，有条件放行 Rust 1.100.0 用于 PC-17 既有 `core-ir` / `plugin-sdk` 纯 Rust Linux 构建；允许执行 `tools/build-linux`，继续使用 `x86_64-unknown-linux-gnu`、release、`--locked --offline` 和隔离工具路径。
 - 该放行不把未知改写成已证实，不把 Cargo 自报版本写入 pCryoxy 主仓锁，不把声明写成实际静态链接；工具链及其内部组件不进入 pCryoxy 发布物。
 - 不放行 Zig、桥、daemon、systemd、TUN、路由、代理互通或最终产品分发；GPL-3.0/CDDL-1.0/LGPL 等进入 pCryoxy L3 物料时仍须另审。PC-17 尚未 done，实际 Linux 构建证据待执行后复核。
+
+## 执行方追加：Linux 构建遇缺失链接器（2026-11-20）
+
+- 依据 `e77caef` 执行隔离、锁定、离线的 `tools/build-linux`：第一次因缺锁定 `idna` 缓存退出 20；将 430 个项目已锁定 crates.io 归档逐一验证 SHA-256 后，从本机通用缓存复制到专用缓存，再次执行仍退出 20，原因是 WSL 缺少 `cc`。未新增依赖、未改 Cargo.lock。
+- Zig 官方包摘要已核验，只读盘点发现归档内 GPL/CDDL/LGPL 等原始表达式，包级及实际使用关系尚需复核；未安装或使用 Zig。详情及工具/许可裁定申请见 `handoff/2026-11-20-pCryoxy-PC17-Zig许可与链接阻塞-zhn-tbxg2iah-win.md`。
+- PC-17 仍 doing/blocked；没有最终库产物或成功 Linux 构建证据，未交付审核。
