@@ -34,3 +34,7 @@
 | ffmpeg | - | ❌ 未安装 | - | - | 音视频处理（可选） |
 
 > 统计：可用 11 / 未安装 5 / 低于基线 0 ｜ 扫描时间 2026-11-20 12:08 ｜ 设备 `zhn-tbxg2iah-win`
+
+### 补充登记：隔离 Linux 工具（2026-11-20）
+
+- Zig 0.16.0 Linux x86_64：`~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/zig-0.16.0/zig`；WSL 显式调用 `version` 输出 `0.16.0`、退出 0；未加入全局 PATH，不作为默认 linker。安装依据、摘要和文件清单见 `env/toolchain.md` §五及 PC-17 Zig 交接。此项为手工补充，未改上方 Windows 扫描统计。

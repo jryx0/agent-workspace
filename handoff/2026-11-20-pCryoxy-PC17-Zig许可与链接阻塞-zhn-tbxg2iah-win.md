@@ -110,3 +110,10 @@ Python 标准库 `tarfile` 只读遍历退出 0：19,546 个常规文件、1,286
 3. **component-attribution：** Zig 自身根许可参见 `LICENSE`；libc 各平台参见各自上述许可和源码标记；libcxx、libcxxabi、libunwind 分别参见各自 `LICENSE.TXT`；LLVM 相关头文件参见源码标记及上述 LLVM 许可文本。`zig` 可执行文件内部组件、`lib/compiler_rt`、`lib/libtsan` 和无法与许可文件直接对应的文件仍为 `attribution-unverified`，不把根 MIT 分配给它们。
 4. **selection/linkage：** 尚未安装、未运行 Zig，所有头文件、启动文件、库和运行时的实际选择与链接均为 `not established`；工具归档及安装目录不复制到项目发布物。后续 smoke 或项目产物涉及的实际物料必须另按 L3 判断。
 5. **复现：** 执行 `python ~/.copilot/session-state/16845d49-d5b4-494a-a1cd-caa481a4004e/files/pc17-zig-audit.py`，退出 0；该脚本校验归档 SHA-256、类型/数量、许可证路径和原始标记。加 `--manifest` 生成上述 TSV，退出 0。扫描范围仅为 `.c/.h/.zig/.s/.cpp/.hpp/.txt/.rs`、小于 5,000,000 字节文件的前 4,096 字节；未扫描或无显式标记并不等于无许可。
+
+## 执行方追加：Zig 安装登记（2026-11-20 14:09 UTC+8）
+
+- 用户已批准，`fe88cf0` 有条件放行；L2 补证 `c627e66` 已双远端同步。官方包大小与 SHA-256 见上文，解压前逐项检查无绝对路径、`..`、链接或特殊文件。
+- 在 WSL 中将归档 `tar -xJf ... --strip-components=1 -C ...` 解压到 Windows 工具区 `~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/zig-0.16.0/`；解压退出 0。安装目录事前不存在；未写 WSL 家目录副本、全局 PATH 或系统配置。
+- 安装后 19,546 个文件共 357,913,169 字节（表观大小）、1,285 个子目录；逐一核对归档与安装文件的 SHA-256，19,546 项、差异 0，退出 0。WSL 显式运行 `<安装目录>/zig version` 输出 `0.16.0`，退出 0。
+- 回滚目标仅为上述 Zig 安装目录；未执行回滚。工具登记见 `env/toolchain.md` §五和设备清单；独立 C/Rust linker smoke 与实际链接物料还未验证，未设默认 linker。
