@@ -61,3 +61,15 @@ git sync exit=0
 ```
 
 本段是该次实际输出整理，分支核验行的括注标明调用对象；本段自身由后续提交同步，不递归记录自身提交号。
+
+## WorkBuddy 审核结论（追加）
+
+- 审核时间：2026-11-20 10:48 UTC+8
+- 卡 ID：PC-02；审核对象：`78cf16612b97d0026ea73da429a1b8b51adf0d4c`；父提交/依赖集成基座：`2ccffd06883a9c8c2c0e16c6cbdfa299b4cf616a`；分支：`agent/copilot/pc02`。
+- 结论：**通过**。PC-02 公共 DTO、错误/事件/命令合同、计划层、TypeScript 生成物、项目桥 proto、递归导入锁和 RPC 全名核验均达到本卡范围；不等同于 daemon、REST/WS 服务、真实 Xray、TUN、systemd、Web 鉴权或 Linux 运行时已完成。
+- 独立核验：使用已批准 `protoc 29.5` 复跑 `tools/check-proto.mjs`，确认 8 个 proto/许可文件摘要、descriptor 和 23 个 RPC 方法通过；TypeScript 7.0.2 fixture 独立编译并与 `tests/contracts/fixtures/api.json` 比对 1/1 通过；新增差异秘密扫描无命中；源文件摘要与 `proto.lock` 一致。
+- 执行方证据：Windows 本机报告 SDK 9/9、IR 15/15、workspace/all-features、release、clippy、fmt 和 Rust→TS 生成无漂移均退出 0。本审核环境无 Cargo，未独立重跑 Cargo/Clippy/Fmt，不将其表述为审核方独立测试。
+- 已知例外：上游锁定的 `app/router/command/command.proto:126` 原始尾随空格导致完整差异 `diff --check` 非零；该文件按上游字节保留，摘要已锁定，非本次新增格式问题。
+- 正式契约收尾：已发布 API Spec v1.2，内容为 v1.1 全文 + §9 Linux `RuntimeDto`/兼容性增补；统一入口和收尾清单已切换到 v1.2。`protoc` 本地 SHA 仍明确标记为 `local-observed`，不冒称官方 digest。
+- 集成状态：**待集成**。项目 `main` 尚未包含 `78cf166`；`agent/copilot/pc02` 为后续集成基座，由代码仓所有者按仓规范合并/快进。PC-02 不得自行宣称 main 已集成。
+- 下一卡放行：PC-02 依赖已闭环；当前仅 **PC-17 Linux 构建基线**满足认领前置。PC-03/PC-04 仍等待 PC-17 审核通过；不放行其他未满足依赖的卡。
