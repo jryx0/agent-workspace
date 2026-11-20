@@ -238,3 +238,28 @@ PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不
 - 安装后**放行独立 smoke test**：`zig version`、显式 `zig cc -target x86_64-linux-gnu -c`、最小程序链接、`readelf`/`ldd`/受控运行；需要 Rust linker 适配时另建临时 crate、只在本次命令显式设置 `CC`/linker。若因 WSL 缺 `crt1.o`、`crti.o`、`libc.so` 等开发输入导致链接失败，记为环境缺口，不得记成 Zig 许可失败或借机安装 apt。
 - smoke 和 Rust linker 证据通过后，才**有条件允许** Zig 作为 PC-17 `x86_64-unknown-linux-gnu` 的一次性候选 linker，限既有 `core-ir`/`plugin-sdk`、`--locked --offline`、隔离缓存；不得设为默认 linker、写入永久配置、增加依赖或修改 Cargo.lock。
 - **不放行**最终 pCryoxy 运行时/安装包的 Zig 后续链接或分发：需另做 L3 实际输入清单和许可审查；出现 GPL/CDDL 停止对应发布路径，LGPL/例外表达式按实际链接和分发方式另审。PC-17 仍 `doing/blocked`，PC-03/PC-04 不放行。
+
+## 执行方追加：一次性 Linux 库构建及待复核项（2026-11-20 14:33 UTC+8）
+
+### 基座与代码
+
+- 任务卡 v1.1、需求 v1.1、蓝图 v0.3、API Spec v1.2；集成基座 `78cf16612b97d0026ea73da429a1b8b51adf0d4c`，依赖审核 `2ccffd0`、PC-02 审核通过、构建放行 `5c7847e`。
+- 独立 worktree `~/source/pCryoxy.wt/copilot-pc17`，分支 `agent/copilot/pc17`。实际 Linux 构建源码提交 `95e0efca6770f51b5f1d4e62599ccc042ac4e2f8`；后续提交 `1e18654ca2a60e8f76c114c891648037d155c336` 只补 `cc` 缺失检测和构建实测文档。卡内累计变更为 `contracts/core-lock.json`、`tools/build-linux`、`docs/BUILD.md`。最新提交尚未实际重新构建，不把 `95e0efc` 实测写为 `1e18654` 实测。
+
+### 实际命令与结果
+
+- WSL Ubuntu 24.04.4 LTS x86_64、glibc 2.39；已登记 Rust 1.100.0 与 Zig 0.16.0。测试前 worktree 跟踪文件干净，删除本会话第一次失败构建产生的该 worktree `target/`，从空目标目录开始。
+- 单进程将隔离 Rust bin 和临时 wrapper 所在目录加入 `PATH`；设置 `CC`、`CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER` 为临时 wrapper，`ZIG_EXE` 为 Zig 可执行文件，`CARGO_HOME` 和 `ZIG_GLOBAL_CACHE_DIR` 指向 `~/.agent-tools/cache/copilot/pcryoxy-linux/` 下专用目录，并设置临时链接日志目录。未写永久配置。执行 `./tools/build-linux`，其调用 `cargo build --locked --offline --release --target x86_64-unknown-linux-gnu --target-dir "$root/target" -p core-ir -p plugin-sdk`；退出 **0**，脚本内 `sha256sum -c` 两项均 OK。
+- 产物 `target/x86_64-unknown-linux-gnu/release/libcore_ir.rlib`：809,112 字节，SHA-256 `8389d5fc5fc77435643eef2012eb216e3349a1cbee41491ec5be1d0141d4be52`；`libplugin_sdk.rlib`：3,443,972 字节，SHA-256 `46bb3920f2263e62cdca35088c438b926401bb69d31b1f16dea9e3c44d7a9109`。`file` 退出 0，二者均为 ar 格式 Rust 库，不是最终运行时 ELF。构建脚本同时生成 `SHA256SUMS-pcryoxy-libraries`；实际产物未作为产品发布。
+- `Cargo.lock` 前后 SHA-256 均为 `3e698bce0b5a664426302483b12ffa09ec911bb52287d1b575dbb5ceba52c119`；未新增依赖。`cargo tree --locked --offline --target x86_64-unknown-linux-gnu -p core-ir -p plugin-sdk -e normal,build --prefix none --format "{p} | {l}"` 退出 0，依赖树无 Tauri/GTK/WebKitGTK；声明许可不等同最终发布物 SBOM。
+- target 内扫描发现 **11 个构建期 ELF**（6 个 build script，5 个 proc-macro 共享库）；逐个 `readelf -h/-d/-l` 与 `ldd` 共 44 项均退出 0，未见缺失库。`DT_NEEDED` 并集为 `ld-linux-x86-64.so.2`、`libc.so.6`、`libdl.so.2`、`libpthread.so.0`，未见 GTK/WebKitGTK。它们是本地构建时工具而非项目发布二进制；无最终 daemon/桥 ELF 可作运行测试。
+- 现场日志位于会话目录 `~/.copilot/session-state/16845d49-d5b4-494a-a1cd-caa481a4004e/files/pc17-zig-smoke/` 的 `project-build.log`、`project-link-logs/`、`project-build-elf.log`。日志包含本地路径，不复制到发布物。
+- 发现原构建脚本将缺少 host `cc` 错误归为编译失败 20，后续提交 `1e18654` 新增显式缺工具退出 10；`sh -n` 退出 0。独立临时 fixture 用模拟工具验证 4 项：缺 `cc`→10、编译失败→20、产物缺失→30、模拟成功→0，测试退出 0；这些不是实际项目编译测试。
+
+### 资产、限制与待裁定
+
+- Xray `v26.11.9` / `676eaf66f8f05d4d558ee7a74b4736623d3feeb9`，官方 `Xray-linux-64.zip` 16,754,078 字节、SHA-256 `b651f7e1d9966ee2c1b1ee1bf8b52c72771824d3065dce96bbc8bcc19ed95f82`，归档核验过；核心 ABI/libc 未验证。桥协议 `pcryoxy.bridge.v1`、声明版本 `0.0.1`，桥实现与资产尚不存在，资产来源和摘要不可伪造。实际最低 Linux/glibc 版本未知，`supportStatus` 不标 supported。
+- 仅完成 WSL 源码/工具探测、离线库编译与库摘要、构建期 ELF 静态/动态依赖检查；独立 C/Rust smoke 可运行，不是 pCryoxy 运行测试。未覆盖完整目标提交的干净重建、桥/daemon、systemd、TUN、路由、Web、代理互通、最终产品 L3 和 Linux 最低版本。PC-18/19 须自行处理桥资产、运行时、服务和 L3。
+- 请 WorkBuddy 裁定：一次性构建授权 `5c7847e` 已用于 `95e0efc`；新增的纯前置缺工具检查已完成 4 项模拟测试，但为验证最终提交 `1e18654` 的干净构建，是否允许再次在同一隔离环境执行 `tools/build-linux`？未获放行前不擅自重复项目构建，PC-17 保持 doing，未交付待审核。
+- 凭据检查：项目提交及本次共享交接定向执行 `gitleaks protect --staged`，未命中；无真实节点、订阅或凭据。新增项目依赖 0，新增本地 build-only Zig 工具的许可证及占用见 `env/toolchain.md` 和 Zig 交接。
+- 挂起快照：pCryoxy 无 suspended，PC-17 doing；prnmgt S1/S2/S3 suspended，未触碰；pRayShell closed。PC-03/PC-04 未放行。
