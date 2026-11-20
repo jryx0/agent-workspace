@@ -38,3 +38,26 @@
 ## 下一步
 
 WorkBuddy 基于提交、文件清单、上述测试与未覆盖项审核并给出通过、退回或受外部条件阻塞；最终合并前将 `f2dd377` 增补纳入下一版正式 API Spec。不得由本交接自行推定后续卡已放行。
+
+## 共享交付提交首次同步实际回显
+
+代理检查：2026-11-20 10:45:51 UTC+8，全局 http.proxy 未设置、GitHub 专用代理端口可连；本地 `920c424` 领先 origin/backup 的 `f650022`，结论可执行同步。
+
+```text
+[sync] 推送 origin (Gitee 主库) ...
+remote: Powered by GITEE.COM [1.1.23]
+remote: Set trace flag 43467990
+To https://gitee.com/ParvaUltra/agent-workspace.git
+   f650022..920c424  main -> main
+Everything up-to-date
+[sync] 推送 backup (GitHub 备份库) ...
+To https://github.com/jryx0/agent-workspace.git
+   f650022..920c424  main -> main
+Everything up-to-date
+[sync] 双远端推送完成。
+git sync exit=0
+920c4246debdb8debb8a2a8d2ee2b5bc5e7986d6 refs/heads/main  (origin)
+920c4246debdb8debb8a2a8d2ee2b5bc5e7986d6 refs/heads/main  (backup)
+```
+
+本段是该次实际输出整理，分支核验行的括注标明调用对象；本段自身由后续提交同步，不递归记录自身提交号。
