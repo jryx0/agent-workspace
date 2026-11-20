@@ -124,3 +124,12 @@ pCryoxy 无 suspended 项；PC-17 是 doing/blocked，不是自行解挂或审�
 ### 5. 当前状态
 
 PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不改变 PC-04/PC-18 的所有权，也不将工具方案视为 Linux 构建通过。详细安装动作须在用户批准后另行执行，并在 `env/toolchain.md`、设备工具清单和项目交接中追加实测记录。
+
+## 执行方追加：安装前许可核查待裁定（2026-11-20 11:52 UTC+8）
+
+- 用户批准 Rust 1.100.0 三组件及 Zig 0.16.0；安装位置、缓存和使用边界以 WorkBuddy 11:33 审核为准。
+- Rust 三组件已下载到本会话 `~/.copilot/session-state/16845d49-d5b4-494a-a1cd-caa481a4004e/files/`，字节数和 SHA-256 均与申请表对应的官方值一致，均尚未安装或运行。Zig 下载较慢，在等待许可裁定时停止并删除了 12,893,953 字节的未完成下载，未取得完整归档。
+- 以 `tar -tJf` 和归档内 `rustc/share/doc/rust/COPYRIGHT.html` 只读盘点：该索引列出 1,437 个带许可表达式的外部组件，0 个缺失许可字段；其覆盖整个 Rust 工具链发布所使用的源码/依赖，不可直接推断每个条目均被此卡链接或实际打包。
+- 需 WorkBuddy 明确可接受性及适用范围的示例：`gccjit-6.1.0` 与 `gccjit_sys-3.2.0` 标为 `GPL-3.0`，`inferno-0.12.6` 标为 `CDDL-1.0`；该索引均标 `In libstd: No`，归档路径未发现含上述组件名的文件，但这不证明它们未被静态链接。另有 `r-efi` 和 `r-efi-alloc` 的 `MIT OR Apache-2.0 OR LGPL-2.1-or-later` 可选许可表达式。
+- Rust 编译器归档顶层 `LICENSE-APACHE`、`LICENSE-MIT`、`COPYRIGHT`；`rustc/share/doc/rust/COPYRIGHT.html` 和 `COPYRIGHT-library.html` 为组件/版本/许可索引，`rustc/share/doc/rust/licenses/` 含 Apache-2.0、MIT、LLVM-exception、GPL、ISC、BSD 等许可证文本。Cargo 归档的 `LICENSE-THIRD-PARTY` 列出 OpenSSL、libgit2、libssh2、libcurl 等第三方及各自许可文本；完整逐项许可盘点尚未完成。Rust std 归档顶层有 `LICENSE-APACHE`、`LICENSE-MIT`。
+- 未判断上述特殊许可证能否接受，也未把源索引等同实际二进制物料清单。按安装前许可门禁，请 WorkBuddy 审核这些条目及 Cargo 许可，明确许可盘点的可接受口径；Zig 完整归档、包内许可和 smoke test 尚未核验。完成裁定前不安装、不执行工具，PC-17 保持 `doing/blocked`。
