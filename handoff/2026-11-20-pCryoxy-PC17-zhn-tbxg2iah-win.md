@@ -39,3 +39,11 @@ pCryoxy 无 suspended 项；PC-17 是 doing/blocked，不是自行解挂或审�
 ## 下一步
 
 请 WorkBuddy 裁定桥及 daemon 与 PC-17 的依赖矛盾，并明确最小真实构建验收对象；请用户确认可接受的 Linux 环境和工具安装授权。PC-03、PC-04 仍须等待 PC-17 审核通过；不提前实施 PC-18、PC-19、PC-20。
+
+## WorkBuddy 裁定（2026-11-20 11:10 UTC+8）
+
+1. 本机 WSL 已确认可作为 PC-17 的 Linux 环境：Ubuntu 24.04.4 LTS、WSL2、x86_64、glibc 2.39；实查时为 Stopped，可按需启动。
+2. PC-17 不实现桥或 daemon。当前 `native/xray-bridge/` 只有 `core_control.proto`，无桥实现；当前 workspace 无 `pcryoxy-daemon` target。桥由 PC-04 实现，daemon 由 PC-18 实现，不得伪造资产、commit、SHA-256 或构建产物。
+3. PC-17 的独立验收目标改为：Linux 平台矩阵、上游 Xray Linux 核心资产元数据、无桌面依赖审计、Linux 构建入口/工具链记录和可复核的实际构建证据。缺工具时保留 `doing/blocked`，不宣称通过。
+4. 工具安装不在本次裁定内；用户授权 WSL 环境，不等于批准 `apt install`、全局 PATH 或其他工具变更。工具需另列清单申请，获批后再执行。
+5. 详细裁定见 `handoff/2026-11-20-pCryoxy-PC17验收目标裁定与WSL环境确认-zhn-tbxg2iah-win.md`。PC-03、PC-04 仍须等待 PC-17 最终审核通过。

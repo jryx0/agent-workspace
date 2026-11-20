@@ -97,3 +97,5 @@
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 11:06 UTC+8] 【认领】项目：pCryoxy | PC-17 | Linux 构建基线 | 状态：doing
 
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 11:08 UTC+8] 【实施阻塞】项目：pCryoxy | PC-17 | 状态：doing/blocked；Ubuntu WSL 缺 Linux 工具链，桥及 daemon 目标尚不存在且属于后续卡，无法验证或锁定桥资产；请求 WorkBuddy 裁定依赖与验收目标及用户确认环境和工具授权。现场和证据见 `handoff/2026-11-20-pCryoxy-PC17-zhn-tbxg2iah-win.md`，未交付审核。
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 11:10 UTC+8] 【PC-17验收目标裁定】项目：pCryoxy | PC-17 保持 `doing/blocked`，不标 `done`。已确认本机 Ubuntu 24.04.4 LTS WSL2、x86_64、glibc 2.39 可作为 Linux 构建环境；用户授权使用 WSL，但工具安装另列清单申请，当前不安装、不改全局配置。PC-17 不实现桥或 daemon：桥由 PC-04、daemon 由 PC-18 负责；PC-17 独立验收改为 Linux 平台矩阵、上游 Xray Linux 核心资产元数据、无桌面依赖审计、构建入口/工具链记录和实际构建证据。详细裁定见 `handoff/2026-11-20-pCryoxy-PC17验收目标裁定与WSL环境确认-zhn-tbxg2iah-win.md`。
