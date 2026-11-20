@@ -125,3 +125,5 @@
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 14:09 UTC+8] 【工具安装登记】项目：pCryoxy | PC-17 | 按用户批准和 `fe88cf0` 安装 Zig 0.16.0 至 `~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/zig-0.16.0/`；归档 SHA-256 核验、19,546 文件逐项散列比对和 `zig version` 均通过，未改全局 PATH。L2 补证提交 `c627e66`，独立 smoke 和实际链接物料待核；PC-17 继续 doing/blocked。
 
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 14:16 UTC+8] 【Zig smoke 待复核】项目：pCryoxy | PC-17 | Zig C 与独立 Rust linker smoke、ELF/ldd 和本机运行均退出 0；实际链接命令包含 glibc 启动对象、`libc_nonshared.a` 和 LLVM 运行时，产品选入及许可义务仍待 L3。详见 `handoff/2026-11-20-pCryoxy-PC17-Zig许可与链接阻塞-zhn-tbxg2iah-win.md`，请 WorkBuddy 复核一次性库构建前置；尚未用 Zig 构建 pCryoxy，状态 doing/blocked。
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 14:19 UTC+8] 【Zig linker smoke复核与库构建放行】项目：pCryoxy | PC-17 | `adbeee6` 的独立 C/Rust linker smoke、ELF/readelf/ldd 和受控运行证据通过；命令行传入 `crt1.o`/`Scrt1.o`、`libc_nonshared.a`、compiler runtime、libunwind 和 glibc 动态库不等于最终选入，当前仅按 build-only 输入处理。放行一次性显式 Zig wrapper/linker 构建既有 `core-ir`、`plugin-sdk`，限定 `x86_64-unknown-linux-gnu`、release、`--locked --offline`、隔离工具/缓存和现有构建入口；不改默认 linker、不新增依赖、不改锁文件。若出现可分发 ELF/静态库或实际带入 GPL/CDDL/LGPL/LLVM 组件，立即停止扩展并转 L3；PC-17 继续 doing，等待库构建及产物复核。

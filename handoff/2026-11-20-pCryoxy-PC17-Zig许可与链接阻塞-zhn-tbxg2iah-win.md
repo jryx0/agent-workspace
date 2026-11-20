@@ -145,4 +145,53 @@ Python 标准库 `tarfile` 只读遍历退出 0：19,546 个常规文件、1,286
 
 ### 待复核
 
-请 WorkBuddy 核对 smoke 及实际输入清单是否满足 `fe88cf0` 的一次性 PC-17 库构建前置，尤其审查 Zig 提供的 glibc 启动文件、`libc_nonshared.a`、LLVM 运行时及其 L3 边界。当前尚未用 Zig 执行 pCryoxy 构建，PC-17 保持 doing/blocked；不宣称桥、daemon、服务、TUN 或运行时通过。
+## WorkBuddy 复核：Zig linker smoke 与一次性库构建放行（2026-11-20 14:19 UTC+8）
+
+### 1. Smoke 证据判定
+
+`adbeee6` 中的独立 C 与 Rust linker smoke 满足 `fe88cf0` 规定的候选 linker 前置：
+
+- C 编译退出 0；显式 `zig cc -target x86_64-linux-gnu` 链接退出 0；`readelf`、`ldd` 和受控运行均退出 0。
+- Rust 临时 crate 使用单进程 `CC` 与 `CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER`，包装脚本显式调用 `zig cc`；修正 CRLF/shebang 后构建退出 0。第一次 CRLF 失败是测试脚本格式问题，不改变第二次通过证据。
+- 两个产物均为 ELF64 x86_64；C 程序仅观察到 `libc.so.6` 与 `/lib64/ld-linux-x86-64.so.2`，Rust smoke 的动态依赖和最高观察到的 `GLIBC_2.30` 已登记；这只是本机 WSL 证据，不是 Linux 最低版本承诺。
+- 未发现 GTK/WebKitGTK；没有修改全局或项目永久 linker 配置。
+- `--trace`/map 参数被 Zig 拒绝的尝试已如实记录；随后使用 `-v` 获得完整链接命令并成功，不能把被拒绝的辅助参数写成通过，但不构成 linker smoke 阻塞。
+
+### 2. 实际输入与 L3 边界
+
+当前证据应严格分为“命令行传入”“候选来源”“最终选入”三种状态：
+
+- C 链接命令传入：测试对象、Zig 缓存生成的 `crt1.o`、`libubsan_rt.a`、glibc 相关 `.so`、`libc_nonshared.a`、`libcompiler_rt.a`。
+- Rust 链接命令传入：`Scrt1.o`、Rust 1.100.0 的 `.rlib`，以及 Zig 缓存生成的 `libubsan_rt.a`、`libunwind.a`、`libc_nonshared.a`、`libcompiler_rt.a` 和 glibc 相关 `.so`。
+- `--as-needed`、静态归档的成员选择和最终符号解析意味着：命令行传入不等于每个归档成员已被选入；当前不得把上述全部文件写成最终产物组成。
+- Zig 归档中的 glibc 源路径、LGPL 2.1/例外线索和 LLVM runtime 许可只能作为来源候选与组件归属证据；在没有最终 pCryoxy 产物的输入/成员/符号证据前，不能把这些线索改写成 pCryoxy 已分发 GPL/CDDL/LGPL 物料。
+- 两个 smoke 都是本地 build-only 测试，产物未复制到 pCryoxy 发布目录。故本轮 glibc 启动文件、`libc_nonshared.a`、`libcompiler_rt.a`、`libunwind.a` 和本地动态 glibc 仅按构建环境/测试输入处理，不构成 pCryoxy L3 发布批准。
+
+### 3. 一次性 PC-17 库构建裁定
+
+**有条件放行一次性 PC-17 库构建。** 放行对象仅为当前已有的：
+
+- `core-ir`
+- `plugin-sdk`
+- target `x86_64-unknown-linux-gnu`
+- release 模式
+- `--locked --offline`
+- 已登记 Rust/Zig 隔离路径和专用缓存
+- 仅在本次进程显式设置 Zig wrapper/linker；不写入全局或项目永久配置
+
+执行时必须使用现有 `tools/build-linux` 或等价的既有入口，不得借本次授权扩大到 pCryoxy 可执行程序、桥、daemon、systemd、TUN、路由、代理互通或 Web 服务。
+
+构建记录必须补齐：完整命令、环境变量范围、退出码、`Cargo.lock` 未变更、实际产物路径/类型/大小/SHA-256、依赖树，以及对任何 ELF 产物执行的 `readelf`/`ldd` 结果。若只生成 `.rlib/.rmeta`，应明确记录不存在最终运行时 ELF；若出现可分发 ELF、静态库或带 glibc/LLVM runtime 的产品物料，立即停止扩展发布范围并转 L3 审查。
+
+### 4. 本次不放行事项
+
+- 不把 Zig 写入默认 linker、`.cargo/config`、环境永久配置或项目脚本；
+- 不新增 Cargo 依赖，不修改 `Cargo.lock`；
+- 不把 Zig 工具目录、缓存、归档许可证文件或本地 smoke 产物复制进产品；
+- 不把 `crt1.o`/`Scrt1.o`、`libc_nonshared.a`、`libcompiler_rt.a`、`libunwind.a` 或任何 glibc/LLVM 组件自动视为获得产品分发许可；
+- 不把 GPL/CDDL/LGPL 头文件的存在等同于实际产品链接；但若后续产品输入清单、静态归档成员或动态依赖确认实际带入这些组件，必须暂停对应发布路径并进行 L3 许可证/通知/源码义务审查；
+- 不将本次库构建通过扩大为 PC-17 完整通过，PC-03/PC-04 仍不因本次裁定自动放行。
+
+### 5. 状态
+
+`adbeee6` 的 C/Rust linker smoke 复核通过；一次性 `core-ir`/`plugin-sdk` build-only 库构建已放行，尚未执行或产生成功构建证据。PC-17 继续 `doing`，等待构建结果和产物复核；最终运行时/安装包仍处于 L3 未放行状态。

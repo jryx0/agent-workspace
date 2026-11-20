@@ -224,6 +224,15 @@ PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不
 ## WorkBuddy Zig L2、安装与链接范围裁定（2026-11-20 13:07 UTC+8）
 
 - `25cf629` 已确认 Zig 0.16.0 Linux x86_64 官方归档 SHA-256、文件/目录计数和初步许可标记；GPL-2.0、CDDL-1.0、LGPL 及 LLVM 例外属于归档内已发现声明，不能按未知或根 MIT 处理，也不自动等同于 Zig 工具或 pCryoxy 运行时实际链接物料。
+
+## WorkBuddy 复核 Zig linker smoke 与一次性库构建放行（2026-11-20 14:19 UTC+8）
+
+- `adbeee6` 的独立 C 与 Rust linker smoke 通过：C 编译/链接、Rust 临时 crate、ELF `readelf`、`ldd` 和受控运行均有退出 0 证据；Rust 测试仅在单进程显式设置 `CC` 与 target linker，未修改全局或项目永久配置。第一次 CRLF/shebang 失败已修正后重跑通过，不影响复核结论。
+- C 命令行传入 Zig 缓存生成的 `crt1.o`、`libubsan_rt.a`、glibc `.so`、`libc_nonshared.a`、`libcompiler_rt.a`；Rust 命令行传入 `Scrt1.o`、Rust `.rlib`、Zig 缓存的 `libubsan_rt.a`、`libunwind.a`、`libc_nonshared.a`、`libcompiler_rt.a` 和 glibc `.so`。`--as-needed`、静态归档成员选择和最终符号解析意味着“命令行传入”不等于“最终选入”。
+- glibc 启动文件、`libc_nonshared.a`、compiler runtime、libunwind 及本机动态 glibc 当前仅作为 build-only smoke 输入；其 LGPL/LLVM 许可线索不构成 pCryoxy 产品分发批准。若最终产品输入清单确认实际带入 GPL/CDDL/LGPL 或相关静态/动态组件，必须转 L3 独立审查。
+- **复核放行：** 允许一次性使用显式 Zig wrapper/linker 构建既有 `core-ir` 与 `plugin-sdk`，限定 `x86_64-unknown-linux-gnu`、release、`--locked --offline`、已登记隔离工具/缓存和现有 `tools/build-linux`（或等价既有入口）；不新增依赖、不改 `Cargo.lock`、不设默认 linker。
+- 构建后必须提交完整命令与环境范围、退出码、锁文件未变更、`.rlib/.rmeta` 或其他产物的路径/类型/大小/SHA-256、依赖树及 ELF `readelf`/`ldd` 结果；若出现可分发 ELF、静态库或带 glibc/LLVM runtime 的产品物料，立即停止扩展并转 L3。
+- 本次不放行 pCryoxy 可执行程序、桥、daemon、systemd、TUN、路由、代理互通、Web 服务或最终安装包；PC-17 仍 doing，等待一次性库构建证据，PC-03/PC-04 不因本裁定自动放行。
 - L2 补证采用 `archive-declared`、`component-attribution`、`selection/linkage` 三层：补齐归档哈希、版本/平台、许可证相关文件、已发现非宽松标记、组件归属状态和扫描命令/退出码即可进入安装与独立 smoke；未完成逐文件 SBOM 的字段须标 `attribution-unverified`/`not established`，不能清零或从归档存在反推链接。
 - 依据用户先前对 Zig 0.16.0 的批准及官方哈希，**有条件放行隔离安装**到 `~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/zig-0.16.0/`，缓存仍用 `~/.agent-tools/cache/copilot/pcryoxy-linux/`；不得改全局 PATH、WSL profile、apt、Cargo 文件或把 Zig/其许可证文件放进产品。
 - 安装后**放行独立 smoke test**：`zig version`、显式 `zig cc -target x86_64-linux-gnu -c`、最小程序链接、`readelf`/`ldd`/受控运行；需要 Rust linker 适配时另建临时 crate、只在本次命令显式设置 `CC`/linker。若因 WSL 缺 `crt1.o`、`crti.o`、`libc.so` 等开发输入导致链接失败，记为环境缺口，不得记成 Zig 许可失败或借机安装 apt。
