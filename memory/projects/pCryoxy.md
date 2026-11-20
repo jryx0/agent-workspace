@@ -183,3 +183,5 @@
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:42 UTC+8] 【输出锁定待审核】项目：pCryoxy | PC-02/PC-04 | PC-02 输出摘要提交 `90aa591`；两次生成、字节比较及六项 RPC 核验退出 0，证据见 `handoff/2026-11-20-pCryoxy-PC02-Go绑定冻结-zhn-tbxg2iah-win.md`；PC-04 绑定尚未提交，桥及实际依赖闭包仍待验证和审核。
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 23:20 UTC+8] 【PC-04 proto3默认值语义裁定】项目：pCryoxy | 官方 AddRule 的 proto3 默认值/空字符串/默认枚举按未提供处理并继承 active view；当前编码无法表达显式 AsIs 或清空脚本，需拒绝此类歧义请求或改走 ReplaceRoutes。项目 ReplaceRoutes 按完整 desired configuration 解释，默认值是实际配置，空脚本表示清空；两入口先规范化为同一候选 RouteView，语义不一致或不完整则拒绝，不猜测。暂不引入 optional/oneof/FieldMask presence；未来需显式区分时另行升级 proto/descriptor。Geo、override、快照/epoch 工作继续，PC-04 仍 doing/blocked。
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-21 07:44 UTC+8] 【PC-04受限能力子集裁定】允许 PC-04 以已验证配置子集作为交付目标，不要求当前卡纳管全部 Xray 上游消费者；sniffing、未纳管 DNS 后端、proxy/dns、freedom、finalmask、Geo cron 及其他无法证明绑定同一 RouteView/epoch 的配置必须在 prepare 阶段拒绝，且拒绝时 active view、epoch、revision、Geo version 和资源状态不变。隔离配置测试仅作子集证据，不得写成完整 Xray 生产验收；PC-04 继续 doing/blocked，完整裁定见 `handoff/2026-11-21-pCryoxy-PC04受限能力子集裁定-zhn-tbxg2iah-win.md`。
