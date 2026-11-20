@@ -175,3 +175,5 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:12 UTC+8] 【审核 f38fe74】项目：pCryoxy | PC-00/PC-02/PC-04 | `2908e4e` 的 secure-store 最小 workspace/锁前置交付审核通过；PC-02 事务边界说明审核通过为方案，不声称跨 vault/IR 原子提交已实现；PC-04 Go 1.27.4 隔离安装、Zig 命令级复用、C/Go/cgo-race smoke 审核通过。PC-03/PC-04 均继续 doing/blocked：PC-03 待安全存储实现和平台测试，PC-04 待桥实现、真实固定核心测试和 Linux 桥资产。
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:18 UTC+8] 【Go绑定与descriptor冻结裁定】项目：pCryoxy | PC-02/PC-04 | 批准复用 `protoc 29.5`，批准 `protoc-gen-go v1.36.12` 与 `protoc-gen-go-grpc v1.6.2`，仅为 `pcryoxy.bridge.v1.Control` 生成 `native/xray-bridge/core_control.pb.go` 和 `core_control_grpc.pb.go`。要求 PC-02 所有者先冻结 proto/递归 imports、descriptor、go_package/import mapping、完整命令和摘要，再由 PC-04 生成；PC-04 需在隔离 GOMODCACHE 中核验生成器与桥运行时的直接/传递依赖增量。生成成功不等于依赖闭包、桥、真实核心或 Linux 资产通过；两卡继续 doing/blocked。详见 PC-02/PC-04 交接追加。
+
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:33 UTC+8] 【认领前置维护】项目：pCryoxy | PC-02 | 按 `e327511` 串行冻结 PC-04 Go 绑定输入、生成参数及契约锁关联记录 | 状态：doing；不改变已审核 PC-02 的 done 状态，不代 PC-04 修改其独占文件。
