@@ -75,3 +75,52 @@ pCryoxy 无 suspended 项；PC-17 是 doing/blocked，不是自行解挂或审�
 - 拟先验证各包 SHA-256，检查官方安装脚本及包内许可后将 Rust 三组件安装到指定 prefix、Zig 解压到指定目录；只在单次构建进程设置 PATH、CARGO_HOME、ZIG_GLOBAL_CACHE_DIR，以及指向 `zig cc` 封装的 `CC` 和 Cargo target linker。该方案的 proc-macro 链接、glibc 和 WSL 驱动器执行兼容性尚未实测，不能保证构建成功；不执行 `apt install`。
 - 拟验收：`rustc --version`、`cargo --version`、`rustc --print target-libdir --target x86_64-unknown-linux-gnu`、`zig version`、C 链接试编、`tools/build-linux`、库产物大小/摘要及锁定依赖树；任何失败如实记录。先离线构建，只有明确缺少 `Cargo.lock` 中已有 crate 时，才恢复这些锁定依赖，不新增清单依赖。
 - 回滚：先确认无人使用，仅移除本次安装的两个具体版本目录及本次专属缓存/临时文件；不动共享工具、工作区或系统配置。安装成功后按规范追加工具登记、实际版本与占用并提交同步。请审核候选安装位置与工具区规范的一致性、Zig 是否适合作为本卡 C linker、包内许可和空间预算；用户批准具体方案后才执行。
+
+## WorkBuddy 工具链审核（2026-11-20 11:33 UTC+8）
+
+### 1. 安装位置：物理隔离通过，目录分类需调整
+
+- 方案使用 Windows 侧 `~/.agent-tools`，再由 WSL 通过 `/mnt/c/Users/Zhn_X/.agent-tools/...` 访问；不在 WSL 的 `/home/...` 创建第二份 `~/.agent-tools`，符合“工作区不进 WSL”和工具运行环境与共享仓分离的规则。
+- 但 `venvs/copilot/linux-tools` 的名称容易被解释为 Python venv；Rust、Cargo 和 Zig 是工具链运行时，不是 Python 依赖。按现有工具登记惯例，建议改为：
+  - `~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/rust-1.100.0/`
+  - `~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/zig-0.16.0/`
+- 专属缓存不得放入 Git 或项目目录，建议使用：
+  - `~/.agent-tools/cache/copilot/pcryoxy-linux/cargo/`
+  - `~/.agent-tools/cache/copilot/pcryoxy-linux/zig/`
+- 构建时只在单次进程注入 `PATH`、`CARGO_HOME`、`ZIG_GLOBAL_CACHE_DIR`、`CC` 和 Cargo linker；不改用户级 PATH、WSL shell profile、系统包源或 Windows 注册表。
+- **审核结论：安装位置有条件通过。** 只有按上述运行时目录和专属缓存隔离执行，才可进入安装；不得把它登记成 Python venv，也不得写入 WSL 家目录。
+
+### 2. Zig 0.16.0 兼容性：作为候选 C linker 有条件通过
+
+- 官方 `https://ziglang.org/download/index.json` 明确列出 Linux x86_64 资产：
+  `zig-x86_64-linux-0.16.0.tar.xz`，SHA-256 为
+  `70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00`。
+- 官方 0.16.0 release notes 列明 Linux 最低内核版本为 5.10；已实查 WSL2 内核为 `6.18.33.2-microsoft-standard-WSL2`，内核版本满足这一门槛。
+- Zig 官方定位支持通过 `zig cc` 编译 C/C++；但这不等于已证明本项目的 Rust/C 构建、proc-macro 链接或 glibc 运行兼容。WSL 当前 glibc 为 2.39，仍需实际验证。
+- 当前 PC-17 代码目标主要是 `core-ir`、`plugin-sdk` 两个纯 Rust 库；**Zig 不是当前库构建的硬依赖**。不得因为安装 Zig 就把它写入 Cargo 依赖、项目运行时或发布包。
+- Zig 只能先作为 C 编译器/链接器候选，不得直接宣称为默认 linker。安装后必须依次验证：
+  1. `zig version` 为 `0.16.0`；
+  2. `zig cc` 编译最小 C 程序；
+  3. 目标为 `x86_64-linux-gnu`，并记录实际 glibc 目标口径；
+  4. `readelf -d` / `ldd` 检查动态依赖；
+  5. 在单次环境中用 `CC=zig cc` 和 Cargo linker wrapper 实测一次需要 C 链接的构建路径；
+  6. 运行 `tools/build-linux`，确认当前纯 Rust 目标在不依赖 Zig 的情况下可构建；
+  7. 不能把 C smoke test 通过写成桥、daemon 或 Linux 运行时已通过。
+- **审核结论：Zig 0.16.0 有条件批准作为本卡的构建辅助工具，不批准将其作为未经验证的默认 linker。** 若后续实际构建不需要 C 编译，允许不安装 Zig，仅安装 Rust 三组件并完成 PC-17 基线。
+
+### 3. 许可证：主许可证可接受，包内第三方许可仍是安装门禁
+
+- Rust 工具链项目主许可证记录为 MIT/Apache-2.0；Zig 项目主许可证记录为 MIT。两者均为构建期工具，不进入 pCryoxy 发布产物。
+- 官方 Zig 下载 JSON 未提供 license 字段；不能仅凭下载 JSON 证明发行归档内所有组件均为 MIT。Rust 和 Zig 发行包可能包含 LLVM、libc、compiler-rt、标准库或其他第三方组件，必须以实际归档内的 `LICENSE*`、`COPYING*`、`NOTICE*` 文件为准。
+- 安装后必须生成一份包内许可证清单，至少包含：文件名、组件名、版本（可识别时）、许可证标识和归档相对路径；清单只入工具登记/交接，不把工具二进制或大段许可证源码提交到项目仓。
+- **审核结论：许可证条件通过。** 允许按主许可证作为初步方案，但在下载校验后、工具投入构建前完成包内许可证盘点；发现不可接受或无法识别的组件时停止并报告，不得把“主项目 MIT/Apache-2.0”扩写成“整个发行包单一许可证”。
+
+### 4. 预算与安装授权边界
+
+- 方案列出的下载总量约 182,663,844 字节、解压估计约 1,001,602,560 字节；这只是候选包预算，不是实际磁盘占用。安装前需确认临时空间、缓存和最终目录空间；安装后记录实测占用。
+- 本审核**不等于安装授权**。仍需用户明确批准具体工具安装；批准范围只能是 Rust 1.100.0 三组件和/或 Zig 0.16.0，按本节路径、哈希、许可盘点和单进程环境执行。
+- 不批准 `apt install`、修改系统包源、全局 PATH、WSL 家目录工具副本、Go/Node/桌面/WebKitGTK 或任何未列工具。
+
+### 5. 当前状态
+
+PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不改变 PC-04/PC-18 的所有权，也不将工具方案视为 Linux 构建通过。详细安装动作须在用户批准后另行执行，并在 `env/toolchain.md`、设备工具清单和项目交接中追加实测记录。
