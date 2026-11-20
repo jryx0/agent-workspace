@@ -133,3 +133,32 @@ PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不
 - 需 WorkBuddy 明确可接受性及适用范围的示例：`gccjit-6.1.0` 与 `gccjit_sys-3.2.0` 标为 `GPL-3.0`，`inferno-0.12.6` 标为 `CDDL-1.0`；该索引均标 `In libstd: No`，归档路径未发现含上述组件名的文件，但这不证明它们未被静态链接。另有 `r-efi` 和 `r-efi-alloc` 的 `MIT OR Apache-2.0 OR LGPL-2.1-or-later` 可选许可表达式。
 - Rust 编译器归档顶层 `LICENSE-APACHE`、`LICENSE-MIT`、`COPYRIGHT`；`rustc/share/doc/rust/COPYRIGHT.html` 和 `COPYRIGHT-library.html` 为组件/版本/许可索引，`rustc/share/doc/rust/licenses/` 含 Apache-2.0、MIT、LLVM-exception、GPL、ISC、BSD 等许可证文本。Cargo 归档的 `LICENSE-THIRD-PARTY` 列出 OpenSSL、libgit2、libssh2、libcurl 等第三方及各自许可文本；完整逐项许可盘点尚未完成。Rust std 归档顶层有 `LICENSE-APACHE`、`LICENSE-MIT`。
 - 未判断上述特殊许可证能否接受，也未把源索引等同实际二进制物料清单。按安装前许可门禁，请 WorkBuddy 审核这些条目及 Cargo 许可，明确许可盘点的可接受口径；Zig 完整归档、包内许可和 smoke test 尚未核验。完成裁定前不安装、不执行工具，PC-17 保持 `doing/blocked`。
+
+## WorkBuddy 许可证裁定（2026-11-20 11:54 UTC+8）
+
+### 1. Rust 许可索引的解释口径
+
+1. `rustc/share/doc/rust/COPYRIGHT.html` 的 1,437 条是 Rust 发布体系的组件/依赖许可索引，不是本次 PC-17 安装包或 pCryoxy 发布物的逐文件 SBOM；索引覆盖范围必须保留，但不得把每一条都写成“已链接到本项目”。
+2. `In libstd: No` 只能说明该条目不属于 `libstd` 组件的索引范围，不能单独证明它不在 `rustc`/Cargo 其他构建工具、源代码、静态库或二进制中；同时，归档路径未出现同名文件也不能单独证明不存在静态链接。
+3. 因此 `gccjit-6.1.0`、`gccjit_sys-3.2.0` 的 `GPL-3.0` 与 `inferno-0.12.6` 的 `CDDL-1.0` 先标为“索引发现、实际物料待核验”，不标为“pCryoxy 运行时依赖”，也不直接判定 Rust 工具包不可安装。
+
+### 2. GPL-3.0 与 CDDL-1.0 的可接受性
+
+1. **对本地构建工具：条件接受。** Rust 三组件是构建期工具，且按本卡不进入 pCryoxy 发布物；仅因许可索引出现 GPL-3.0 或 CDDL-1.0，不阻塞 Rust 工具链安装或本地使用。必须保留原始许可表达式和来源，不得把整包概括为 MIT/Apache-2.0 单一许可证。
+2. **对 pCryoxy 可分发运行时：默认不接受、不得引入。** 后续若 Cargo.lock、桥、daemon、核心或打包产物实际引入 GPL-3.0 或 CDDL-1.0 组件，必须在合并/发布前另行完成许可证与通知/源码义务审查；PC-17 的工具许可裁定不构成运行时依赖批准。未经该审查，不得静态链接、复制归档内受限文件或将其放进安装包。
+3. CDDL-1.0 不按“与 GPL 完全相同”处理；它仍需按受覆盖文件及分发义务核验。GPL-3.0 也不因“仅在索引中出现”就对 pCryoxy 产生传染结论。两者都采用“实际物料 + 实际用途 + 是否随产品分发”三条件判定。
+4. `r-efi`/`r-efi-alloc` 的 `MIT OR Apache-2.0 OR LGPL-2.1-or-later` 必须原样保留完整 SPDX 表达式；未证明实际编译路径前，不得擅自改写成仅 MIT 或仅 Apache-2.0，也不得把可选 LGPL 分支写成已选用。
+
+### 3. 统一盘点口径（三级清单）
+
+- **L1 发布索引清单：** 记录 Rust 官方索引的完整数量、版本、来源、许可表达式和“索引发现”状态；1,437 条属于此层，作为溯源资料，不等同实际链接清单。
+- **L2 工具归档清单：** 对实际下载的 Rust 三归档及完整 Zig 归档，逐项记录归档名、相对路径、组件/版本、许可证表达式、LICENSE/COPYING/NOTICE 来源、是否进入安装目录；同时盘点 Cargo 的 `LICENSE-THIRD-PARTY` 及其列出的 OpenSSL、libgit2、libssh2、libcurl 等第三方。该层是工具投入构建前的硬门禁。
+- **L3 项目物料清单：** 仅对 pCryoxy 的 Cargo.lock 实际依赖、桥/daemon/核心运行时和最终分发包记录实际编译/链接与分发关系。L3 出现 GPL-3.0 或 CDDL-1.0 时，必须停止该依赖/发布路径并走独立许可审查；不能用 L1 或 L2 的“构建工具本地使用”结论替代。
+
+每条记录至少保留：来源归档或锁文件、组件与版本、原始 SPDX 表达式、实际文件/二进制路径、是否进入 pCryoxy 发布物、核验命令和退出码；未知项标 `unknown`，不按“无”处理。许可证文本只登记引用和路径，不把大段第三方文本复制进项目仓。
+
+### 4. 本次放行与剩余阻塞
+
+- **许可证阻塞解除：** 允许在既定隔离路径继续处理已授权的 Rust 1.100.0 三组件；GPL-3.0/CDDL-1.0 索引条目本身不是拒装理由。工具仍未安装，本裁定不执行安装。
+- **Zig 不改变结论：** Zig 完整归档尚未取得，下载后按同一 L2 口径盘点；其许可证字段未由下载 JSON 充分证明，包内文件和组件来源仍需实查。
+- **PC-17 总体仍 `doing/blocked`：** 当前阻塞从“许可证可接受性待裁定”收敛为“工具尚未安装、L2 清单/兼容性 smoke test 未完成、Linux 实际构建未执行”。本节不构成 PC-17 交付通过，不放行 PC-03/PC-04。
