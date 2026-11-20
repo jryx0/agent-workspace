@@ -117,3 +117,32 @@ Python 标准库 `tarfile` 只读遍历退出 0：19,546 个常规文件、1,286
 - 在 WSL 中将归档 `tar -xJf ... --strip-components=1 -C ...` 解压到 Windows 工具区 `~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/zig-0.16.0/`；解压退出 0。安装目录事前不存在；未写 WSL 家目录副本、全局 PATH 或系统配置。
 - 安装后 19,546 个文件共 357,913,169 字节（表观大小）、1,285 个子目录；逐一核对归档与安装文件的 SHA-256，19,546 项、差异 0，退出 0。WSL 显式运行 `<安装目录>/zig version` 输出 `0.16.0`，退出 0。
 - 回滚目标仅为上述 Zig 安装目录；未执行回滚。工具登记见 `env/toolchain.md` §五和设备清单；独立 C/Rust linker smoke 与实际链接物料还未验证，未设默认 linker。
+
+## 执行方追加：独立 Zig C / Rust linker smoke 待复核（2026-11-20 14:16 UTC+8）
+
+### 测试环境与命令
+
+- Ubuntu 24.04 WSL2 x86_64、glibc 2.39；Zig 0.16.0 安装登记共享提交 `61c8c0c`，Rust 1.100.0。仅在单进程设置 `ZIG_GLOBAL_CACHE_DIR=~/.agent-tools/cache/copilot/pcryoxy-linux/zig`、`CARGO_HOME=~/.agent-tools/cache/copilot/pcryoxy-linux/cargo`；临时目录为 `~/.copilot/session-state/16845d49-d5b4-494a-a1cd-caa481a4004e/files/pc17-zig-smoke/`。未改系统或项目 linker 配置。
+- C 测试源仅调用 `puts`。`zig cc -target x86_64-linux-gnu -MD -MF smoke.d -c smoke.c -o smoke.o` 退出 0。尝试链接时 `-Wl,--trace`、`-Wl,-Map,smoke.map` 均被 Zig 拒绝，分别退出 1；改用 `zig cc -target x86_64-linux-gnu -v smoke.o -o smoke` 退出 0，详细链接命令见临时目录 `link.stderr`。
+- 无依赖的独立 Rust 临时 crate：`cargo generate-lockfile --offline` 退出 0；以临时 `zig-cc` 包装脚本显式调用 `zig cc -target x86_64-linux-gnu -v`，仅本进程设置 `CC` 和 `CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER`，执行 `cargo build --locked --offline --release --target x86_64-unknown-linux-gnu`。第一次因 Windows CRLF 导致包装脚本 shebang 找不到，退出 101；换成 LF 后第二次退出 0，有 Zig 忽略 deprecated linker optimization 的警告。完整链接命令保留在临时目录 `rust-link.log`。
+
+### 产物与运行证据
+
+| 独立产物 | 大小 | SHA-256 | 检查结果 |
+|---|---:|---|---|
+| C 对象 `smoke.o` | 2,544 | `977e4a49879b358953ed2b0f5973c1febbcff848b8e8882be3ba532ed657a862` | 编译退出 0；`smoke.d` 记录所用 Zig glibc 和 Clang 头文件。 |
+| C 程序 `smoke` | 7,904 | `b4d4902a3d4a90633d60fec1f6d3d5c74f8df226ae05fa286a5c840169e7ba31` | `readelf -h/-d/-l/--version-info` 各退出 0，`ldd` 退出 0，运行退出 0；ELF64 x86_64，解释器 `/lib64/ld-linux-x86-64.so.2`，NEEDED `libc.so.6`，版本需求 `GLIBC_2.2.5`。 |
+| Rust 程序 `rust/target/x86_64-unknown-linux-gnu/release/pc17-linker-smoke` | 359,856 | `0b5df24999bccf46577fe6baeea7fc1c64326f5bbe380ef69277c14f194232d3` | `readelf -h/-d/-l/--version-info` 各退出 0，`ldd` 退出 0，运行退出 0；ELF64 x86_64 PIE，NEEDED `libc.so.6`、`ld-linux-x86-64.so.2`、`libpthread.so.0`、`libdl.so.2`，最高已观察符号版本 `GLIBC_2.30`。 |
+
+`ldd` 实际解析到本机 glibc 和解释器，两测试输出分别为 `pc17 zig smoke`、`pc17 rust linker smoke`；依赖检查未发现 GTK/WebKitGTK。此仅为 WSL 上的两个独立测试，`GLIBC_2.30` 是该 Rust 测试的符号版本证据，不是已验证的 Linux 最低支持版本。
+
+### 实际命令输入与许可边界
+
+- C 编译 `smoke.d` 记录 29 个头文件路径，来自 Zig 的 `lib/libc/include/generic-glibc/`、`x86-linux-gnu/` 和 `lib/include/`。C 链接命令显式传入测试 `smoke.o`、Zig 缓存生成的 `crt1.o`、`libubsan_rt.a`、glibc 相关 `.so`、`libc_nonshared.a`、`libcompiler_rt.a`；`--as-needed` 使传入并不等于最终选入。
+- Rust 链接命令显式传入 `Scrt1.o`、测试对象、Rust 1.100.0 的 `libstd`、`panic_unwind`、`object`、`memchr`、`addr2line`、`gimli`、`cfg_if`、`rustc_demangle`、`std_detect`、`hashbrown`、`rustc_std_workspace_alloc/core`、`miniz_oxide`、`adler2`、`unwind`、`libc`、`alloc`、`core`、`compiler_builtins` 的 `.rlib`，以及 Zig 缓存生成的 `libubsan_rt.a`、`libunwind.a`、`libc_nonshared.a`、`libcompiler_rt.a` 和 glibc 相关 `.so`。完整参数及哈希目录见 `rust-link.log`；静态归档命令行传入不证明每个成员被选入。
+- `-v` 日志显示 `Scrt1.o`/`crt1.o` 由 `start-2.33.o`、`abi-note.o`、`init.o` 构成；`libc_nonshared.a` 的构造命令列有 `atexit.o`、`at_quick_exit.o`、`pthread_atfork.o`、`stack_chk_fail_local.o`、`stat` 系列等。Zig 归档中对应 glibc 源路径线索包括 `lib/libc/glibc/sysdeps/x86_64/start-2.33.S`、`csu/abi-note.S`、`csu/init.c`、`csu/elf-init-2.33.c`、`stdlib/atexit.c`、`stdlib/at_quick_exit.c`、`sysdeps/pthread/pthread_atfork.c`、`debug/stack_chk_fail_local.c`；仅按名称关联是候选来源，不是逐对象来源证明。
+- 上述 glibc 源文件头包含 LGPL 2.1 及部分特殊例外的线索，须逐项验证实际来源、表达式、选入和分发义务；LLVM 相关组件参见 Zig `lib/libunwind/LICENSE.TXT`、Rust 许可索引。两次测试仅为本地 build-only smoke，未复制到产品；不放行这些输入进入最终产品。
+
+### 待复核
+
+请 WorkBuddy 核对 smoke 及实际输入清单是否满足 `fe88cf0` 的一次性 PC-17 库构建前置，尤其审查 Zig 提供的 glibc 启动文件、`libc_nonshared.a`、LLVM 运行时及其 L3 边界。当前尚未用 Zig 执行 pCryoxy 构建，PC-17 保持 doing/blocked；不宣称桥、daemon、服务、TUN 或运行时通过。
