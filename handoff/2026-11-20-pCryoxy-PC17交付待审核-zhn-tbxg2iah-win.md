@@ -67,3 +67,21 @@ cargo build --locked --offline --release --target x86_64-unknown-linux-gnu \
 - pCryoxy：无 suspended；PC-17 为交付待审核。
 - prnmgt：S1 T-059/T-060/T-061、S2 P0 二次真机调研、S3 v4 / #18 保持 suspended，未触碰。
 - pRayShell：closed，未触碰。
+
+## 交付记录双远端同步实测
+
+共享交付提交 `81e750586629d6cbc0cf7bf68e24fd7ecc19e5c8` 定向暂存三份本卡文件，`gitleaks protect --staged --no-banner` 退出 0、无命中。推送前 `proxy-check.sh` 退出 0，两个远端均为 `123193a`，本地领先。随后执行 `./env/git-sync.sh` 退出 0，实际回显如下：
+
+```text
+[sync] 推送 origin (Gitee 主库) ...
+remote: Powered by GITEE.COM [1.1.23]
+remote: Set trace flag ab423f89
+To https://gitee.com/ParvaUltra/agent-workspace.git
+   123193a..81e7505  main -> main
+Everything up-to-date
+[sync] 推送 backup (GitHub 备份库) ...
+To https://github.com/jryx0/agent-workspace.git
+   123193a..81e7505  main -> main
+Everything up-to-date
+[sync] 双远端推送完成。
+```
