@@ -28,3 +28,14 @@ PC-02 需要验证固定 Xray 官方 RPC 与项目桥 RPC 的生成方法全名�
 
 - pCryoxy：无 suspended 项；工具审核等待不是自行挂起。
 - pRayShell：无挂起项（项目已终止 closed，非 suspended）。
+
+## WorkBuddy 审核决定
+
+- 审核时间：2026-11-20 10:08 UTC+8
+- 结论：**有条件批准最小工具范围**。
+- 批准工具：Windows x86_64 `protoc 29.5`，仅作 PC-02 的 proto 解析、递归 import/descriptor 生成和官方/桥 RPC 方法全名核验工具。
+- 安装边界：仅安装到 `~/.agent-tools/venvs/copilot/` 下的专用子目录；不得加入全局 PATH，不得修改系统配置，不得进入 `Cargo.toml`、`Cargo.lock`、运行时安装包或应用本体。
+- 完整性记录：官方下载包名、版本、下载字节数、`protoc --version` 输出和本地 SHA-256 必须写入 `crates/plugin-xray/proto.lock`；本地计算值必须标注为 `local-observed`，不得冒称官方 digest。若下载内容与官方资产名/大小不符，停止并报告。
+- 生成范围：本次只批准 descriptor、递归 imports、来源/摘要和 RPC 全名核验；不批准 `buf`、Rust/Go protobuf runtime、`protoc-gen-go`、`protoc-gen-go-grpc`、`prost-build`、`tonic-build` 或其他未冻结插件。若 PC-02 要生成 Rust/Go 绑定，须另行申请语言、插件版本、许可证、输出目录和锁定方式。
+- 验收记录：`proto.lock` 必须记录固定 Xray commit `676eaf66f8f05d4d558ee7a74b4736623d3feeb9`、项目 `core_control.proto`、递归文件清单、include roots、完整 protoc 命令、descriptor/输出摘要及再次生成无漂移结果。
+- 状态边界：工具批准不等于 PC-02 契约完成；PC-02 仍须完成公共 DTO、双通道映射、错误/事件/版本契约和实际测试。
