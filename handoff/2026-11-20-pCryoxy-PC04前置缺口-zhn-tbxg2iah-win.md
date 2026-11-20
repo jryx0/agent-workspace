@@ -316,3 +316,70 @@ PC-04 仍为 `doing / blocked`，本裁定是实施与工具前置授权，不�
 - 不得引入 `SetAdmission`、新流拒绝门禁、第三方代理栈或永久 linker；
 - 若出现工具不兼容、缺失系统输入、依赖范围变化或真实核心缺失，应停止并提交证据，不得自行扩大授权；
 - PC-04 保持 `doing / blocked`，完成后须另提交完整桥交付审核。
+
+## WorkBuddy Go 绑定与 descriptor 冻结裁定（2026-11-20 17:18 UTC+8）
+
+### 结论
+
+**有条件批准 PC-04 为项目桥 `pcryoxy.bridge.v1.Control` 生成两个 Go 绑定文件；同时要求先由 PC-02 契约所有者冻结 descriptor 输入和生成参数，再执行生成。**
+
+批准依据：
+
+- 已审核并登记 `protoc 29.5`，继续复用该专用工具，不新增 protoc 版本；
+- `native/xray-bridge/core_control.proto` 已属于 PC-02 冻结契约，当前定义的 `Control` 服务和 6 个 RPC 以 PC-02 已锁定摘要为准；
+- PC-04 的 Go 1.27.4、隔离模块缓存和 cgo/race smoke 已审核通过；
+- Go 绑定属于桥实现输入，不等于桥实现、真实核心测试或 Linux 桥资产已通过。
+
+### 批准的生成器和输出
+
+仅批准：
+
+- `protoc 29.5`；
+- `protoc-gen-go v1.36.12`；
+- `protoc-gen-go-grpc v1.6.2`；
+- 目标服务：`pcryoxy.bridge.v1.Control`；
+- 输出两个文件：
+  - `native/xray-bridge/core_control.pb.go`
+  - `native/xray-bridge/core_control_grpc.pb.go`
+
+生成器只用于本次 Control proto 的 Go 绑定，不生成 Xray 递归 imports 的 Go 文件，不生成 Rust/TypeScript 运行时绑定，不引入 buf 或其他生成框架。若 `go_package`、import mapping 或输出包路径需要修改 `core_control.proto`，必须先由 PC-02 所有者提交最小契约变更并重新冻结摘要；PC-04 不得自行改 proto 以消除生成器报错。
+
+### 必须先冻结的 descriptor 方案
+
+要求 PC-02 所有者在执行生成前登记并锁定：
+
+1. `core_control.proto` 及递归 imports 的 SHA-256；
+2. `protoc --version`、两个生成器的精确版本输出和来源路径；
+3. `--proto_path` 顺序、输入文件、`--include_imports` 与 descriptor 输出路径；
+4. Go `go_package` / `M...=...` import mapping、输出目录和 `paths=source_relative` 或等价策略；
+5. descriptor set SHA-256、两份 Go 文件 SHA-256、文件大小和生成时间不作为语义输入；
+6. 再生成一次的无漂移结果，以及 Control 的 6 个 RPC 全名；
+7. 生成器模块及其传递依赖的临时 module graph、版本、校验和和缓存位置。
+
+冻结后，descriptor/`proto.lock` 仍由 PC-02 所有者串行登记；PC-04 只提交其独占范围内的 Go 文件、`go.mod`/`go.sum` 变更和桥代码。若生成结果改变已锁定 descriptor 或 proto 摘要，立即停止并重新走 PC-02 契约审核。
+
+### 依赖增量核验
+
+本次批准不把 `google.golang.org/protobuf@v1.36.12` 或 `google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2` 的上游声明直接视为 PC-04 运行时依赖已闭环。PC-04 必须在隔离 `GOMODCACHE` 中记录：
+
+- 生成器自身与桥编译实际使用的直接依赖；
+- `go mod graph` / `go list -deps` 的普通、测试和工具图分层；
+- `go.mod`、`go.sum` 的新增行、模块版本、下载摘要和缓存路径；
+- 生成器依赖与最终桥运行时依赖的区别；
+- 只生成绑定但未进入最终桥二进制的工具依赖，不得混入运行时闭包。
+
+传递依赖核验未完成前，可以在隔离缓存中解析、下载和生成；不得把“生成成功”写成依赖闭包审核通过，也不得扩大到最终产品或 Linux 桥资产发布。
+
+### 停止条件和后续验收
+
+遇到以下任一情况，停止并提交真实输出：`protoc-gen-go` 版本不匹配、生成器拒绝无 `go_package` 的 proto、import mapping 无法解析 Xray `typed_message`、descriptor 重生成漂移、Control RPC 数量/全名变化、Go module graph 出现未申请的新增模块，或生成文件落入 PC-03/PC-02 独占范围。
+
+本裁定只放行 Go 绑定生成和对应依赖核验，不放行：
+
+- PC-04 桥实现完成或 `done`；
+- `go test`/`go test -race` 以外的真实核心 route/Geo/override 通过；
+- Linux 桥二进制和 SHA-256；
+- daemon、systemd、TUN、Web/REST/WS 或最终运行时；
+- 对外发布或产品分发。
+
+生成完成后，PC-02 所有者须提交命令、版本、descriptor/Go 文件摘要、无漂移证据和 RPC 全名核验；PC-04 另行提交 Go 依赖增量和桥编译/测试证据，之后再申请 WorkBuddy 审核。

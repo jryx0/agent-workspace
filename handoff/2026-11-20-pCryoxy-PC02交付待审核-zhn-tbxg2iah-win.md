@@ -73,3 +73,42 @@ git sync exit=0
 - 正式契约收尾：已发布 API Spec v1.2，内容为 v1.1 全文 + §9 Linux `RuntimeDto`/兼容性增补；统一入口和收尾清单已切换到 v1.2。`protoc` 本地 SHA 仍明确标记为 `local-observed`，不冒称官方 digest。
 - 集成状态：**待集成**。项目 `main` 尚未包含 `78cf166`；`agent/copilot/pc02` 为后续集成基座，由代码仓所有者按仓规范合并/快进。PC-02 不得自行宣称 main 已集成。
 - 下一卡放行：PC-02 依赖已闭环；当前仅 **PC-17 Linux 构建基线**满足认领前置。PC-03/PC-04 仍等待 PC-17 审核通过；不放行其他未满足依赖的卡。
+
+## WorkBuddy 后续 Go 绑定与 descriptor 冻结裁定（2026-11-20 17:18 UTC+8）
+
+PC-02 作为契约所有者，现获准配合 PC-04 为已冻结的 `pcryoxy.bridge.v1.Control` 生成 Go 绑定，但必须先冻结生成输入和参数，不得借生成绑定修改公共 proto 的语义。
+
+### 批准范围
+
+- 复用已登记的 `protoc 29.5`；
+- 批准 `protoc-gen-go v1.36.12`；
+- 批准 `protoc-gen-go-grpc v1.6.2`；
+- 仅生成：
+  - `native/xray-bridge/core_control.pb.go`
+  - `native/xray-bridge/core_control_grpc.pb.go`
+- 仅覆盖 `pcryoxy.bridge.v1.Control`，不为递归 Xray imports 生成 Go 文件。
+
+### PC-02 所有者必须登记
+
+生成前后必须在契约交接/`proto.lock` 关联记录中登记：
+
+1. 精确 `protoc` 和两个插件版本、来源路径及实际版本输出；
+2. 完整生成命令，包括 `--proto_path` 顺序、输入文件、`--go_out`、`--go-grpc_out`、`paths=source_relative` 和 import mapping；
+3. `core_control.proto`、递归 imports、descriptor set、两份 Go 文件的 SHA-256 与大小；
+4. 6 个 Control RPC 全名；
+5. 第二次生成无漂移；
+6. 生成器/工具依赖与桥运行时依赖的分层摘要。
+
+`core_control.proto` 没有明确的 Go `go_package` 或 import mapping 时，不得由 PC-04 静默猜测或直接改写 proto；应先提交最小契约变更，由 PC-02 所有者重新冻结摘要后再生成。
+
+### 与 PC-04 的分工
+
+- PC-02：冻结 descriptor、proto.lock 关联记录、生成命令和摘要，复核 RPC 全名与无漂移；
+- PC-04：在自己的分支生成两个 Go 文件，维护桥侧 `go.mod`/`go.sum` 和隔离缓存，核验新增直接/传递依赖并提交构建/测试证据；
+- 公共 proto、descriptor 和契约锁不得由 PC-04 直接改写。
+
+### 依赖与状态边界
+
+`google.golang.org/protobuf@v1.36.12` 与 `google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2` 当前只是获准的生成器/候选模块版本，不等同桥运行时闭包已通过。PC-04 可以在隔离 `GOMODCACHE` 中解析和下载以完成生成与核验，但必须单独报告 `go mod graph`、`go list -deps`、新增 `go.mod`/`go.sum` 行和普通/测试/工具依赖分层。
+
+本裁定不改变 PC-02 已通过的 `78cf166`，不把 Go 绑定生成写成 PC-02 重新交付，也不代表 PC-04 桥、真实核心、Linux 资产或运行时通过。
