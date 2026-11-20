@@ -66,3 +66,52 @@
 - 本补充没有改变此前 `33e3c8c` 的阻塞结论、依赖审批要求、平台实测门槛或安全 L3 边界。
 
 本次不放行代码实现、密码学依赖安装、公共清单/锁修改或 PC-03 done；仍只允许在既有边界内进行只读盘点、设计和测试准备。
+
+## 只读前置核验（2026-11-20 15:55 UTC+8）
+
+执行人 `copilot@zhn-tbxg2iah-win~zhn-x-w`；依据用户本轮一次性只读授权和 `8fb69c3`；仍为 **doing / blocked**。截至核验，两卡 HEAD 均为 `1e18654ca2a60e8f76c114c891648037d155c336`，均包含 `78cf16612b97d0026ea73da429a1b8b51adf0d4c`，各自独立 worktree 的 `git status --porcelain=v1 --untracked-files=all` 退出 0 且输出空；主仓 main 为 `152df4eca58d5c663d5e59d6979eea55bbf288ee`，未集成上述提交。未创建 crate、改源码或合同、下载/安装依赖、构建或运行正式测试。
+
+### 命令和现场
+
+- `git -C <worktree> rev-parse HEAD`、`git -C <worktree> branch --show-current`、`git -C <worktree> status --porcelain=v1 --untracked-files=all`、`git -C <worktree> merge-base --is-ancestor 78cf16612b97d0026ea73da429a1b8b51adf0d4c HEAD` 均退出 0；PC-03 分支 `agent/copilot/pc03`、`~/source/pCryoxy.wt/copilot-pc03`，PC-04 分支 `agent/copilot/pc04`、`~/source/pCryoxy.wt/copilot-pc04`。
+- `git -C <pc03-worktree> show HEAD:Cargo.toml` 及 `show HEAD:crates/plugin-sdk/src/lib.rs` 退出 0：workspace 只有 core-ir、plugin-sdk、tauri-app；`SecretStore` 冻结 trait 只有 `put`、`with_secret`；`git ls-tree -r --name-only HEAD crates/secure-store native/android` 退出 0 且无匹配。
+- `~/.agent-tools/runtimes/rust/cargo/bin/rustc.exe --version`、`cargo.exe --version` 均退出 0，版本 1.100.0；设置进程级 `CARGO_HOME`/`RUSTUP_HOME` 指向已登记路径。`~/.agent-tools/android-sdk/platform-tools/adb.exe devices -l` 退出 0、设备列表空；`adb.exe version` 退出 0、37.0.1；JDK `java.exe -version` 退出 0、Temurin 21.0.13；SDK NDK 29.0.14206865 和 Gradle 9.6.1 启动文件存在，不代表 Android 构建或真机通过。
+- `wsl.exe --list --verbose` 退出 0；Ubuntu 24.04 WSL2 可启动。`wsl.exe -d Ubuntu-24.04 -- sh -c 'uname -sm; cat /etc/os-release | grep PRETTY_NAME; getconf GNU_LIBC_VERSION'` 退出 0：Linux x86_64、Ubuntu 24.04.4 LTS、glibc 2.39。只读 `command -v go; command -v gcc; command -v cc; command -v readelf` 仅找到 `/usr/bin/readelf`；已登记隔离 Linux Rust/Zig 文件存在，**PC-17 一次性使用授权不扩展本卡**。WSL 没有验证正式服务身份、第二账户或设备权限，不能据此推断异账户拒绝或重启通过。
+- `tools-scan.sh --check` 退出 0。此前用于平台检查的 `Get-Command cl,gcc` 无结果；未探测所有 VS 安装路径，不能断言系统中绝不存在编译器。Windows Credential Manager 服务账户访问、ACL、用户交互和异账户均未操作或验证。
+
+### 候选依赖与许可证证据
+
+使用 `https://crates.io/api/v1/crates/<name>/<version>` 和对应 `/dependencies` 只读 JSON；并以 Python `tarfile.open(..., 'r:gz')` 只读枚举**已有** Cargo 缓存归档的 LICENSE 文件，未下载或解压依赖。下列明确为拟选版本和元数据，不是已解析的最终闭包或许可批准；缓存存在不等于批准。
+
+| 候选及考察版本 | 上游元数据 SPDX / 归档字节 | 已登记 Windows Cargo 缓存 | 主要正常/构建依赖（版本为范围，不是最终解析） |
+|---|---|---|---|
+| aes-gcm 0.10.3 | Apache-2.0 OR MIT / 148991 | 无 | aead ^0.5、cipher ^0.4、ctr ^0.9、ghash ^0.5、subtle ^2；默认 aes ^0.8，zeroize 可选 |
+| aead 0.5.2 | MIT OR Apache-2.0 / 15509 | 无 | crypto-common ^0.1.4、generic-array ^0.14；arrayvec/bytes/heapless 等可选 |
+| aes 0.8.4 | MIT OR Apache-2.0 / 124812 | 无 | cfg-if、cipher、目标条件 cpufeatures、可选 zeroize |
+| cipher 0.4.4 / ctr 0.9.2 | MIT OR Apache-2.0 / 19073 / 18344 | 均无 | cipher→crypto-common、inout；ctr→cipher |
+| ghash 0.5.1 / polyval 0.6.2 | Apache-2.0 OR MIT / 9482 / 18425 | 均无 | ghash→opaque-debug、polyval；polyval→cfg-if、cpufeatures、opaque-debug、universal-hash |
+| subtle 2.6.1 | BSD-3-Clause / 14562 | 无 | 无正常依赖 |
+| hmac 0.12.1 | MIT OR Apache-2.0 / 42657 | 无 | digest ^0.10.3；需另选 SHA-256 |
+| zeroize 1.8.2 | Apache-2.0 OR MIT / 20907 | 无 | serde/zeroize_derive 可选 |
+| inout 0.1.4 / opaque-debug 0.3.1 / universal-hash 0.5.1 | MIT OR Apache-2.0 / 11280 / 7066 / 9146 | 均无 | inout→generic-array；universal-hash→crypto-common、subtle |
+| digest 0.10.7 / sha2 0.10.9 | MIT OR Apache-2.0 / 19557 / 29271 | 均有 | digest→crypto-common、可选 block-buffer/subtle；sha2→cfg-if、目标条件 cpufeatures、digest |
+| crypto-common 0.1.7 / cfg-if 1.0.5 / cpufeatures 0.2.17 | MIT OR Apache-2.0 / 9619 / 9578 / 13466 | 均有 | 目标和 feature 条件仍须解析 |
+| generic-array 0.14.7 | MIT / 15950 | 有 | typenum、构建期 version_check；serde/zeroize 可选 |
+| typenum 1.20.1 / block-buffer 0.10.4 | MIT OR Apache-2.0 / 105479 / 10538 | 均有 | block-buffer→generic-array；typenum 可选 scale-info |
+| version_check 0.9.5 | 原始 `MIT/Apache-2.0` / 15554 | 有 | 构建期，无正常依赖；原始许可证字符串不能未经核验改写 |
+| getrandom 0.3.4 / windows-sys 0.61.2 / jni 0.21.1 / libc 0.2.191 | MIT OR Apache-2.0，jni 原始 `MIT/Apache-2.0` / 50932 / 2517186 / 105028 / 855401 | 均有 | `getrandom` 按目标有 libc 等条件依赖；windows-sys→windows-link；jni→cesu8、cfg-if、combine、jni-sys、log、thiserror、Windows 条件 windows-sys |
+
+现有锁已包含 digest、sha2、crypto-common、cfg-if、cpufeatures、generic-array、typenum、block-buffer、version_check、getrandom、windows-sys、jni、libc，但未包含 aes-gcm、aead、aes、cipher、ctr、ghash、hmac、zeroize、inout、opaque-debug、polyval、subtle、universal-hash。版本和 feature 仍须正式解决；尤其 aes-gcm 默认 getrandom/`rand_core`、平台条件和构建依赖可能扩展闭包，上表不保证完整。未指定最终 crate 特性、目标和构建方式，因此**完整解析闭包、全部许可证文件、下载/安装总量、各平台二进制增量均未核实**，不能用表中大小相加宣称总成本。
+
+已有归档中实际读到：sha2、digest、getrandom、jni、libc 各含 `LICENSE-APACHE` 与 `LICENSE-MIT`；generic-array 含 `LICENSE`；windows-sys 含 `license-apache-2.0`、`license-mit`。候选缺缓存的包未取得归档内许可证文件；registry SPDX 是发布者声明，不替代实际文件归属及最终产品 L3。
+
+### 最小后续裁定与测试矩阵
+
+1. 请 WorkBuddy 先审核上列候选及其按 Windows/Linux/Android target、features、dev/build 分层的**完整解析闭包**、各归档许可文件、来源摘要、总下载/安装占用和产物影响；必要时单独授权隔离获取元数据/归档以补证。之后再申请具体依赖下载和 PC-00 所有者串行 workspace/清单/锁提交；不得把本盘点当成任何批准。
+2. 请 PC-02 契约所有者判定 staging/commit/delete 能否保持现有 trait 不变；设计须保证 IR 和 vault 不半提交、密钥不可用不覆盖现有密文、nonce 唯一、密钥和 Token 分离、路径和目录属主受检。三平台各自密钥实现、别名生命周期和服务身份需要明确审核。
+3. 后续分别以受控临时 vault/alias 测试：写/读、独立进程重启、不可用密钥保留旧密文、alias 不覆盖、大于 2560 字节、AEAD 篡改拒绝；Linux 目录属主/0600 与异账户，Windows 用户/服务账户和 ACL，Android 真机 Keystore/noBackup；向解析、网络、JNI 错误注入虚构秘密并检查日志/事件/崩溃与网络输出。测试只清理自身资产；异账户、服务和真机需要单独明确环境及授权。
+4. 未执行任何 PC-03 安装、代码编写、正式构建、平台/安全测试、部署或系统配置变更；等待依赖、工具和实现各自裁定。
+
+### 挂起快照更正
+
+pCryoxy 无 suspended；两卡 doing/blocked。prnmgt 的 S1 已由人类解挂，T-059 已认领（见 `memory/projects/prnmgt.md` 的最新记录）；S2 真机调研与 S3 v4/#18 仍以原快照为准，未触碰。pRayShell closed。旧交接中 S1 suspended 为历史快照，不得作为当前禁令。

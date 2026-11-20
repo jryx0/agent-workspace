@@ -60,3 +60,95 @@
 - 本补充没有改变此前 `33e3c8c` 的阻塞结论、Go race 环境门槛、真实核心测试要求或 Linux 桥资产边界。
 
 本次不放行 Go 模块安装、系统编译器安装、桥构建、Linux 资产生成或 PC-04 done；仍只允许在既有边界内进行只读盘点、补丁设计和测试准备。
+
+## 只读前置核验（2026-11-20 15:55 UTC+8）
+
+执行人 `copilot@zhn-tbxg2iah-win~zhn-x-w`；依据用户本轮一次性只读授权和 `8fb69c3`；仍为 **doing / blocked**。PC-04 `agent/copilot/pc04` / `~/source/pCryoxy.wt/copilot-pc04` 与 PC-03 独立分支的 HEAD 均为 `1e18654ca2a60e8f76c114c891648037d155c336`，包含 `78cf16612b97d0026ea73da429a1b8b51adf0d4c`；`git status --porcelain=v1 --untracked-files=all` 退出 0 且输出空。主仓 main `152df4eca58d5c663d5e59d6979eea55bbf288ee` 仍不含上述集成；本卡未改项目文件。
+
+### 上游模块与许可证盘点
+
+只读 `gh api 'repos/XTLS/Xray-core/contents/go.mod?ref=676eaf66f8f05d4d558ee7a74b4736623d3feeb9' -H 'Accept: application/vnd.github.raw+json'` 退出 0：固定 go.mod 声明 Go 1.27、35 个直接和 21 个间接模块（不代表实际使用闭包），另列 `protoc-gen-go-grpc` 和 `protoc-gen-go` 工具。用 `gh api 'repos/XTLS/Xray-core/license?ref=676eaf66f8f05d4d558ee7a74b4736623d3feeb9' --jq '[.path,.license.spdx_id,.sha] | @tsv'` 退出 0：根 `LICENSE` / MPL-2.0 / blob `a612ad9813b006ce81d1ee438dd784da99a54007`。
+
+下表为上游 go.mod 的全部 56 个声明条目，非桥模块最终解析图、非实际链接清单。`L` 是只读 GitHub 在**对应 tag 或伪版本 commit**返回的仓库根 LICENSE 检测结果，`?` 表示未核实；根文件不证明子模块/全部文件许可，`NOASSERTION` 原样保留。查询方法：对 GitHub 依赖 `gh api 'repos/<owner>/<repo>/license?ref=<tag-or-commit>' --jq '[.path,.license.spdx_id,.sha] | @tsv'`；伪版本按末尾 commit 查询；非 GitHub 路径未推断仓库。未获取模块归档、未运行依赖解析、未执行 Go 构建。
+
+| 直接模块@版本 | 根许可证 L |
+|---|---|
+| github.com/apernet/quic-go@v0.61.1-0.20260806010916-184d081eef3e | MIT |
+| github.com/bufbuild/protocompile@v0.14.1 | Apache-2.0 |
+| github.com/ghodss/yaml@v1.0.1-0.20220118164431-d8423dcdf344 | NOASSERTION |
+| github.com/golang/mock@v1.7.0-rc.1 | Apache-2.0 |
+| github.com/google/go-cmp@v0.7.0 | BSD-3-Clause |
+| github.com/google/uuid@v1.6.0 | BSD-3-Clause |
+| github.com/gorilla/websocket@v1.5.3 | BSD-2-Clause |
+| github.com/klauspost/cpuid/v2@v2.4.2 | MIT |
+| github.com/libp2p/go-nat@v1.0.1-0.20250821073202-01afc089f138 | Apache-2.0 |
+| github.com/miekg/dns@v1.1.73 | NOASSERTION |
+| github.com/pelletier/go-toml@v1.9.5 | NOASSERTION |
+| github.com/pion/stun/v3@v3.1.7 | MIT |
+| github.com/pires/go-proxyproto@v0.16.0 | Apache-2.0 |
+| github.com/refraction-networking/utls@v1.8.3-0.20261108164504-a13c59ffe98b | BSD-3-Clause |
+| github.com/robfig/cron/v3@v3.0.1 | MIT |
+| github.com/stretchr/testify@v1.12.1 | MIT |
+| github.com/vishvananda/netlink@v1.3.1 | Apache-2.0 |
+| github.com/xtls/reality@v0.0.0-20261108101329-4bb46b2afd8b | NOASSERTION |
+| github.com/yuin/gopher-lua@v1.1.2 | MIT |
+| go4.org/netipx@v0.0.0-20231129151722-fdeea329fbba | ? |
+| golang.org/x/crypto@v0.58.0 | ? |
+| golang.org/x/crypto/x509roots/fallback@v0.0.0-20261020153306-9f2b28d4331a | ? |
+| golang.org/x/exp@v0.0.0-20240506185415-9bf2ced13842 | ? |
+| golang.org/x/net@v0.62.0 | ? |
+| golang.org/x/sync@v0.24.0 | ? |
+| golang.org/x/sys@v0.49.0 | ? |
+| golang.zx2c4.com/wintun@v0.0.0-20230126152724-0fa3db229ce2 | ? |
+| golang.zx2c4.com/wireguard@v0.0.0-20250521234502-f333402bd9cb | ? |
+| golang.zx2c4.com/wireguard/windows@v1.1.1 | ? |
+| google.golang.org/grpc@v1.85.0 | ? |
+| google.golang.org/protobuf@v1.36.12 | ? |
+| h12.io/socks@v1.0.3 | ? |
+| layeh.com/gopher-luar@v1.0.11 | ? |
+| lukechampine.com/blake3@v1.4.1 | ? |
+| mvdan.cc/gofumpt@v0.12.0 | ? |
+
+| 间接模块@版本 | 根许可证 L |
+|---|---|
+| github.com/google/gopacket@v1.1.19 | NOASSERTION |
+| github.com/huin/goupnp@v1.2.0 | BSD-2-Clause |
+| github.com/jackpal/go-nat-pmp@v1.0.2 | NOASSERTION |
+| github.com/juju/ratelimit@v1.0.2 | NOASSERTION |
+| github.com/klauspost/compress@v1.20.1 | NOASSERTION |
+| github.com/koron/go-ssdp@v0.0.4 | MIT |
+| github.com/libp2p/go-netroute@v0.2.1 | NOASSERTION |
+| github.com/molecule-man/go-brrr@v1.2.0 | MIT |
+| github.com/pion/dtls/v3@v3.1.5 | MIT |
+| github.com/pion/logging@v0.2.4 | MIT |
+| github.com/pion/transport/v4@v4.1.0 | MIT |
+| github.com/quic-go/qpack@v0.6.0 | MIT（`LICENSE.md`） |
+| github.com/vishvananda/netns@v0.0.5 | Apache-2.0 |
+| github.com/wlynxg/anet@v0.0.5 | BSD-3-Clause |
+| go.yaml.in/yaml/v3@v3.0.5 | ? |
+| golang.org/x/text@v0.43.0 | ? |
+| golang.org/x/tools@v0.51.0 | ? |
+| google.golang.org/genproto/googleapis/rpc@v0.0.0-20260817212433-ac3dfec99bb1 | ? |
+| google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2 | ? |
+| gopkg.in/yaml.v2@v2.4.0 | ? |
+| gvisor.dev/gvisor@v0.0.0-20260122175437-89a5d21be8f0 | ? |
+
+GitHub 检测成功项的文件名均 `LICENSE`（qpack 除外）；NOASSERTION 和 `?` 不能简化为已批准。源码嵌入的其他许可证、模块子目录与实际最终构建图尚未证实；所列 go.mod 依赖可能包含未使用、测试或工具项，也可能遗漏桥实现会新增的模块。**完整传递闭包、每个归档 LICENSE/NOTICE、实际选入及下载/安装/产物大小尚未确定。**
+
+### 工具、缓存与测试条件
+
+- `~/.agent-tools/runtimes/go/bin/go.exe version` 退出 0：go1.27.4 windows/amd64；`go.exe env GOOS GOARCH CGO_ENABLED GOMODCACHE` 退出 0，输出 windows、amd64、0 和默认 `~/go/pkg/mod`。只读检测 `~/go/pkg/mod/cache/download` 不存在；不等于其他独立缓存均无资产，也不等于任何模块已批准。
+- `wsl.exe --list --verbose`、Linux `uname -sm`、`getconf GNU_LIBC_VERSION` 退出 0：Ubuntu 24.04.4 LTS WSL2、Linux x86_64、glibc 2.39；只读 `command -v go; command -v gcc; command -v cc; command -v readelf` 仅返回 `/usr/bin/readelf`。Windows PATH 中 `Get-Command cl,gcc` 无结果，不代表未检查到的 VS 路径不存在。PC-17 登记隔离 Zig 文件存在，但其一次性批准已消耗，不能用于本卡；Linux Go、race 所需 C 工具链与使用权限未落实。
+- `git -C <pc04-worktree> ls-tree -r --name-only HEAD native/xray-bridge tests/integration/bridge upstream-patches` 退出 0，仅有冻结的 `native/xray-bridge/core_control.proto`。未取得真实受控核心的项目构建及 Geo 测试资产，不存在可供核验的桥二进制或产物 SHA-256。
+- `tools-scan.sh --check` 退出 0；Android `adb devices -l` 退出 0 且无设备；不涉及建立服务或变更账户。
+
+### 最小方案和申请
+
+1. 先审核固定上游 56 个声明模块及补丁后的实际可达闭包（包含平台、工具和测试分层）、`NOASSERTION` / 未知模块原始许可文件、MPL 源码分发义务、摘要及下载/占用预算；只读索引不等于授权下载。取得逐项裁定后，再单独授权隔离源码/模块获取、构建工具与 race 环境；禁止全局安装。
+2. 经实现许可后才设计并实施实际核心读路径：候选在锁外构造，将 routes、双 Geo 和 override 绑定同一不可变 view；发布锁只核对版本并切换指针；管理 RPC 与兼容服务共用提交器；DNS Geo 纳管、独立 cron 停用、旧 view 生命周期受控；script/domainStrategy 热变更明确拒绝。不得加入 SetAdmission 或新流拒绝门禁。
+3. 隔离真实核心的验收矩阵须独立验证路由与两类 Geo 和 override 并发、每次 route 单 epoch、prepare/publish 失败不变、旧 view 无旧磁盘依赖、慢 DNS/webhook 不持锁、管理旁路拒绝、无递归锁死；另给 `go test`、`go test -race`、线性化结果、Linux 桥运行及产物摘要。缺任一真实条件标未覆盖，不把模型或 mock 当实证。
+4. proto/公共核心锁由 PC-02/PC-00 所有者审核串行维护；本阶段未安装模块/工具、未改任何源码、未构建桥、未运行正式测试或生成资产，等待依赖、工具和实现分别裁定。
+
+### 挂起快照更正
+
+pCryoxy 无 suspended；两卡 doing/blocked。prnmgt S1 已由人类解挂，T-059 已认领（见 `memory/projects/prnmgt.md` 最新记录）；S2 真机调研与 S3 v4/#18 仍以原快照为准，未触碰。pRayShell closed；旧交接中 S1 suspended 为历史快照。
