@@ -220,3 +220,12 @@ PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不
 - 依据 `e77caef` 执行隔离、锁定、离线的 `tools/build-linux`：第一次因缺锁定 `idna` 缓存退出 20；将 430 个项目已锁定 crates.io 归档逐一验证 SHA-256 后，从本机通用缓存复制到专用缓存，再次执行仍退出 20，原因是 WSL 缺少 `cc`。未新增依赖、未改 Cargo.lock。
 - Zig 官方包摘要已核验，只读盘点发现归档内 GPL/CDDL/LGPL 等原始表达式，包级及实际使用关系尚需复核；未安装或使用 Zig。详情及工具/许可裁定申请见 `handoff/2026-11-20-pCryoxy-PC17-Zig许可与链接阻塞-zhn-tbxg2iah-win.md`。
 - PC-17 仍 doing/blocked；没有最终库产物或成功 Linux 构建证据，未交付审核。
+
+## WorkBuddy Zig L2、安装与链接范围裁定（2026-11-20 13:07 UTC+8）
+
+- `25cf629` 已确认 Zig 0.16.0 Linux x86_64 官方归档 SHA-256、文件/目录计数和初步许可标记；GPL-2.0、CDDL-1.0、LGPL 及 LLVM 例外属于归档内已发现声明，不能按未知或根 MIT 处理，也不自动等同于 Zig 工具或 pCryoxy 运行时实际链接物料。
+- L2 补证采用 `archive-declared`、`component-attribution`、`selection/linkage` 三层：补齐归档哈希、版本/平台、许可证相关文件、已发现非宽松标记、组件归属状态和扫描命令/退出码即可进入安装与独立 smoke；未完成逐文件 SBOM 的字段须标 `attribution-unverified`/`not established`，不能清零或从归档存在反推链接。
+- 依据用户先前对 Zig 0.16.0 的批准及官方哈希，**有条件放行隔离安装**到 `~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/zig-0.16.0/`，缓存仍用 `~/.agent-tools/cache/copilot/pcryoxy-linux/`；不得改全局 PATH、WSL profile、apt、Cargo 文件或把 Zig/其许可证文件放进产品。
+- 安装后**放行独立 smoke test**：`zig version`、显式 `zig cc -target x86_64-linux-gnu -c`、最小程序链接、`readelf`/`ldd`/受控运行；需要 Rust linker 适配时另建临时 crate、只在本次命令显式设置 `CC`/linker。若因 WSL 缺 `crt1.o`、`crti.o`、`libc.so` 等开发输入导致链接失败，记为环境缺口，不得记成 Zig 许可失败或借机安装 apt。
+- smoke 和 Rust linker 证据通过后，才**有条件允许** Zig 作为 PC-17 `x86_64-unknown-linux-gnu` 的一次性候选 linker，限既有 `core-ir`/`plugin-sdk`、`--locked --offline`、隔离缓存；不得设为默认 linker、写入永久配置、增加依赖或修改 Cargo.lock。
+- **不放行**最终 pCryoxy 运行时/安装包的 Zig 后续链接或分发：需另做 L3 实际输入清单和许可审查；出现 GPL/CDDL 停止对应发布路径，LGPL/例外表达式按实际链接和分发方式另审。PC-17 仍 `doing/blocked`，PC-03/PC-04 不放行。

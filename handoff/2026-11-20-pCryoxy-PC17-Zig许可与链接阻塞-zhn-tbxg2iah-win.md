@@ -52,6 +52,49 @@ Python 标准库 `tarfile` 只读遍历退出 0：19,546 个常规文件、1,286
 2. 请确认上述实际发现的 Zig 归档 GPL/CDDL/LGPL 头文件与现有 build-only 放行规则的关系，以及 Zig C smoke test 和后续库构建的 L3 边界；不将已发现的许可当成未知或自动认定进入 pCryoxy。
 3. Zig 完整逐文件许可归属、工具安装登记、smoke test、Linux 实际构建和产物证据未完成。PC-17 保持 `doing/blocked`，PC-03/PC-04 不放行；不代审、不部署。
 
+## WorkBuddy Zig L2、安装与链接范围裁定（2026-11-20 13:07 UTC+8）
+
+### 1. 许可证与 L2 补证口径
+
+1. 本归档中的 GPL/CDDL/LGPL 等不是“未知项”，而是归档文件中已发现的原始许可标记；必须保留原始 SPDX 表达式、例外、`OR`/`AND` 关系和相对路径，不能用根目录 MIT 概括整个 Zig 归档。
+2. 当前 19,546 个常规文件、1,286 个目录、16 个许可证相关路径和 46 种扫描到的原始 SPDX 标记，属于**初步 L2 盘点**。扫描只检查部分文本文件前 4,096 字节，不能写成完整逐文件 SBOM；未扫描到不等于不存在。
+3. Zig L2 补证采用三层字段，不要求在安装前完成每个文件逐符号归因，但不得裸留或擅自清零未知：
+   - `archive-declared`：归档内文件实际声明的许可表达式、路径和计数；GPL-2.0、CDDL-1.0、LGPL 及 LLVM 例外均原样保留。
+   - `component-attribution`：按 `libc`、`libcxx/libcxxabi/libunwind`、LLVM/编译器运行时、Zig 自身源文件等组件或目录关联许可证文本、COPYING/NOTICE 路径；无法归属时记 `attribution-unverified`。
+   - `selection/linkage`：在 smoke/build 后才判断哪些头文件、启动文件、库或运行时实际被选入；未实测统一记 `not established`，不得从归档存在反推实际链接。
+4. L2 补证最小闭环为：完整归档 SHA-256、版本/平台、归档根许可证、许可证相关文件清单、已发现非宽松标记清单、组件归属状态和扫描命令/退出码。完成该闭环即可进入工具安装和独立 smoke 阶段；不要求把全部 19,546 个文件先改写成逐文件 SPDX SBOM。
+5. 但若后续实际选入 GPL/CDDL/LGPL 文件、静态库、启动文件或运行时，必须从 L2 转入 L3 单独审查；不得用“build-only 工具可安装”替代产品物料许可结论。
+
+### 2. Zig 安装放行
+
+- **有条件放行隔离安装**：用户先前已批准 Zig 0.16.0，本次归档 SHA-256 与官方值一致，允许按既定路径安装到 `~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/zig-0.16.0/`，缓存使用 `~/.agent-tools/cache/copilot/pcryoxy-linux/`。
+- 安装不得改全局 PATH、WSL profile、apt 源、系统包或 Cargo 文件；不得复制到 WSL 家目录作为第二份工具；不得把 Zig 归档或其许可证文件放入 pCryoxy 发布包。
+- 安装登记必须补：归档哈希、安装路径、实测版本、文件数/占用、安装命令退出码、`zig version` 退出码和回滚路径。
+- 本放行只针对 build-only 工具，不是对 Zig 归档内 GPL/CDDL/LGPL 组件进入 pCryoxy 的许可批准。
+
+### 3. 独立 smoke test 放行
+
+安装完成后，允许执行**独立、显式调用 Zig 的 smoke test**，不把它设为默认 linker：
+
+1. `zig version`：验证版本与目标平台。
+2. `zig cc -target x86_64-linux-gnu -c` 最小 C 源：先验证编译器、头文件和对象生成。
+3. 在同一隔离目录尝试显式链接最小 C 程序；使用 `readelf -h/-d`、`ldd` 和受控运行验证 ELF、解释器和动态依赖。每条命令记录退出码；失败必须记录真实缺口，不能改写为成功。
+4. 若因当前 WSL 缺少 `crt1.o`、`crti.o`、`libc.so` 开发链接输入而链接失败，结论应为“Zig 已安装、C 编译 smoke 通过/链接 smoke 被环境缺口阻塞”，不是 Zig 许可失败，也不得借机安装 apt 或系统工具。
+5. 需要验证 Rust linker 适配时，另建最小临时 Rust crate，显式设置本次命令的 `CC`/linker 环境；该测试与 C smoke 分开记录。不得把 `zig cc` 写入全局配置或项目永久配置。
+
+### 4. 后续链接放行边界
+
+- **允许**：在 Zig smoke 通过后，用显式命令和隔离缓存进行临时 linker 试验、对象/测试程序链接，以及为定位 WSL `cc` 缺口而做的最小 Rust linker 试验。
+- **有条件允许**：若 Rust linker smoke、`readelf`/`ldd` 和实际输入清单均通过，可将 Zig 作为 PC-17 `x86_64-unknown-linux-gnu` 的一次性候选 linker，用于既有 `core-ir` / `plugin-sdk` 构建验证；仍须 `--locked --offline`，不新增依赖，不修改 Cargo.lock，不宣称 PC-17 完整通过。
+- **暂不允许**：将 Zig 设为默认 linker、写入全局或项目永久配置；把 Zig 的 `libc`/启动文件/运行时复制进 pCryoxy 安装包；将任何 GPL-2.0/CDDL-1.0/LGPL 物料静态或动态带入最终产品；或把一次成功链接写成桥、daemon、systemd、TUN、代理互通和发布物料已通过。
+- **L3 前置**：任何实际 pCryoxy 运行时链接必须列出实际输入（对象、启动文件、静态库/动态库、解释器、头文件/运行时来源）及许可证关系。出现 GPL/CDDL 时停止对应发布路径；LGPL 或带例外表达式需按实际链接和分发方式另审，不能按宽松许可证自动放行。
+
+### 5. 当前状态
+
+- `25cf629` 的 Zig 归档哈希和初步盘点有效；Zig 尚未安装，未执行 smoke，未作为 linker 使用。
+- WSL 缺 `cc`、`gcc`、`clang`、`make` 及开发版启动/链接文件，Rust Linux 构建仍 blocked；本裁定不等于 Linux 构建成功。
+- PC-17 保持 `doing/blocked`；PC-03/PC-04 不因本裁定放行。后续执行方可按上述范围先安装 Zig，再提交独立 smoke 证据供复核。
+
 ## 挂起快照
 
 - pCryoxy：无 suspended；PC-17 doing/blocked（不是 suspended）。
