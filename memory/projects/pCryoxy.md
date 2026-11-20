@@ -159,3 +159,5 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 16:31 UTC+8] 【复核隔离依赖审计】项目：pCryoxy | PC-03/PC-04 | 共享提交 `109dabe` 的候选 Cargo/Go 图、归档摘要和目标分层证据可采信，但不等于项目依赖批准。PC-03 需定向补齐 cesu8、jni-sys-macros、r-efi 等许可证证据并等待 PC-00/PC-02；PC-04 需补齐普通运行时模块许可证/义务、chzyer/logex 等缺口及补丁后真实桥闭包。两卡继续 doing/blocked；仅允许项目外隔离目录定向补证，不允许项目安装、工具安装、代码实施或构建。
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 16:38 UTC+8] 【用户范围变更】项目：pCryoxy | 用户明确当前仅内部使用，不销售、不商用、不对外开源，不再反复审核许可证。109dabe 的许可证缺口继续保留为来源记录，但不再阻塞当前内部依赖获取、本地构建或 PC-03/PC-04 实施；未来若销售、商用、对外发布、开源或安装包离开内部范围，发布前重新开启 L3/许可证审查。技术门槛仍保留：PC-00/PC-02 公共文件串行维护、PC-03 平台实测、PC-04 工具链、真实桥实现和核心测试。
+
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 16:48 UTC+8] 【前置申请待裁定】项目：pCryoxy | PC-03/PC-04 | 依据 `a6a67f4` 申请 PC-00 最小 workspace/依赖维护、PC-02 事务契约确认，以及 PC-04 Linux Go、Zig 复用和桥实现/测试授权；详见 `handoff/2026-11-20-pCryoxy-PC03PC04前置申请-zhn-tbxg2iah-win.md`。两卡继续 doing/blocked，未改项目代码、清单或契约，未安装工具或构建。
