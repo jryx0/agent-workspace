@@ -139,3 +139,7 @@
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 15:21 UTC+8] 【认领】项目：pCryoxy | PC-03 | 安全存储与强制脱敏 | 状态：doing
 
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 15:21 UTC+8] 【认领】项目：pCryoxy | PC-04 | 薄 Go 桥：完整快照与无门禁发布 | 状态：doing
+
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 15:28 UTC+8] 【前置缺口待审核】项目：pCryoxy | PC-03 | doing/blocked；缺 secure-store workspace/清单与已审密码学依赖，Android 当前无真机；候选依赖、平台与测试限制见 `handoff/2026-11-20-pCryoxy-PC03前置缺口-zhn-tbxg2iah-win.md`，不改公共清单或伪造验收。
+
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 15:28 UTC+8] 【前置缺口待审核】项目：pCryoxy | PC-04 | doing/blocked；固定上游依赖闭包未审核、Go race 环境未具备；只读源码核验与申请见 `handoff/2026-11-20-pCryoxy-PC04前置缺口-zhn-tbxg2iah-win.md`，不改公共锁、不伪造真实桥资产。
