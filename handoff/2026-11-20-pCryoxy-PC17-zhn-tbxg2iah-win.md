@@ -47,3 +47,13 @@ pCryoxy 无 suspended 项；PC-17 是 doing/blocked，不是自行解挂或审�
 3. PC-17 的独立验收目标改为：Linux 平台矩阵、上游 Xray Linux 核心资产元数据、无桌面依赖审计、Linux 构建入口/工具链记录和可复核的实际构建证据。缺工具时保留 `doing/blocked`，不宣称通过。
 4. 工具安装不在本次裁定内；用户授权 WSL 环境，不等于批准 `apt install`、全局 PATH 或其他工具变更。工具需另列清单申请，获批后再执行。
 5. 详细裁定见 `handoff/2026-11-20-pCryoxy-PC17验收目标裁定与WSL环境确认-zhn-tbxg2iah-win.md`。PC-03、PC-04 仍须等待 PC-17 最终审核通过。
+
+## 执行方追加：部分基线与剩余阻塞（2026-11-20 11:27 UTC+8）
+
+- 代码部分提交 `95e0efca6770f51b5f1d4e62599ccc042ac4e2f8`，基于 `78cf166`；仅在 `agent/copilot/pc17` 本地分支，未推送，非最终交付。文件为 `contracts/core-lock.json`、`docs/BUILD.md`、`tools/build-linux`。
+- 代码锁定 Xray Linux x86_64 上游 zip 的官方来源、大小和 SHA-256。`gh release download v26.11.9 --repo XTLS/Xray-core --pattern Xray-linux-64.zip` 退出 0；本地 SHA-256 及 16,754,078 字节与官方元数据一致，临时包已删除。该 zip 的 Linux libc 兼容性仍未知。
+- Windows 已有 Cargo 执行 `cargo tree --locked --offline -p core-ir -p plugin-sdk --edges normal` 退出 0：所选库默认正常依赖树无 Tauri、GTK 或 WebKitGTK；并非 Linux 产物依赖检查。
+- WSL `sh -n tools/build-linux` 退出 0；直接执行 `./tools/build-linux` 因缺 `rustc` 按设计退出 10；上述是语法/缺工具路径验证，不是实际编译或成功产物验证。脚本以 Rust 1.100.0、`x86_64-unknown-linux-gnu`、release、`--locked --offline` 构建两个现有库并复核其 SHA-256；锁定文件执行位为 `100755`。真实 release、产物摘要、动态依赖及运行均未覆盖。
+- 锁文件 JSON 核对和差异 `git diff --cached --check` 退出 0；代码增量 `gitleaks protect --staged` 退出 0、无命中。未新增项目依赖或安装工具。
+- 工具申请准备：官方 Rust 1.100.0 Linux x86_64 GNU 完整包 `https://static.rust-lang.org/dist/2026-11-12/rust-1.100.0-x86_64-unknown-linux-gnu.tar.xz` 官方清单 SHA-256 `98ee6bec240e1cfe944f17e7092412dc5ef6e008484bb668c6936d35a7d15acd`，HEAD 长度 211,225,068 字节；安装占用尚未核实。Rust 用于构建、不是项目运行时依赖，Rust 项目许可证为 MIT/Apache-2.0；包内组件各自许可仍需核查。Linux 还缺 C 编译器和开发头文件；`apt-get -s install --no-install-recommends gcc libc6-dev` 仅模拟，显示 27 个候选包，未安装。非全局的编译器及 sysroot 方案、其完整来源/摘要/许可证/体积和回滚方式尚未确定，不能据此申请或执行安装。
+- 当前状态仍 `doing/blocked`，须取得符合裁定的完整工具申请批准或由用户提供已安装的合规 Linux 工具链，再做真实构建；不标交付待审核或 done。
