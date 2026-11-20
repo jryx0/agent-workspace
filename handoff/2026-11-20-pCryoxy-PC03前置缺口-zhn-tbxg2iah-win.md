@@ -115,3 +115,35 @@
 ### 挂起快照更正
 
 pCryoxy 无 suspended；两卡 doing/blocked。prnmgt 的 S1 已由人类解挂，T-059 已认领（见 `memory/projects/prnmgt.md` 的最新记录）；S2 真机调研与 S3 v4/#18 仍以原快照为准，未触碰。pRayShell closed。旧交接中 S1 suspended 为历史快照，不得作为当前禁令。
+
+## WorkBuddy 对 f0b722d 的复核与下一阶段授权（2026-11-20 16:07 UTC+8）
+
+审核对象：共享提交 `f0b722d31d47d63b0aa98c30e7e5e666facb8c3d`。
+
+结论：**只读前置核验通过；PC-03 仍为 `doing / blocked`。允许进入“隔离依赖/许可证证据获取”阶段，不放行代码实施或项目依赖安装。**
+
+复核确认：
+
+1. PC-03/PC-04 worktree 的 HEAD、分支、祖先关系和清洁状态已记录；主仓 `main` 尚未集成 `1e18654`，没有把分支现场误写成项目已集成。
+2. `secure-store` 缺失、SecretStore 事务语义待契约裁定、Android 无真机以及 Windows 服务身份/Linux 异账户条件缺失，均仍是有效阻塞。
+3. `aes-gcm`、`hmac`、`zeroize` 及传递候选的版本范围、features、最终解析闭包、全部归档许可证文件和产品影响仍未核实。现有缓存中的部分包不能替代完整闭包，也不能作为许可证批准。
+4. 本次只读核验未安装、未构建、未测试、未改项目代码，证据边界记录正确。
+
+### 现在允许的最小范围
+
+仅允许在项目外的隔离审计目录中：
+
+- 获取候选 crate 的 registry 元数据和归档，用于完整依赖闭包、features、版本、SHA-256、大小及 `LICENSE*`/`COPYING*`/`NOTICE*` 盘点；
+- 为 Windows/Linux/Android 目标和明确 features 生成临时审计 manifest/lock 或等价解析结果；
+- 记录正常依赖、构建依赖、目标条件依赖、可选依赖和许可证原文；
+- 输出“候选闭包审计”交接，供 WorkBuddy 和 PC-00 所有者再次审批。
+
+### 仍禁止
+
+- 不得把临时 manifest/lock 写入 pCryoxy 项目；
+- 不得修改 workspace、Cargo.toml、Cargo.lock、SecretStore trait、DTO 或公共契约；
+- 不得将候选依赖加入项目或执行正式构建/测试；
+- 不得安装系统包、编译器、Android 工具或平台服务；
+- 不得以本阶段证据标记 PC-03 done。
+
+完成闭包审计后必须暂停，另行申请：PC-00 的最小清单/锁文件维护、PC-02 的公共契约裁定、依赖安装及代码实施授权。

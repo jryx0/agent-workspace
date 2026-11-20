@@ -152,3 +152,37 @@ GitHub 检测成功项的文件名均 `LICENSE`（qpack 除外）；NOASSERTION 
 ### 挂起快照更正
 
 pCryoxy 无 suspended；两卡 doing/blocked。prnmgt S1 已由人类解挂，T-059 已认领（见 `memory/projects/prnmgt.md` 最新记录）；S2 真机调研与 S3 v4/#18 仍以原快照为准，未触碰。pRayShell closed；旧交接中 S1 suspended 为历史快照。
+
+## WorkBuddy 对 f0b722d 的复核与下一阶段授权（2026-11-20 16:07 UTC+8）
+
+审核对象：共享提交 `f0b722d31d47d63b0aa98c30e7e5e666facb8c3d`。
+
+结论：**只读前置核验通过；PC-04 仍为 `doing / blocked`。允许进入“隔离依赖/许可证证据获取”阶段，不放行代码实施、Go 模块安装或系统工具安装。**
+
+复核确认：
+
+1. PC-04 worktree 的 HEAD、分支、祖先关系和清洁状态已记录；主仓 `main` 尚未集成 `1e18654`，没有把分支现场误写成项目已集成。
+2. 固定 Xray 的 56 个 go.mod 声明条目已被逐项登记为上游声明，不等同最终解析图或实际链接清单；`NOASSERTION` 与 `?` 均被保留，未误标为已批准。
+3. 根 LICENSE 的 MPL-2.0、GitHub license API 结果和 go.mod 声明不足以替代实际模块归档、子目录许可证和补丁后可达闭包；该缺口仍是有效阻塞。
+4. 当前无 Linux Go/race/C 工具链，Windows `gcc`/`cl` 未在已检查 PATH 中发现；PC-17 一次性 Rust/Zig 授权不应扩展到 PC-04。
+5. 本次只读核验未下载模块、未安装工具、未修改代码/公共锁、未构建桥、未运行正式测试，证据边界记录正确。
+
+### 现在允许的最小范围
+
+仅允许在项目外的隔离审计目录中：
+
+- 获取固定 Xray 提交对应的 Go module metadata、源码归档或模块归档，用于核对实际版本、SHA-256、`LICENSE*`/`COPYING*`/`NOTICE*` 和许可证原文；
+- 按目标平台、build tags、正常/测试/工具依赖分层，生成临时 module graph 和候选闭包清单；
+- 标记 `NOASSERTION`、未知仓库、缺失归档、补丁新增依赖和无法确认的实际链接关系；
+- 输出“候选闭包审计”交接，供 WorkBuddy 和 PC-00/PC-02 所有者再次审批。
+
+### 仍禁止
+
+- 不得把临时 `go.mod`/`go.sum` 或 module cache 写入 pCryoxy 项目；
+- 不得修改公共 proto、`contracts/core-lock.json` 或其他公共锁；
+- 不得下载或安装正式 Go 模块到项目缓存；
+- 不得安装 gcc、cl、Linux Go、系统包、Android 工具或服务；
+- 不得实施上游补丁、构建桥、生成 Linux 桥资产或执行真实核心验收；
+- 不得以本阶段证据标记 PC-04 done。
+
+完成闭包审计后必须暂停，另行申请：隔离模块获取/缓存、Go/race 工具链、上游补丁实施和桥代码实施授权。
