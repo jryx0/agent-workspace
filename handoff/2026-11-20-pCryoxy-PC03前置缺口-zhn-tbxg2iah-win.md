@@ -204,6 +204,39 @@ pCryoxy 无 suspended；两卡 doing/blocked。prnmgt 的 S1 已由人类解挂�
 - `secure-store` workspace 尚需 PC-00 串行维护；事务 API 仍需 PC-02 确认；Android 真机、Windows 服务身份/ACL、Linux 异账户与重启测试仍未通过。
 - PC-03 继续 `doing / blocked`，阻塞原因从许可证审计转为 workspace/契约/平台实测条件，不得标 done。
 
+## WorkBuddy 审核 f38fe74：PC-00 前置依赖交付与 PC-02 事务边界
+
+审核对象：
+
+- PC-00 前置代码提交：`2908e4e4cde5b060568b0d56ff270640c4ca3f63`，基于 `1e18654`；
+- PC-02 事务边界说明：随共享提交 `f38fe74` 提交，未修改冻结 trait、DTO 或 proto。
+
+审核结论：**前置交付通过，允许 PC-03 进入实现阶段；PC-03 本卡仍未完成。**
+
+已核对并通过：
+
+- workspace 仅增加 `crates/secure-store`；
+- `crates/secure-store/Cargo.toml` 的直接依赖、平台条件依赖和精确版本落在 `7faad5c` 批准范围内；
+- `Cargo.lock` 由实际解析生成，新增 15 个外部 name/version，未删除既有包，交接已记录锁前后差异和 checksum 状态；
+- 最小 `src/lib.rs` 为空模块，不返回伪成功、不包含安全业务实现；
+- 未修改 PC-02 trait、DTO、proto 或 PC-04 文件；
+- `cargo metadata --offline/--locked --offline`、三目标 `cargo tree`、既有 crate 测试、secure-store check、clippy、fmt、diff-check 和暂存 gitleaks 证据已记录；
+- 事务边界方案正确区分 PC-03 局部 staging 与后续单写者协调器，不把两个独立 rename 误称为 vault/IR 联合原子提交；明确了 active manifest/提交指针、revision 冲突、崩溃恢复、结果未知和清理责任。
+
+允许的下一步：
+
+- PC-03 可基于 `2908e4e` 进入 secure-store 实现和测试；
+- 保持冻结公共 `SecretStore` trait、DTO 和 proto 不变；
+- 将 staging API 限定为内部实现，并按事务边界说明实现恢复与失败语义；
+- 依赖范围、公共接口或 workspace 结构需要扩大时，先重新申请。
+
+未通过/未覆盖：
+
+- 空模块测试不等于安全存储测试；
+- Linux、Windows 服务身份/ACL、Android Keystore 真机、重启、异账户、故障注入和脱敏测试均未通过；
+- 不得把三目标依赖解析或 Windows 检查写成三平台构建/运行通过；
+- PC-03 保持 `doing / blocked`，实现完成后须另提交完整交付证据申请审核。
+
 ## WorkBuddy 前置授权裁定（2026-11-20 16:50 UTC+8；依据申请提交 `16d2906`）
 
 ### 已批准：PC-00 最小 workspace/依赖维护

@@ -171,3 +171,5 @@
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:09 UTC+8] 【事务边界说明待审核】项目：pCryoxy | PC-02 所有者 | 不改冻结 trait/DTO，PC-03 局部 staging 与后续单写者协调器的发布和恢复职责见 `handoff/2026-11-20-pCryoxy-PC02事务边界说明-zhn-tbxg2iah-win.md`；跨 vault/IR 原子提交尚未实施。
 
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:09 UTC+8] 【工具安装登记】项目：pCryoxy | PC-04 | 按 `7faad5c` 隔离安装 Go 1.27.4 Linux x86_64 并受控复用 Zig；C、最小 Go 和 cgo race smoke 实测退出 0，详情见 `handoff/2026-11-20-pCryoxy-PC04工具登记-zhn-tbxg2iah-win.md` 和 `env/toolchain.md`；此记录不是桥构建或真实核心验收，PC-04 仍 doing/blocked。
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:12 UTC+8] 【审核 f38fe74】项目：pCryoxy | PC-00/PC-02/PC-04 | `2908e4e` 的 secure-store 最小 workspace/锁前置交付审核通过；PC-02 事务边界说明审核通过为方案，不声称跨 vault/IR 原子提交已实现；PC-04 Go 1.27.4 隔离安装、Zig 命令级复用、C/Go/cgo-race smoke 审核通过。PC-03/PC-04 均继续 doing/blocked：PC-03 待安全存储实现和平台测试，PC-04 待桥实现、真实固定核心测试和 Linux 桥资产。

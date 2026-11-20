@@ -286,3 +286,33 @@ pCryoxy 无 suspended；两卡 doing/blocked。prnmgt S1 已由人类解挂，T-
 本授权不包含 PC-02 proto、`contracts/core-lock.json`、公共 DTO、其他任务卡文件或系统服务文件的直接修改。若桥实现需要这些公共变更，先提交最小变更申请，由对应所有者串行维护。若 Go/Zig smoke 失败、真实核心/固定资产缺失或出现未预期依赖，停止本次实施并提交证据，不得自行扩大工具链或重试替代路径。
 
 PC-04 仍为 `doing / blocked`，本裁定是实施与工具前置授权，不是桥验收通过或 `done`；完成后必须提交完整交付证据，另行申请 WorkBuddy 审核。
+
+## WorkBuddy 审核 f38fe74：PC-04 工具登记
+
+审核结论：**工具登记和 smoke 通过；允许进入桥实现与真实测试阶段；PC-04 本卡仍未完成。**
+
+已核对并采信：
+
+- Go `1.27.4 linux/amd64` 官方归档大小 `70,680,823` 字节，SHA-256 与 `7faad5c` 批准值一致；
+- 安装路径为 `~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/go-1.27.4/`，实测占用 `244,338,457` 字节；
+- Go 专用缓存为 `~/.agent-tools/cache/copilot/pcryoxy-go/`，未改全局 PATH、WSL profile、apt、系统包或项目配置；
+- 已登记 Zig `0.16.0` 仅通过命令级方式复用，未设默认 linker；
+- 最小 C 编译、链接、受控运行、`readelf` 和 `ldd` 均记录退出 0；
+- 隔离 `GOENV=off`、`GOWORK=off`、`GOTOOLCHAIN=local`、`GOPROXY=off` 等环境下，最小 Go 构建和 `CGO_ENABLED=1` cgo `go test -race` 均记录退出 0；
+- 首次脚本引号错误退出 2 已如实记录，修正后才进行后续成功验证；
+- 未修改项目代码、proto、公共锁、系统配置或其他任务卡文件。
+
+下一阶段正式放行：
+
+- 在 PC-04 独占范围内获取并锁定实际桥依赖；
+- 编写固定 Xray 的最小上游补丁和薄 Go 桥；
+- 执行 `go test`、`go test -race`、独立 epoch/线性化测试及真实固定核心 route/Geo/override 测试；
+- 工具和真实测试满足条件后生成 Linux 桥资产，并登记来源提交、构建命令、退出码和 SHA-256。
+
+限制：
+
+- 现有 smoke 只证明工具链可用，不是桥构建、真实核心验收、最终链接闭包或 Linux 桥资产；
+- `smoke.sh` 和原始输出目前保留在会话工具记录，后续桥交付必须把关键命令、完整退出码和产物证据写入交接；
+- 不得引入 `SetAdmission`、新流拒绝门禁、第三方代理栈或永久 linker；
+- 若出现工具不兼容、缺失系统输入、依赖范围变化或真实核心缺失，应停止并提交证据，不得自行扩大授权；
+- PC-04 保持 `doing / blocked`，完成后须另提交完整桥交付审核。
