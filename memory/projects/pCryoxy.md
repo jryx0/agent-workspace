@@ -87,3 +87,5 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 10:08 UTC+8] 【工具申请有条件批准】项目：pCryoxy | PC-02 | 批准 Windows x86_64 `protoc 29.5` 仅用于 proto 解析、递归 imports/descriptor 和 RPC 全名核验；仅专用工具目录，禁止全局 PATH、Cargo/运行时依赖。未批准 buf、Rust/Go runtime 或未冻结生成插件；本地 SHA-256 必须标注 local-observed 并写入 proto.lock。
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 10:08 UTC+8] 【Linux契约裁定】项目：pCryoxy | PC-02 | `RuntimeDto.platform` 增补 `linux`，`apiVersion` 保持 1；增补 `arch`、`libc`、`supportStatus` 兼容摘要字段，ready 必须同时满足握手、资产和实测证据。PC-17/18/19/20 分别负责平台矩阵、daemon 生命周期、Linux 数据面/systemd 和 Web 鉴权细节；PC-02 可基于 `2ccffd0` 继续公共契约实现，不能宣称 Linux 运行时已验收。完整裁定见对应 handoff。
+
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 10:26 UTC+8] 【工具安装登记】项目：pCryoxy | PC-02 | 按 `f2dd377` 安装 protoc 29.5 至 `~/.agent-tools/venvs/copilot/protoc-29.5-win64/`，`libprotoc 29.5` 实测退出 0；官方资产 3,189,582 字节，本地观察 SHA-256 `633d3e555fc97f0a1f55b4adb03256cd94b8059e51e7abbae98ff39e58a9dfa5`，非官方 digest；工具登记见 `env/toolchain.md`。未改全局 PATH 或 Cargo 锁。

@@ -73,6 +73,7 @@
 2026-11-19 | zhn-tbxg2iah-win | 安装（Agent 工具区，非全局） | Temurin JDK 21.0.13+9 LTS | 官方Release | copilot@zhn-tbxg2iah-win~zhn-x-w | pCryoxy PC-00，Adoptium `OpenJDK21U-jdk_x64_windows_hotspot_21.0.13_9.zip` SHA-256 `a4dbaa05fca4bd89d84584e58c459bd732efebb1722af80ab13c6516832004f9`，安装到 `~/.agent-tools/runtimes/jdk-21`
 2026-11-19 | zhn-tbxg2iah-win | 安装（Agent 工具区，非全局） | Android CLI 23.0.0 / Platform-Tools 37.0.1 / SDK Platform 36、37.0、37.2 / Build-Tools 36.0.0、37.0.0 / NDK 29.0.14206865 | 官方Release | copilot@zhn-tbxg2iah-win~zhn-x-w | pCryoxy PC-00，用户已批准 Android SDK 许可；Google 官方 command-line tools `commandlinetools-win-16111833_latest.zip`（154,957,218 B）与 sdkmanager 安装，`ANDROID_HOME=~/.agent-tools/android-sdk`；ADB `1.0.41`，NDK Clang `21.0.0`
 2026-11-19 | zhn-tbxg2iah-win | 安装（Agent 工具区，非全局） | Gradle 9.6.1 | 官方Release | copilot@zhn-tbxg2iah-win~zhn-x-w | pCryoxy PC-00 Android 包装；官方 `gradle-9.6.1-bin.zip` SHA-256 `9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14`，安装到 `~/.agent-tools/runtimes/gradle-9.6.1`
+2026-11-20 | zhn-tbxg2iah-win | 安装（Agent 专用，非全局） | protoc 29.5 Windows x86_64 | 官方Release | copilot@zhn-tbxg2iah-win~zhn-x-w | PC-02 有条件批准 `f2dd377`；`https://github.com/protocolbuffers/protobuf/releases/tag/v29.5` 的 `protoc-29.5-win64.zip`，3,189,582 字节，本地观察 SHA-256 `633d3e555fc97f0a1f55b4adb03256cd94b8059e51e7abbae98ff39e58a9dfa5`（非官方 digest）；`~/.agent-tools/venvs/copilot/protoc-29.5-win64/bin/protoc.exe`，实测 `libprotoc 29.5`；不改 PATH；扫描 stamp 未满 30 天，未运行 `--write`
 ```
 
 ## 六、设备清单索引
