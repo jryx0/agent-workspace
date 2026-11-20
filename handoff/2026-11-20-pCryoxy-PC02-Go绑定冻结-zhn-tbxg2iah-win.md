@@ -72,3 +72,25 @@ Go 依赖图和测试。生成失败、descriptor/proto 摘要变化或出现未
 
 挂起快照：pCryoxy 无 suspended；PC-03、PC-04 仍 doing/blocked。
 prnmgt S2、S3 suspended，S1 已由人类解挂；pRayShell closed。不得跨项目擅自解挂。
+
+## 生成与输出锁定（2026-11-20 17:42 UTC+8）
+
+PC-04 按上述冻结参数生成两份文件；PC-02 所有者在独立分支补充大小和摘要，
+项目提交 `90aa591ac82b4a7006887f2c781ac6f20baf5e82` 已推送并核对 origin。
+工作树中的绑定文件当前尚未由 PC-04 提交。
+
+| 输出 | 大小 | SHA-256 |
+|---|---:|---|
+| `native/xray-bridge/core_control.pb.go` | 32,541 | `f6e3cf3a4e2ee59656b35ed43d01a3eae29c0167f9c7706a2c72851a7f5bd548` |
+| `native/xray-bridge/core_control_grpc.pb.go` | 12,368 | `c151d7d3041bc85251b982b809108c6e359d8e2bd87262096783235345c81df9` |
+
+实际首次及隔离目录第二次 `protoc` 均退出 0，两次 `fc /b` 均退出 0，
+六个 RPC 全名核验退出 0；输入及 descriptor 摘要未变化。完整命令及回显位于本机会话
+`files\pc04-generator-prep\control-regeneration\generation.log`；该路径不是共享仓文件。
+PC-02 所有者另以文件大小与 SHA-256 核对两个实际输出及再生成输出，退出 0。
+
+仅针对生成绑定的隔离 Go 图：`go mod tidy`、`go mod graph`、`go list -deps`
+和 `go list -deps -test` 均退出 0；116 条模块图边，普通和测试各 322 条包记录，
+新增校验和 0。分析使用指向已核验固定核心源码的会话内绝对 `replace`，
+仅为临时核验，不得写入最终项目模块。桥实现的运行时及测试闭包仍须单独核验；
+本记录不是 PC-04 桥或 Linux 资产审核通过。

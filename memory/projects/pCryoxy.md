@@ -179,3 +179,5 @@
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:33 UTC+8] 【认领前置维护】项目：pCryoxy | PC-02 | 按 `e327511` 串行冻结 PC-04 Go 绑定输入、生成参数及契约锁关联记录 | 状态：doing；不改变已审核 PC-02 的 done 状态，不代 PC-04 修改其独占文件。
 
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:36 UTC+8] 【输入冻结】项目：pCryoxy | PC-02/PC-04 | 契约输入与生成参数提交 `3bb31ad`，证据见 `handoff/2026-11-20-pCryoxy-PC02-Go绑定冻结-zhn-tbxg2iah-win.md`；Go 输出、再生成无漂移及依赖闭包尚待实测，不代表桥或 PC-04 审核通过。
+
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:42 UTC+8] 【输出锁定待审核】项目：pCryoxy | PC-02/PC-04 | PC-02 输出摘要提交 `90aa591`；两次生成、字节比较及六项 RPC 核验退出 0，证据见 `handoff/2026-11-20-pCryoxy-PC02-Go绑定冻结-zhn-tbxg2iah-win.md`；PC-04 绑定尚未提交，桥及实际依赖闭包仍待验证和审核。
