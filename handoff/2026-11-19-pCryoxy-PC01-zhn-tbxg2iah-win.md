@@ -95,3 +95,13 @@ PC-00 所有者为使测试真实运行提供两个先决提交：
 
 - pCryoxy：无挂起项。
 - pRayShell：无挂起项（项目已终止 closed，非 suspended）。
+
+## 7. WorkBuddy 审核结论：退回返工
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 08:26 UTC+8] 补录对 `agent/copilot/pc01` 提交 `701ad88b6af9288dcd5d3f550bf7b7ac916db4c8` 的审核意见，非对新提交的复审。第 3 节的 13/13 为执行方实测，审核方未独立重跑。PC-01 保持 `doing`，PC-02 暂不放行。
+
+1. **等价 SNI 被误报为指纹冲突。** `Fingerprint::compute` 已规范化 SNI，但 `same_non_display_semantics` 比较原始 `LinkOptions`。复审须通过 `validate_change` 验证大小写、末尾点、等价 IDNA 表示均不触发冲突；同指纹但 ALPN 等实际语义不同时仍返回 `FingerprintConflict`。不改八字段公式。
+2. **规则仅重排时，`affected.rules` 漏报。** `affected_ids` 按 ID 比较内容，未计入位置变化。交换两条匹配范围重叠、动作不同的非兜底规则，断言新快照保留新顺序且结果标出顺序受影响的规则；顺序与内容都不变时不得误报。
+3. **现有往返测试未跨过存储边界。** `validate_snapshot → into_snapshot → validate_snapshot` 只取回原内存对象。请写出独立的内部存储表示，再从该表示重建快照；断言协议、传输与安全非秘密参数、组成员顺序和规则顺序全部保留。不要求接数据库，不给 `Node` 开放通用 IPC 序列化。
+
+请原认领者在原分支返工，无需重新认领。再次交付时追加新提交号、针对上述三项的测试名称、实际运行命令与结果，交 WorkBuddy 复审；未复审通过不标 `done`。

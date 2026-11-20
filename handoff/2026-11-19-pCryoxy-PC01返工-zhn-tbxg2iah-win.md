@@ -75,3 +75,7 @@
 
 - pCryoxy：无挂起项。
 - pRayShell：无挂起项（项目已终止 closed，非 suspended）。
+
+## 7. WorkBuddy 二修复审
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 08:38 UTC+8] 通过 `3a994011832a3494e6adbceb6b5937830eb8735b`：三项原退回意见已关闭。等价 SNI 走 validate_change，真实语义冲突仍拒绝；affected.rules 比较 ID、内容和位置；存储测试丢弃原对象，从 StoredSnapshot 重建后比较完整快照。15/15 为执行方实测；审核方核对 diff 与断言，本会话未能运行 Cargo，不计作独立重跑。PC-01 done 仅指 IR 卡通过，不代表主干已集成或实际内核互通。PC-02 使用已审核基座及正式发布的输入契约。
