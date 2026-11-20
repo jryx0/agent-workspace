@@ -203,3 +203,34 @@ pCryoxy 无 suspended；两卡 doing/blocked。prnmgt 的 S1 已由人类解挂�
 
 - `secure-store` workspace 尚需 PC-00 串行维护；事务 API 仍需 PC-02 确认；Android 真机、Windows 服务身份/ACL、Linux 异账户与重启测试仍未通过。
 - PC-03 继续 `doing / blocked`，阻塞原因从许可证审计转为 workspace/契约/平台实测条件，不得标 done。
+
+## WorkBuddy 前置授权裁定（2026-11-20 16:50 UTC+8；依据申请提交 `16d2906`）
+
+### 已批准：PC-00 最小 workspace/依赖维护
+
+批准 PC-00 所有者在独立分支、基于 `1e18654` 串行维护以下最小范围：
+
+- 根 `Cargo.toml`：仅加入 `crates/secure-store` workspace 成员；
+- 根 `Cargo.lock`：由实际解析结果生成和校验，不手工承诺固定包数；
+- `crates/secure-store/Cargo.toml`；
+- 为使 workspace 可解析所需的最小空 `crates/secure-store/src/lib.rs`。
+
+空模块不得返回伪成功，也不得提前实现安全功能。候选直接依赖和版本/feature 以申请表为本次候选范围：`aes-gcm = 0.10.3`（含申请的 `zeroize` feature）、`hmac = 0.12.1`、既有 `sha2 = 0.10.9`、`zeroize = 1.8.2`、既有 `getrandom = 0.3.4`，以及按平台实际需要使用的 `windows-sys = 0.61.2`、`libc = 0.2.191`、`jni = 0.21.1`。实际 lock 解析、feature 展开和下载增量必须以提交证据为准；超出上述版本、feature 或直接依赖范围，需重新申请。
+
+PC-00 提交前须记录 `cargo metadata --locked`/等价解析结果、lock 前后差异、工作树状态和离线缓存边界，并申请 WorkBuddy 审核。PC-03 不得在自己的分支改根清单或 lock。
+
+### 已批准：PC-03 在前置提交审核后实施
+
+PC-00 前置提交审核通过后，PC-03 可在已登记独占文件内实施 secure-store、平台适配、脱敏和单元/可复现测试；允许使用已登记隔离依赖和本地缓存。不得新增未申请依赖，不得修改公共 DTO/proto 或冻结的 `SecretStore` trait。
+
+### PC-02 事务契约裁定
+
+先保持公共 `SecretStore` trait/DTO 不变。PC-03 可在自身实现内提供受限 staging API，但必须把它限定为安全存储内部的暂存、校验、提交和清理能力；不得宣称仅靠两个方法实现跨 vault/IR 的崩溃原子性。PC-02 所有者须补一份可执行的事务边界说明，明确调用者、发布顺序、失败恢复、进程中断后的清理和与单写者/导入卡的责任；若确需改公共 trait，再单独提交最小契约变更申请。
+
+### 仍未批准/仍需实测
+
+- Android Keystore 真机、Windows 服务身份/ACL、Linux 异账户/重启等平台证据；
+- 任何公共 trait/DTO、proto、公共 lock 之外的扩大变更；
+- 将内部构建状态写成对外分发或许可证已确认结论。
+
+本裁定不将 PC-03 标记为 `done`；状态保持 `doing / blocked`，待 PC-00 前置提交审核、PC-02 事务说明及平台实测证据完成后再交付审核。

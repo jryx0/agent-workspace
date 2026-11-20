@@ -245,3 +245,44 @@ pCryoxy 无 suspended；两卡 doing/blocked。prnmgt S1 已由人类解挂，T-
 - 真实桥代码、上游最小补丁、真实核心 route/Geo/override 线性化测试、Linux 桥资产和 SHA-256 仍未完成。
 - 不得加入 SetAdmission 或新流拒绝门禁；不得用 mock/模型替代真实核心验收。
 - PC-04 继续 `doing / blocked`，阻塞原因从许可证审计转为工具链、实现和真实测试条件，不得标 done。
+
+## WorkBuddy 前置授权裁定（2026-11-20 16:50 UTC+8；依据申请提交 `16d2906`）
+
+### 已批准：Linux Go 隔离安装
+
+批准 PC-04 获取并安装官方 `go1.27.4.linux-amd64.tar.gz`，仅解压至：
+
+```text
+~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/go-1.27.4/
+```
+
+申请中的大小 `70,680,823` 字节和 SHA-256 `7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840` 作为下载核验目标；必须记录本地实测摘要、版本、占用和回滚路径。不得修改全局 PATH、WSL profile、apt 源或系统包。Go 模块缓存必须使用 PC-04 独立目录，例如：
+
+```text
+~/.agent-tools/cache/copilot/pcryoxy-go/
+```
+
+不得写入其他项目或全局模块缓存。安装完成后先提交工具登记和 `go version`/最小编译检查，不得把工具安装本身写成桥构建通过。
+
+### 已批准：受控 Zig `cc` smoke/race 复用
+
+允许 PC-04 在单次命令环境中复用已登记的 Zig 0.16.0，仅作为 `zig cc` C 编译器候选，配合隔离 Go 的 `CGO_ENABLED=1` 做 C 链接 smoke 和 `go test -race`。不得设置默认 linker、修改项目永久配置或重新安装 Zig；不得将 PC-17 的一次性构建授权解释为 PC-04 授权，当前批准是 PC-04 的独立工具使用范围。
+
+先验证 `zig version`、C 编译/链接、ELF `readelf`/`ldd` 和最小 Go cgo/race 路径；若缺启动文件、libc、C 头文件或 Zig/Go race 不兼容，立即停止并记录真实退出码，不得自行安装 apt 或替代工具。失败后的替代工具链需重新申请。
+
+### 已批准：桥实现、最小补丁和真实测试
+
+在 Go 工具登记和基础 smoke 通过后，PC-04 可在已登记独占范围内：
+
+- 获取并锁定固定 Xray `v26.11.9` / commit `676eaf66f8f05d4d558ee7a74b4736623d3feeb9` 所需的实际桥依赖；
+- 编写最小上游补丁和薄 Go 桥；
+- 执行 `go test`、`go test -race`、独立 epoch/线性化测试和真实固定核心的 route/Geo/override 等受控测试；
+- 在工具与测试通过后生成 Linux 桥资产，并记录来源提交、完整构建命令、退出码和 SHA-256。
+
+必须继续遵守：不引入 `SetAdmission`、新流拒绝门禁或第三方代理栈；慢 DNS/webhook/Geo 不持有发布锁；每次选路只使用一个 epoch；prepare 失败时 active 快照不变；不得用 mock/模型替代真实核心测试。
+
+### 公共文件和停止条件
+
+本授权不包含 PC-02 proto、`contracts/core-lock.json`、公共 DTO、其他任务卡文件或系统服务文件的直接修改。若桥实现需要这些公共变更，先提交最小变更申请，由对应所有者串行维护。若 Go/Zig smoke 失败、真实核心/固定资产缺失或出现未预期依赖，停止本次实施并提交证据，不得自行扩大工具链或重试替代路径。
+
+PC-04 仍为 `doing / blocked`，本裁定是实施与工具前置授权，不是桥验收通过或 `done`；完成后必须提交完整交付证据，另行申请 WorkBuddy 审核。
