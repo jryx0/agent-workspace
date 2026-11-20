@@ -100,3 +100,13 @@ Python 标准库 `tarfile` 只读遍历退出 0：19,546 个常规文件、1,286
 - pCryoxy：无 suspended；PC-17 doing/blocked（不是 suspended）。
 - prnmgt：S1、S2、S3 保持 suspended，未触碰。
 - pRayShell：closed；未触碰。
+
+## 执行方追加：Zig L2 补证（2026-11-20）
+
+依据 `fe88cf0`，补充扫描结果，仍不宣称完整逐文件 SBOM：
+
+1. **archive-declared：** Zig 0.16.0 Linux x86_64 的官方归档、大小、SHA-256、根 MIT 许可与目录计数见上文。完整扫描到的 4,416 条 SPDX 原文标记及其各自相对路径，包括所有本次扫描发现的 GPL/CDDL/LGPL、例外和复合表达式，保存在 `handoff/2026-11-20-pCryoxy-PC17-Zig-SPDX路径-zhn-tbxg2iah-win.tsv`；共 46 种原始标记，不改写其括号或表达式。
+2. **许可证相关文件清单：** `LICENSE`；`lib/libc/freebsd/COPYRIGHT`；`lib/libc/glibc/LICENSES`；`lib/libc/include/generic-freebsd/sys/copyright.h`；`lib/libc/mingw/COPYING`；`lib/libc/musl/COPYRIGHT`；`lib/libc/wasi/LICENSE`、`LICENSE-APACHE`、`LICENSE-APACHE-LLVM`、`LICENSE-MIT`；`lib/libc/wasi/fts/musl-fts/COPYING`；`lib/libc/wasi/libc-bottom-half/cloudlibc/LICENSE`；`lib/libc/wasi/libc-top-half/musl/COPYRIGHT`；`lib/libcxx/LICENSE.TXT`；`lib/libcxxabi/LICENSE.TXT`；`lib/libunwind/LICENSE.TXT`。其中 `copyright.h` 是按文件名匹配的头文件，不能仅凭名字当作许可证。
+3. **component-attribution：** Zig 自身根许可参见 `LICENSE`；libc 各平台参见各自上述许可和源码标记；libcxx、libcxxabi、libunwind 分别参见各自 `LICENSE.TXT`；LLVM 相关头文件参见源码标记及上述 LLVM 许可文本。`zig` 可执行文件内部组件、`lib/compiler_rt`、`lib/libtsan` 和无法与许可文件直接对应的文件仍为 `attribution-unverified`，不把根 MIT 分配给它们。
+4. **selection/linkage：** 尚未安装、未运行 Zig，所有头文件、启动文件、库和运行时的实际选择与链接均为 `not established`；工具归档及安装目录不复制到项目发布物。后续 smoke 或项目产物涉及的实际物料必须另按 L3 判断。
+5. **复现：** 执行 `python ~/.copilot/session-state/16845d49-d5b4-494a-a1cd-caa481a4004e/files/pc17-zig-audit.py`，退出 0；该脚本校验归档 SHA-256、类型/数量、许可证路径和原始标记。加 `--manifest` 生成上述 TSV，退出 0。扫描范围仅为 `.c/.h/.zig/.s/.cpp/.hpp/.txt/.rs`、小于 5,000,000 字节文件的前 4,096 字节；未扫描或无显式标记并不等于无许可。
