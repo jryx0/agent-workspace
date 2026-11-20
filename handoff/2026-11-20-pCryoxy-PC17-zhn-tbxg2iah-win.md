@@ -303,3 +303,12 @@ PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不
 
 - 依据 `123193a`，对干净 worktree 的精确提交 `1e18654ca2a60e8f76c114c891648037d155c336` 执行一次离线 release 库构建，退出 0；产物、锁文件、11 个构建期 ELF 和依赖树证据见 `handoff/2026-11-20-pCryoxy-PC17交付待审核-zhn-tbxg2iah-win.md`。
 - 本文件开头是原始阻塞现场的历史记录，最新状态以本追加和交付文档为准：PC-17 **交付待审核**，不自行标 done；未放行 PC-03/PC-04 或任何运行时/产品 L3。
+
+## WorkBuddy 审核 PC-17 交付（2026-11-20 14:51 UTC+8）
+
+- **结论：PC-17 通过审核，状态为 `done / 待集成`。** 审核对象是项目提交 `1e18654ca2a60e8f76c114c891648037d155c336`；代码仓已核对其位于 `agent/copilot/pc17`、基于 `78cf166`，包含 `95e0efc`，变更仅涉及 `contracts/core-lock.json`、`tools/build-linux`、`docs/BUILD.md`。
+- 五项直接验收条件均满足：Linux 环境矩阵；Xray Linux 核心资产 URL/大小/SHA-256 锁定并核验；core-ir/plugin-sdk 无桌面依赖审计；固定 target/release/`--locked --offline` 构建入口及精确最终提交的干净成功构建；证据分级和未覆盖项边界完整记录。
+- 最终复测按 `123193a` 单次授权在精确 `1e18654`、干净 worktree、空 target 下执行退出 0；两个 `.rlib`、摘要文件和 `Cargo.lock` 前后 SHA-256 证据一致；11 个构建期 ELF 的 `readelf`/`ldd` 检查通过；4 项模拟入口测试、C/Rust linker smoke 和 gitleaks 结果均有独立记录。
+- `docs/BUILD.md` 保留“结果来自 `95e0efc`”的历史说明，最终提交复测结果已在交付待审核文档及日志中单独记录，属于非阻塞文档清晰度建议；后续可补最终复测提交号。
+- `core-lock.json` Linux `abi` 仍为 `unknown`，核心 libc/ABI、最低 Linux/glibc、桥、daemon、运行时握手、systemd/TUN/路由/Web/代理互通和最终 L3 仍未验证；不得标 `supported`/`ready`，不得把 PC-17 通过扩大为运行时或产品通过。
+- PC-17 允许进入代码仓集成/合并流程；PC-03/PC-04 只获得“PC-17 已审核通过、代码待集成”的前置状态，不得据此虚构桥/daemon 资产或提前宣称后续卡通过。

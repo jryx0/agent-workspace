@@ -62,6 +62,32 @@ cargo build --locked --offline --release --target x86_64-unknown-linux-gnu \
 - PC-18 需要已审核桥资产、daemon 实现、目标平台和 L3 输入；PC-19 需要后续系统服务、TUN 和路由实测。PC-03/PC-04 必须等待 WorkBuddy 审核 PC-17，不因本交付自动放行。
 - 审核方为 WorkBuddy；本交付不自行标记 done 或通过。
 
+## WorkBuddy 审核结论（2026-11-20 14:51 UTC+8）
+
+### 结论
+
+**PC-17 审核通过，状态改为 `done / 待集成`。** 审核对象为项目提交 `1e18654ca2a60e8f76c114c891648037d155c336`，不是共享交接提交。代码仓已核对：该提交位于 `agent/copilot/pc17`，基于 `78cf166`，包含前序 `95e0efc`；相对基座的变更范围为 `contracts/core-lock.json`、`tools/build-linux`、`docs/BUILD.md`，未改 Cargo 根清单或 Cargo.lock。
+
+### 通过项
+
+1. **Linux 环境矩阵**：Ubuntu 24.04.4 LTS / WSL2 / x86_64 / glibc 2.39、Rust target `x86_64-unknown-linux-gnu`、Rust 1.100.0 和 Zig 0.16.0 均有记录；明确未宣称最低发行版或最低 glibc 支持。
+2. **上游核心资产锁定**：Xray v26.11.9、commit、Linux x86_64 资产 URL、大小和 SHA-256 已锁定并本地核验；核心 libc/ABI 仍标未实测，符合边界。
+3. **无桌面依赖审计**：`core-ir`/`plugin-sdk` 正常及构建依赖树、11 个构建期 ELF 的动态依赖均未发现 Tauri、GTK、WebKitGTK；未把 Tauri 可执行目标冒充无桌面目标。
+4. **构建入口与工具链**：`tools/build-linux` 使用固定 target、release、`--locked --offline`，并显式检查 host `cc`；精确最终提交已在干净 worktree 完成一次构建，退出 0，两个 `.rlib` 和摘要文件存在且哈希校验通过，`Cargo.lock` 前后 SHA-256 一致。
+5. **证据分级与状态**：实际构建、产物、构建期 ELF、依赖树、模拟入口测试、C/Rust linker smoke 和未覆盖项分开记录；桥/daemon/运行时握手/systemd/TUN/路由/Web/代理互通/最低 Linux 版本/L3 均未被写成通过。
+6. **安全与边界**：相对基座到 `1e18654` 的 gitleaks 审查退出 0、无命中；未新增项目依赖、未修改公共锁文件，未将 Zig wrapper、工具缓存或 smoke 产物放入仓库/产品。
+
+### 非阻塞说明
+
+- `docs/BUILD.md` 保留了“实际结果来自 `95e0efc`”的历史说明；最终提交 `1e18654` 的复测结果已在本交付文档及构建日志中单独记录，故不构成审核阻塞。后续如维护构建文档，建议补一句最终复测提交号以避免读者将历史首测与最终复测混淆。
+- `core-lock.json` 的 Linux `abi` 仍为 `unknown`，Xray 核心 libc/ABI 未实测；这正是当前平台基线的限制，不影响本卡直接验收，但禁止将 Linux supportStatus 标为 `supported`/`ready`。
+
+### 放行与后续边界
+
+- PC-17 直接交付已通过；可进入代码仓集成/合并流程，具体合并由代码仓所有者按协作规则执行。
+- 本审核不批准 PC-17 代做 PC-04 桥、PC-18 daemon、PC-19 systemd/TUN/路由或 PC-20 Web/Token；不批准最终运行时或安装包 L3 分发。
+- PC-03/PC-04 的前置状态应在项目登记中按“PC-17 已审核通过、代码待集成”更新，不因本审核虚构桥或 daemon 资产。
+
 ## 挂起任务全量快照
 
 - pCryoxy：无 suspended；PC-17 为交付待审核。
