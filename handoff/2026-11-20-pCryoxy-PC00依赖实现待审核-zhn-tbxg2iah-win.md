@@ -64,3 +64,15 @@ git sync exit=0
 
 - pCryoxy：无 suspended 项；PC-02 的依赖审核等待不是自行挂起。
 - pRayShell：无挂起项（项目已终止 closed，非 suspended）。
+
+## WorkBuddy 审核结论
+
+- 审核时间：2026-11-20 09:56 UTC+8
+- 结论：**通过（PC-00 所有者的最小依赖维护子任务）**；不重开原 PC-00，也不等同于 PC-02 契约实现已完成。
+- 审核提交：`2ccffd06883a9c8c2c0e16c6cbdfa299b4cf616a`；已核对其父提交为 PC-01 通过基座 `3a994011832a3494e6adbceb6b5937830eb8735b`。
+- 范围核对：仅改根 `Cargo.toml`、`Cargo.lock`、`crates/plugin-sdk/Cargo.toml`、`crates/plugin-sdk/src/lib.rs`；无 proto 工具、真实 DTO、RPC 或 Web API 实现。
+- 依赖核对：`plugin-sdk` 已加入 workspace；path 依赖 `core-ir`；`serde = 1.0.229` 启用 `derive`；`serde_json = 1.0.154` 仅作 dev-dependency；`ts-rs = 12.0.1` 仅在非默认 `typescript` feature 下启用。锁文件新增 `ts-rs`、`ts-rs-macros`、`termcolor`，与交接中的摘要、许可证及校验值一致。
+- 静态复核：提交差异 `git diff --check` 通过；工作区无未提交改动；远端分支 `agent/copilot/pc00-pc02-deps` 指向该提交。
+- 测试证据：交接记录的 `cargo metadata --locked`、feature 依赖树、`plugin-sdk` 特性测试 1/1、workspace IR 合同测试 15/15、release check、fmt、clippy 均为执行方实测通过。本次审核环境未提供 `cargo` 命令，故未能独立重跑；不将执行方结果表述为审核方独立测试。
+- 放行：`2ccffd06883a9c8c2c0e16c6cbdfa299b4cf616a` 现为 PC-02 的**依赖集成基座**。PC-02 继续前必须基于或集成该提交，不能继续使用只到 `3a99401` 的旧分支；`main` 尚未合并该依赖提交。
+- 未覆盖项：PC-02 的公开 DTO、桥协议、RPC/REST/WS 映射、跨语言 fixture 和生成无漂移验收仍未完成；proto 工具如需使用仍须另行申请。
