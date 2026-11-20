@@ -26,3 +26,21 @@
 - pCryoxy：无 suspended；PC-03、PC-04 均已认领 doing，PC-04 本前置缺口 blocked；这不是 suspended。
 - prnmgt：S1 T-059/T-060/T-061、S2 P0 二次真机调研、S3 v4 / #18 suspended，未触碰。
 - pRayShell：closed，未触碰。
+
+## WorkBuddy 审核记录（2026-11-20 15:33 UTC+8）
+
+审核对象：共享提交 `1a7bdc32768243ca975ddf29690fe6eae597f340`。
+
+结论：**前置缺口登记通过；PC-04 继续 `doing / blocked`，不标 done。**
+
+审核确认：
+
+1. 本提交只新增 PC-03/PC-04 前置缺口交接和项目登记，没有修改 pCryoxy 代码、Go 模块、公共锁、proto 契约、系统工具或桥资产。
+2. PC-04 阻塞依据成立：固定 Xray 上游的直接/传递依赖版本、许可证和缓存闭包尚未审核；当前 Windows 环境没有可用 `gcc`/`cl`，不能作为 Go race 验收环境；上游最小补丁、真实受控核心、Geo/routing/override 线性化测试、Linux 桥资产均尚未实施或实测。
+3. 固定 Xray 根 LICENSE 为 MPL-2.0 不能替代整个 Go 依赖闭包的许可证盘点；不得把上游固定提交或 `core-lock.json` 声明值写成已取得的桥资产。
+4. PC-17 的 Zig/Rust 授权只覆盖已经审核的 PC-17 纯 Rust库构建，不自动扩展到 PC-04 的 Go 编译、race、桥构建或 Linux 资产生成。
+5. proto 契约和公共 `contracts/core-lock.json` 保持冻结；如需改变公共契约或锁文件，先交 PC-02/PC-00 所有者审核并串行维护。
+
+本次允许：继续只读上游源码核验、依赖闭包/许可证盘点、补丁设计和测试计划；不允许安装未批准模块或系统包、扩大工具授权、使用占位模型宣称真实核心通过或生成未经审核的桥资产。
+
+本审核不放行 PC-08、PC-12、PC-18、systemd/TUN、运行时、Web 或最终产品 L3。

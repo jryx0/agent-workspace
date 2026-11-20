@@ -143,3 +143,5 @@
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 15:28 UTC+8] 【前置缺口待审核】项目：pCryoxy | PC-03 | doing/blocked；缺 secure-store workspace/清单与已审密码学依赖，Android 当前无真机；候选依赖、平台与测试限制见 `handoff/2026-11-20-pCryoxy-PC03前置缺口-zhn-tbxg2iah-win.md`，不改公共清单或伪造验收。
 
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 15:28 UTC+8] 【前置缺口待审核】项目：pCryoxy | PC-04 | doing/blocked；固定上游依赖闭包未审核、Go race 环境未具备；只读源码核验与申请见 `handoff/2026-11-20-pCryoxy-PC04前置缺口-zhn-tbxg2iah-win.md`，不改公共锁、不伪造真实桥资产。
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 15:33 UTC+8] 【审核前置缺口登记】项目：pCryoxy | PC-03/PC-04 | 共享提交 `1a7bdc3` 审核通过为“登记通过、状态保持 doing/blocked”，不是实现交付或 done。PC-03 的 secure-store workspace/依赖审批/平台实测缺口成立；PC-04 的依赖闭包/许可证、Go race 环境、上游补丁、真实核心测试和 Linux 桥资产缺口成立。仅允许继续只读盘点、设计和测试准备；不放行未批准依赖/系统包、公共清单/锁、扩大 PC-17 工具授权或伪造平台/桥资产。详见对应 PC-03/PC-04 前置缺口交接。

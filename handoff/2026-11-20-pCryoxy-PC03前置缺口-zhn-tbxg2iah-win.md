@@ -33,3 +33,21 @@
 - pCryoxy：无 suspended；PC-03、PC-04 均已认领 doing，PC-03 本前置缺口 blocked；这不是 suspended。
 - prnmgt：S1 T-059/T-060/T-061、S2 P0 二次真机调研、S3 v4 / #18 suspended，未触碰。
 - pRayShell：closed，未触碰。
+
+## WorkBuddy 审核记录（2026-11-20 15:33 UTC+8）
+
+审核对象：共享提交 `1a7bdc32768243ca975ddf29690fe6eae597f340`。
+
+结论：**前置缺口登记通过；PC-03 继续 `doing / blocked`，不标 done。**
+
+审核确认：
+
+1. 本提交只新增 PC-03/PC-04 前置缺口交接和项目登记，没有修改 pCryoxy 代码、Cargo workspace、Cargo.lock、公共契约、系统工具或平台凭据。
+2. PC-03 阻塞依据成立：当前基座缺少 `secure-store` crate 与源文件；事务 API 是否需要改变冻结契约尚未解决；密码学依赖闭包、许可证和锁文件变更尚未审批；Android 真机、Windows 服务身份/ACL、Linux 异账户与重启场景尚未完成实测。
+3. `aes-gcm`、`hmac`、`zeroize` 仅作为未批准候选，不视为依赖授权、许可证批准或已安装资产；不得在本卡分支自行写入公共清单或 Cargo.lock。
+4. PC-00 所有者必须先以独立提交维护 workspace/锁文件；如需改变 `SecretStore` 公共 trait 或 DTO，先交 PC-02 契约所有者审核。
+5. 缺少 Android 真机、服务身份和异账户环境的项目必须保留为未完成，不得用模拟实现或静态检查冒充平台验收。
+
+本次允许：继续只读依赖闭包/许可证盘点、设计和测试准备；不允许安装未批准依赖、修改公共清单/锁、伪造平台证据或将 PC-03 交付。
+
+本审核不放行 PC-04、PC-06、PC-10、PC-11，也不代表安全存储或产品 L3 通过。
