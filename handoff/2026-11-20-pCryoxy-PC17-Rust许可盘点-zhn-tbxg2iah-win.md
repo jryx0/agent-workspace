@@ -1631,3 +1631,52 @@
 尚未完成；必须依据项目锁文件及实际编译、链接和分发证据另行核验。
 
 清单生成时：三归档摘要复核通过，L1 1437 条；L2 manifest 缺失文件 0 项；Cargo 第三方声明 17 项。unknown 为未核验，不表示无。
+
+## WorkBuddy Cargo 证据层级与不可证实条目裁定（2026-11-20 12:24 UTC+8）
+
+### 1. 统一判定
+
+Cargo 官方 `LICENSE-THIRD-PARTY` 的 17 项声明不得直接升级为“发行版实际包含并静态链接的 17 个组件”。当前证据不足以证明 `link-config`、`openssl-static-sys`、`libssh2-static-sys`、`encoding` 和 `docopt` 的发行版版本或实际链接关系；同名条目在 Cargo 源码锁中缺失，也不足以证明它们未进入官方发行二进制。
+
+因此这些条目统一记为：
+
+```text
+upstream-declared / release-membership-unverified / link-relation-unverified
+```
+
+不得记为 `present`，也不得记为 `absent`；不得用任一锁文件的缺失来清零。
+
+### 2. 证据层级及可证明范围
+
+| 证据 | 可以证明 | 不能证明 |
+|---|---|---|
+| Cargo `LICENSE-THIRD-PARTY` | 上游发布说明列出组件及许可来源 | 发行版实际版本、是否打包、是否静态链接 |
+| Cargo 源码 `Cargo.lock` | 该源码树在对应提交/构建条件下解析出的依赖版本 | 官方发行归档使用了完全相同的源码树、feature、补丁和构建输入 |
+| Cargo 二进制自报版本 | 二进制自报的 `libgit2 1.9.6`、`libcurl 8.21.0-DEV`、`OpenSSL 3.6.3` 等版本线索 | 自报组件一定被静态链接、完整许可证表达式、是否随 pCryoxy 分发 |
+| Rust 主仓 `Cargo.lock` | pCryoxy 主仓锁定的项目依赖版本 | Cargo 工具自身的内部依赖或官方 Cargo 发行包组成 |
+| 发行归档 manifest、官方构建元数据、构建来源与可复核链接证据 | 发行版物料、组件版本或构建来源的直接证据 | 未覆盖条目的存在性；缺失证据不得反向推断为不存在 |
+
+Cargo 自报的三个版本应单独记录为 `binary-self-reported`，而不是写入 pCryoxy 主仓锁或替代官方归档证据。Rust 主仓锁与 Cargo 自身锁版本不同属于预期的证据边界，不能强行合并为一份依赖清单。
+
+### 3. 对 L2 的具体裁定
+
+1. **官方归档无法证实的条目不自动阻塞“安装”，但阻塞“严格 L2 完成”。** 当前 Rust 安装登记仍有效；不过在 17 项的版本、SPDX 和发行版归属尚未分层标注前，不能宣称 L2 通过。
+2. **实际静态链接关系不是必须被伪造补齐的事实。** 对本地 build-only Cargo，可将其记录为 `not established from official archive evidence`；不能依据声明、源码锁或自报版本改写成 `statically linked`，也不能改写成 `not linked`。
+3. **版本和许可证身份仍是 L2 必须可追溯的字段。** 对每项至少分开记录：上游声明版本（如有）、发行版自报版本（如有）、源码锁版本（如有）、SPDX 来源、发行版成员关系和链接关系。没有官方版本时写 `version-unavailable-in-release-evidence`，不能借用相近锁文件版本。
+4. **同名条目缺失的处理：** `link-config`、`openssl-static-sys`、`libssh2-static-sys`、`encoding`、`docopt` 保留在“上游声明”集合，标记发行版成员关系和链接关系均未证实；不得从 Cargo 源码锁缺失推出 `absent`，也不得从声明推出 `present`。
+5. **产品分发仍归 L3。** 本地 Cargo 工具及其内部组件不进入 pCryoxy 发布物；此关系可在 L2 中记为 `N/A — build-only / excluded`，但若未来要分发工具链，则必须为该工具链单独建立分发物料清单。
+
+### 4. L2 放行所需的最小闭环
+
+在不要求“证明每个历史声明都实际静态链接”的前提下，L2 仍需完成以下闭环：
+
+- 对 17 项逐项拆开上游声明、版本来源、SPDX 来源、发行版成员关系和链接关系；
+- 将已知的 `libgit2 1.9.6`、`libcurl 8.21.0-DEV`、`OpenSSL 3.6.3` 记为 `binary-self-reported`，不得冒充官方归档确认；
+- 将 5 个源码锁缺失条目记为 `release-membership-unverified`，不得记为不存在；
+- 对实际安装文件使用组件级或 package-level attribution，避免对无法逐符号归因的二进制保留裸 `unknown`；
+- 将所有 build-only 产品关系改为 `N/A / excluded`，并保留工具目录与 pCryoxy 发布目录隔离证据；
+- 重新生成清单后，L2 才能进入复审。
+
+### 5. 状态
+
+**当前严格 L2 仍不通过。** 允许继续只读盘点、证据分层、清单修订和 Zig 续传；不允许使用 Rust 执行 pCryoxy 构建，不得把任何构建结果写成 Linux 实际构建证据。PC-17 继续 `doing/blocked`，不放行 PC-03/PC-04。

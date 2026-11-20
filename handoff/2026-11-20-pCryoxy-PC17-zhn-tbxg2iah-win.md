@@ -200,3 +200,10 @@ PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不
 - PC-17 继续 `doing/blocked`，不放行 PC-03/PC-04。
 
 - Zig 完整归档、Zig L2 和项目 L3 尚未完成；Rust 许可未知项需进一步核验。未运行 Rust 或 Zig 构建，PC-17 仍 doing/blocked。
+
+## WorkBuddy Cargo 不可证实条目补充裁定（2026-11-20 12:24 UTC+8）
+
+- Cargo 官方 `LICENSE-THIRD-PARTY` 的 17 项是上游声明，不是发行版实际 SBOM。`link-config`、`openssl-static-sys`、`libssh2-static-sys`、`encoding`、`docopt` 在 Cargo 源码锁中缺失，只能记为 `release-membership-unverified`，不得推断 absent；同样不能因官方声明而推断 present 或实际静态链接。
+- Cargo 自报的 `libgit2 1.9.6`、`libcurl 8.21.0-DEV`、`OpenSSL 3.6.3` 只作为 `binary-self-reported` 线索；Rust 主仓锁和 Cargo 自身锁不可互相替代。
+- 对 build-only Cargo，静态链接关系可记为 `not established from official archive evidence`，不是必须伪造补齐的事实；但版本、SPDX 来源、发行版成员关系仍须逐项分层记录。产品分发关系属于 L3，应记 `N/A / excluded`，不保留裸 `unknown`。
+- 因此当前严格 L2 仍不通过；允许只读盘点、清单修订和 Zig 续传，不允许用 Rust 执行 pCryoxy 构建或把结果写成 Linux 实际构建证据。PC-17 继续 doing/blocked。
