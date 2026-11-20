@@ -1680,3 +1680,53 @@ Cargo 自报的三个版本应单独记录为 `binary-self-reported`，而不是
 ### 5. 状态
 
 **当前严格 L2 仍不通过。** 允许继续只读盘点、证据分层、清单修订和 Zig 续传；不允许使用 Rust 执行 pCryoxy 构建，不得把任何构建结果写成 Linux 实际构建证据。PC-17 继续 `doing/blocked`，不放行 PC-03/PC-04。
+
+## 执行方追加：Rust L2 证据分层补充（2026-11-20）
+
+本节是对先前清单中 `unknown` 的证据分层补充，不改写历史行，也不是审核通过。以下三个发行包均为 1.100.0、`x86_64-unknown-linux-gnu`；上文完整安装 manifest 是逐文件路径清单，本节的包级归属覆盖该清单，不声称确定每个二进制内部的组成或每个文件的独立 SPDX。
+
+### 安装文件的包级归属
+
+| 安装 manifest 范围 | 发行组件 / 版本 | 包级许可来源与界限 |
+|---|---|---|
+| `rustc` manifest 的全部路径，包括编译器、调试辅助脚本、LLVM 动态库、链接器、元数据、文档和许可文本 | `rustc` 1.100.0 | 归档顶层 `LICENSE-MIT`、`LICENSE-APACHE`；发行索引 `share/doc/rust/COPYRIGHT.html` 和 `COPYRIGHT-library.html` 及其 `licenses/` 目录。Rust 项目双许可 `MIT OR Apache-2.0` 是包级来源，不代表 LLVM 或每个内嵌组件均为该表达式；LLVM 相关许可另见索引和 `licenses/NCSA.txt`、`licenses/LLVM-exception.txt`。索引中的各原始表达式不得简化。 |
+| `cargo` manifest 的全部路径，包括 `bin/cargo`、补全脚本、手册及许可文件 | `cargo` 1.100.0 | 归档顶层 `LICENSE-MIT`、`LICENSE-APACHE`；安装后的 `share/doc/cargo/LICENSE-MIT`、`LICENSE-APACHE`、`LICENSE-THIRD-PARTY`。Cargo 项目双许可 `MIT OR Apache-2.0` 是包级来源，不是二进制内部各项的归属或链接证明。 |
+| `rust-std-x86_64-unknown-linux-gnu` manifest 的全部 `.rlib`、`.rmeta` 和其他路径 | `rust-std-x86_64-unknown-linux-gnu` 1.100.0 | 归档顶层 `LICENSE-MIT`、`LICENSE-APACHE`、`COPYRIGHT`；库索引 `share/doc/rust/COPYRIGHT-library.html`。包级 `MIT OR Apache-2.0` 不替代索引中的第三方许可，也不根据文件名哈希猜测各 crate 的版本。 |
+
+归属粒度为 **package-level attribution**，不是逐符号 SBOM。`licenses/` 中是许可证文本和例外文本，文件名标识文本，不代表该许可证适用于所有安装文件。GPL、CDDL、LGPL 等仍按上文 L1 官方索引的原始表达式保留，索引发现不等于已证明该物料存在或进入产品。
+
+工具安装目录 `~/.agent-tools/runtimes/copilot/linux-x86_64-gnu/rust-1.100.0/` 与专用缓存不属于项目工作树；已提交的 `tools/build-linux` 使用项目内 `target/`，只列出两个项目库及其摘要，不包含复制工具链或缓存的发布步骤。因此 **工具目录本身**记录为 `N/A — build-only tool, excluded from product artifact`；此为当前脚本范围的源码证据，尚无最终发布包可核验。标准库和编译器可能对生成物引入代码或链接义务，不因此推定其产品关系为 excluded，须在 L3 依据实际产物及分发包另审。
+
+### Cargo 17 项：版本、许可与发行证据分别记录
+
+来源为上文 Cargo 第三方原始声明及其逐项许可 URL；声明未给版本，且“通常静态链接”不是本发行二进制的实际链接证据。Cargo 二进制 `cargo --version --verbose` 返回 `cargo 1.100.0 (3acc79c0c 2026-11-05)`，完整提交 `3acc79c0c841844675bc53a605922dbfc441e750`；其输出中的版本仅记 `binary-self-reported`。Cargo 对应源码锁为 `https://github.com/rust-lang/cargo/blob/3acc79c0c841844675bc53a605922dbfc441e750/Cargo.lock`；Rust 发行源码中的 Cargo 子模块指向同一提交，但这仍不证明发行构建使用了源码锁的全部解析结果和 feature。
+
+下表中，源码锁和 L1 表达式仅为**对应源码候选**，不是发行包实际成员或静态链接证明；`原文许可文件`表示上文同名 Cargo 声明所列 URL 和安装后的 `share/doc/cargo/LICENSE-THIRD-PARTY`，不能把许可文件名当作该项目完整原始 SPDX 表达式。
+
+| 上游声明 | 自报版本 | Cargo 源码锁候选 | SPDX 来源及证据界限 |
+|---|---|---|---|
+| OpenSSL | `3.6.3` | 无同名 `openssl` 条目 | 原文许可文件；上文 L1 的 `openssl-sys` 是 Rust 包而非 OpenSSL 本体，不替代本体 SPDX。 |
+| libgit2 | `1.9.6` | `libgit2-sys 0.18.7+1.9.6` | 原文许可文件；L1 `libgit2-sys` 为 `MIT OR Apache-2.0`，仅适用于候选 Rust 包，非 libgit2 本体的表达式证明。 |
+| libssh2 | 无 | `libssh2-sys 0.3.4` | 原文许可文件；L1 `libssh2-sys` 为 `MIT OR Apache-2.0`，非 libssh2 本体的表达式证明。 |
+| libcurl | `8.21.0-DEV` | `curl-sys 0.4.90+curl-8.21.0` | 原文许可文件；L1 `curl-sys` 为 `MIT`，非 libcurl 本体的表达式证明。 |
+| flate2-rs | 无 | `flate2 1.1.9` | L1 相同候选版本：`MIT OR Apache-2.0`；另有原文许可文件。 |
+| link-config | 无 | 同名条目缺失 | 原文 `LICENSE-MIT`；发行版本及完整包级 SPDX 表达式未由该文件名证实。 |
+| openssl-static-sys | 无 | 同名条目缺失 | 原文 `LICENSE-MIT`；发行版本及完整包级 SPDX 表达式未由该文件名证实。 |
+| toml-rs | 无 | `toml 1.1.5+spec-1.1.0` | L1 相同候选版本：`MIT OR Apache-2.0`；另有原文许可文件。 |
+| libssh2-static-sys | 无 | 同名条目缺失 | 原文 `LICENSE-MIT`；发行版本及完整包级 SPDX 表达式未由该文件名证实。 |
+| git2-rs | 无 | `git2 0.21.0` | L1 相同候选版本：`MIT OR Apache-2.0`；另有原文许可文件。 |
+| tar-rs | 无 | `tar 0.4.46` | L1 相同候选版本：`MIT OR Apache-2.0`；另有原文许可文件。 |
+| glob | 无 | `glob 0.3.3` | L1 相同候选版本：`MIT OR Apache-2.0`；另有原文许可文件。 |
+| semver | 无 | `semver 1.0.28` | L1 相同候选版本：`MIT OR Apache-2.0`；另有原文许可文件。 |
+| rust-url | 无 | `url 2.5.8` | L1 相同候选版本：`MIT OR Apache-2.0`；另有原文许可文件。 |
+| rust-encoding | 无 | 同名 `encoding` 条目缺失 | 原文 `LICENSE.txt`；发行版本及原始包级 SPDX 表达式未证实。 |
+| curl-rust | 无 | `curl 0.4.50` | L1 相同候选版本：`MIT`；另有原文许可文件。 |
+| docopt.rs | 无 | 同名 `docopt` 条目缺失 | 原文 `UNLICENSE`；发行版本及原始包级 SPDX 表达式未证实。 |
+
+逐项共同状态：上游声明版本 `not specified`；除表中三个自报版本外，发行版本为 `version-unavailable-in-release-evidence`；发行成员关系 `release-membership-unverified`；链接关系 `not established from official archive evidence`；Cargo 工具及其内部组件产品分发关系 `N/A — build-only / excluded`，不推断其他工具生成物的 L3 关系。源码锁缺失不证明实际不存在。
+
+### 复核与待裁定
+
+- 只读命令：Cargo `--version --verbose` 退出 0；GitHub API 查询 Cargo 精确提交、源码 `Cargo.lock` 与 Rust 发行源码的 Cargo 子模块，退出 0。三份 Rust 归档的散列及 manifest 存在性核对结果见上文；本次未执行项目构建。
+- LLVM 及 Rust 编译器包内具体组件的逐符号链接、上表若干历史声明的完整原始 SPDX 和发行归属尚无归档直接证据；保留证据边界，请 WorkBuddy 对上述包级归属及未证实项复审，不能自判 L2 通过。
+- Zig 归档完整 SHA-256 为 `70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00`，19,546 个常规文件、16 个按名称识别的许可相关文件；仅为初步只读盘点，未覆盖全部嵌入式许可、未完成 Zig L2，未安装或投入构建。
