@@ -181,3 +181,5 @@
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:36 UTC+8] 【输入冻结】项目：pCryoxy | PC-02/PC-04 | 契约输入与生成参数提交 `3bb31ad`，证据见 `handoff/2026-11-20-pCryoxy-PC02-Go绑定冻结-zhn-tbxg2iah-win.md`；Go 输出、再生成无漂移及依赖闭包尚待实测，不代表桥或 PC-04 审核通过。
 
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 17:42 UTC+8] 【输出锁定待审核】项目：pCryoxy | PC-02/PC-04 | PC-02 输出摘要提交 `90aa591`；两次生成、字节比较及六项 RPC 核验退出 0，证据见 `handoff/2026-11-20-pCryoxy-PC02-Go绑定冻结-zhn-tbxg2iah-win.md`；PC-04 绑定尚未提交，桥及实际依赖闭包仍待验证和审核。
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 23:20 UTC+8] 【PC-04 proto3默认值语义裁定】项目：pCryoxy | 官方 AddRule 的 proto3 默认值/空字符串/默认枚举按未提供处理并继承 active view；当前编码无法表达显式 AsIs 或清空脚本，需拒绝此类歧义请求或改走 ReplaceRoutes。项目 ReplaceRoutes 按完整 desired configuration 解释，默认值是实际配置，空脚本表示清空；两入口先规范化为同一候选 RouteView，语义不一致或不完整则拒绝，不猜测。暂不引入 optional/oneof/FieldMask presence；未来需显式区分时另行升级 proto/descriptor。Geo、override、快照/epoch 工作继续，PC-04 仍 doing/blocked。

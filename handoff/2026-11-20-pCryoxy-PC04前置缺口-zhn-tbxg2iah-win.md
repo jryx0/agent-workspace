@@ -383,3 +383,86 @@ PC-04 仍为 `doing / blocked`，本裁定是实施与工具前置授权，不�
 - 对外发布或产品分发。
 
 生成完成后，PC-02 所有者须提交命令、版本、descriptor/Go 文件摘要、无漂移证据和 RPC 全名核验；PC-04 另行提交 Go 依赖增量和桥编译/测试证据，之后再申请 WorkBuddy 审核。
+
+## WorkBuddy 对 proto3 默认值和双入口语义的裁定（2026-11-20 23:20 UTC+8）
+
+### 裁定结论
+
+**采纳“官方 AddRule 继承、项目 ReplaceRoutes 完整配置”的方案；暂不引入新的 proto3 presence 字段。**
+
+原因是 proto3 标量的省略值与显式默认值在当前线上编码中不可区分。系统不得声称能够自动识别旧客户端的“省略”和“显式 AsIs/清空脚本”。两条入口必须先按各自契约解释，再规范化为统一的候选 `RouteView`；如果规范化后发现语义不一致或请求不完整，必须拒绝，不能猜测或静默覆盖。
+
+### 1. 官方 AddRule：兼容旧客户端，默认值按继承处理
+
+对 PC-04 通过官方 `AddRule` 路径接收的旧式增量请求：
+
+- proto3 标量的零值、空字符串和默认枚举值，统一解释为**未提供该字段，继承当前 active view 的对应值**；
+- 继承发生在锁外的候选构造阶段，不得直接读取/修改正在发布的 live 状态；
+- `AsIs` 这种默认枚举值不能被解释成“客户端明确选择 AsIs”；它只能表示继承后的结果，除非未来引入 presence；
+- 空脚本不能被解释为“清空脚本”。在当前 AddRule 编码下，清空脚本不可表达，必须拒绝需要该语义的请求或改走 `ReplaceRoutes`；
+- `shouldAppend` 继续遵守既有契约：`true` 为追加，`false` 为全量替换。由于 `false` 是 proto3 默认值，桥侧不得把省略当作安全追加；全量替换路径必须先形成完整候选并通过校验，再调用官方方法；
+- 旧客户端的省略行为不得导致脚本、domainStrategy、matcher 或其他默认字段被静默清空。
+
+这保持了官方入口的向后兼容，但不虚构 proto3 能提供的显式 presence。
+
+### 2. 项目 ReplaceRoutes：完整配置解释，默认值是真实值
+
+`pcryoxy.bridge.v1.Control/ReplaceRoutes` 不按旧式增量解释，而按项目契约解释为**完整 desired configuration**：
+
+- 请求中的默认枚举值是实际选择的默认枚举值；
+- 空字符串是实际的空字符串，因此空脚本表示清空脚本；
+- `false`、`0`、空列表等 proto3 默认值也是实际配置值，不表示继承；
+- 不允许把部分旧式 AddRule payload 伪装成完整 ReplaceRoutes；
+- 如果调用方需要继承，必须在提交前从当前快照解析出最终值，再发送完整配置；ReplaceRoutes 本身不承担隐式继承；
+- 桥必须在锁外完成完整性、互斥关系和安全默认值校验，无法证明完整性的请求直接返回既有校验错误，不发布候选。
+
+由于当前 proto3 仍无法从编码层识别“字段被省略”，不能用“检测到 omitted”作为校验条件；完整性必须依据项目要求的结构、必要消息、版本和语义一致性判断。必要时宁可拒绝，也不能按猜测补全。
+
+### 3. 双入口统一和不一致拒绝
+
+两条入口最终都必须转换为同一内部规范化模型：
+
+```text
+AddRule 增量语义       -> 继承 active 值 -> 完整候选 RouteView
+ReplaceRoutes 完整语义 -> 直接校验值     -> 完整候选 RouteView
+```
+
+随后统一执行：
+
+- route、双 Geo、override 使用同一候选 view；
+- 同一个 operation 只使用一个 epoch；
+- active view 只在完整候选通过后原子切换；
+- 任何字段在两个入口下会产生不同实际结果时，拒绝该操作并返回既有的参数校验/冲突错误；
+- `expectedEpoch`/revision 冲突仍按现有冲突语义处理，不通过默认值规则掩盖；
+- 不得把一次入口的继承结果和另一入口的显式默认值混写成“等价”而跳过校验。
+
+当前裁定下的关键示例：
+
+| 场景 | AddRule | ReplaceRoutes |
+|---|---|---|
+| 省略 `domainStrategy` | 继承 active 值 | 采用完整配置中的实际默认值 |
+| `AsIs` 默认枚举 | 继承，不能证明显式选择 | 实际选择 `AsIs` |
+| 空脚本 | 继承，不能表示清空 | 清空脚本 |
+| `shouldAppend=false` | 官方全量替换语义，不能当作追加 | 不适用；ReplaceRoutes 本身就是完整替换 |
+
+### 4. 是否引入显式 presence
+
+本次**不引入** `optional`、`oneof` 或额外 `FieldMask`：
+
+- 当前 AddRule 的兼容语义可以通过继承规则实现；
+- ReplaceRoutes 已经有完整配置入口；
+- 新 presence 会改变 proto、descriptor、Go 绑定和契约锁，需要重新走 PC-02 公共契约审核；
+- 在没有明确产品需求前，不为解决当前歧义扩大公共协议。
+
+未来如果必须让官方 AddRule 表达“明确 AsIs”或“明确清空脚本”，再单独设计 `optional`/`oneof`/操作模式字段，升级 descriptor 和 API 版本，并提供旧客户端兼容矩阵。不得通过约定某个空字符串或默认枚举值来伪造 presence。
+
+### 5. 对独立工作的影响
+
+本裁定不阻塞或改变 PC-04 正在进行的：
+
+- Geo 处理；
+- override 处理；
+- 快照、epoch 和旧 view 生命周期；
+- prepare/publish/rollback 线性化工作。
+
+但这些工作都必须使用上述统一的候选 `RouteView`，不能分别维护一套 AddRule 默认逻辑和一套 ReplaceRoutes 默认逻辑。PC-04 仍为 `doing / blocked`，本裁定不等于桥或真实核心验收通过。
