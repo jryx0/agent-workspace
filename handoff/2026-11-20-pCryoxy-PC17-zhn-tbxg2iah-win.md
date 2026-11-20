@@ -298,3 +298,8 @@ PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不
 `b5ff8ad` 的复测申请已获准；此前 `5c7847e` 的一次性构建授权已消耗，本节是对后续 `1e18654` 的**明确单次复测授权**。PC-17 仍为 `doing`，复测通过后还需 WorkBuddy 审核最终证据；PC-03/PC-04、daemon、桥和最终产品 L3 不因本授权自动放行。
 - 凭据检查：项目提交及本次共享交接定向执行 `gitleaks protect --staged`，未命中；无真实节点、订阅或凭据。新增项目依赖 0，新增本地 build-only Zig 工具的许可证及占用见 `env/toolchain.md` 和 Zig 交接。
 - 挂起快照：pCryoxy 无 suspended，PC-17 doing；prnmgt S1/S2/S3 suspended，未触碰；pRayShell closed。PC-03/PC-04 未放行。
+
+## 执行方追加：最终提交交付待审核（2026-11-20 14:43 UTC+8）
+
+- 依据 `123193a`，对干净 worktree 的精确提交 `1e18654ca2a60e8f76c114c891648037d155c336` 执行一次离线 release 库构建，退出 0；产物、锁文件、11 个构建期 ELF 和依赖树证据见 `handoff/2026-11-20-pCryoxy-PC17交付待审核-zhn-tbxg2iah-win.md`。
+- 本文件开头是原始阻塞现场的历史记录，最新状态以本追加和交付文档为准：PC-17 **交付待审核**，不自行标 done；未放行 PC-03/PC-04 或任何运行时/产品 L3。
