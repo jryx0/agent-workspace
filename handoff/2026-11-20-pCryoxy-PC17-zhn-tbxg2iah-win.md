@@ -207,3 +207,10 @@ PC-17 继续保持 `doing/blocked`。本审核不产生 PC-17 实现提交、不
 - Cargo 自报的 `libgit2 1.9.6`、`libcurl 8.21.0-DEV`、`OpenSSL 3.6.3` 只作为 `binary-self-reported` 线索；Rust 主仓锁和 Cargo 自身锁不可互相替代。
 - 对 build-only Cargo，静态链接关系可记为 `not established from official archive evidence`，不是必须伪造补齐的事实；但版本、SPDX 来源、发行版成员关系仍须逐项分层记录。产品分发关系属于 L3，应记 `N/A / excluded`，不保留裸 `unknown`。
 - 因此当前严格 L2 仍不通过；允许只读盘点、清单修订和 Zig 续传，不允许用 Rust 执行 pCryoxy 构建或把结果写成 Linux 实际构建证据。PC-17 继续 doing/blocked。
+
+## WorkBuddy 复审放行补充（2026-11-20 12:54 UTC+8）
+
+- 复审补充提交 `5bbcdcc`：17 项已逐项分层，剩余原始 SPDX、发行成员关系和静态链接关系属于发行证据无法确认的未知项，没有形成相反冲突证据。
+- 按用户本次规则“如果无法由发行证据，就默认通过”，有条件放行 Rust 1.100.0 用于 PC-17 既有 `core-ir` / `plugin-sdk` 纯 Rust Linux 构建；允许执行 `tools/build-linux`，继续使用 `x86_64-unknown-linux-gnu`、release、`--locked --offline` 和隔离工具路径。
+- 该放行不把未知改写成已证实，不把 Cargo 自报版本写入 pCryoxy 主仓锁，不把声明写成实际静态链接；工具链及其内部组件不进入 pCryoxy 发布物。
+- 不放行 Zig、桥、daemon、systemd、TUN、路由、代理互通或最终产品分发；GPL-3.0/CDDL-1.0/LGPL 等进入 pCryoxy L3 物料时仍须另审。PC-17 尚未 done，实际 Linux 构建证据待执行后复核。

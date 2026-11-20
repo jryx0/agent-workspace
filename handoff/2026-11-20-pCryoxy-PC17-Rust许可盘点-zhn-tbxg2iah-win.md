@@ -1730,3 +1730,32 @@ Cargo 自报的三个版本应单独记录为 `binary-self-reported`，而不是
 - 只读命令：Cargo `--version --verbose` 退出 0；GitHub API 查询 Cargo 精确提交、源码 `Cargo.lock` 与 Rust 发行源码的 Cargo 子模块，退出 0。三份 Rust 归档的散列及 manifest 存在性核对结果见上文；本次未执行项目构建。
 - LLVM 及 Rust 编译器包内具体组件的逐符号链接、上表若干历史声明的完整原始 SPDX 和发行归属尚无归档直接证据；保留证据边界，请 WorkBuddy 对上述包级归属及未证实项复审，不能自判 L2 通过。
 - Zig 归档完整 SHA-256 为 `70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00`，19,546 个常规文件、16 个按名称识别的许可相关文件；仅为初步只读盘点，未覆盖全部嵌入式许可、未完成 Zig L2，未安装或投入构建。
+
+## WorkBuddy 复审与 Rust 构建放行（2026-11-20 12:54 UTC+8）
+
+### 1. 复审结论
+
+补充清单 `5bbcdcc` 已对 Cargo 17 项逐项记录：上游声明、候选源码锁、自报版本、SPDX 来源、发行成员关系、链接关系和产品分发边界。复审确认：剩余部分原始 SPDX、发行版成员关系和静态链接关系是**发行证据无法确认的未知项**，当前没有证据表明其与本地 build-only 使用发生许可冲突。
+
+根据用户本次明确规则：**凡无法由官方发行证据确认、且没有相反冲突证据的条目，默认通过，不再以该未知项阻塞本地工具投入构建。** 该规则只改变本次 PC-17 Rust 本地构建门槛，不把未知项改写成已证实事实。
+
+### 2. 放行范围
+
+**有条件放行 Rust 1.100.0 rustc/cargo/rust-std 用于 PC-17 既有纯 Rust 构建目标：**
+
+- 允许执行项目现有 `tools/build-linux`，目标限定为 `core-ir` 和 `plugin-sdk`；
+- 继续使用 `x86_64-unknown-linux-gnu`、release、`--locked --offline` 和已登记的隔离工具路径；
+- 允许记录实际 Linux 编译、产物大小、SHA-256、依赖树和运行验证结果；
+- 不新增 Cargo 依赖、不恢复未锁定依赖、不把 Cargo 自身锁或自报版本写入 pCryoxy 主仓锁；
+- Cargo 17 项继续按 `upstream-declared`、`binary-self-reported`、`release-membership-unverified`、`not established` 等证据标签保留；不得写成实际静态链接或确定不存在。
+
+### 3. 明确不放行的范围
+
+- 不放行 Rust 工具链或其内部组件进入 pCryoxy 发布包；
+- 不放行 GPL-3.0、CDDL-1.0、LGPL 等条目进入 pCryoxy 运行时、桥、daemon、核心或安装包；这些仍由 L3 依据实际项目依赖、链接和分发物料另审；
+- 不放行 Zig 使用；Zig 仍需完成归档许可盘点和 smoke test；
+- 不把 Rust 两个库构建通过扩大为桥、daemon、systemd、TUN、路由、代理互通或 PC-17 完整交付通过。
+
+### 4. 状态
+
+本条**覆盖此前“严格 L2 未通过而禁止 Rust 构建”的阻塞结论，仅覆盖上述 Rust build-only 范围**。严格的逐项发行 SBOM 仍未完成，但按用户默认通过规则不再阻塞本地构建。PC-17 状态从“许可证未知项阻塞构建”收敛为“允许 Rust 构建、等待实际 Linux 构建及其余平台证据”；PC-17 尚未 done，PC-03/PC-04 的业务放行仍按任务依赖和实际审核结论执行。
