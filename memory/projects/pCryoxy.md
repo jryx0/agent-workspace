@@ -101,3 +101,5 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 11:10 UTC+8] 【PC-17验收目标裁定】项目：pCryoxy | PC-17 保持 `doing/blocked`，不标 `done`。已确认本机 Ubuntu 24.04.4 LTS WSL2、x86_64、glibc 2.39 可作为 Linux 构建环境；用户授权使用 WSL，但工具安装另列清单申请，当前不安装、不改全局配置。PC-17 不实现桥或 daemon：桥由 PC-04、daemon 由 PC-18 负责；PC-17 独立验收改为 Linux 平台矩阵、上游 Xray Linux 核心资产元数据、无桌面依赖审计、构建入口/工具链记录和实际构建证据。详细裁定见 `handoff/2026-11-20-pCryoxy-PC17验收目标裁定与WSL环境确认-zhn-tbxg2iah-win.md`。
 
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 11:27 UTC+8] 【部分实施仍阻塞】项目：pCryoxy | PC-17 | 本地提交 `95e0efca6770f51b5f1d4e62599ccc042ac4e2f8`；Xray Linux 资产本地散列核验、无桌面依赖审计和构建入口缺工具路径验证已完成；Linux 实际构建仍待合规工具链和安装批准，状态 doing/blocked，未交付审核。详见 `handoff/2026-11-20-pCryoxy-PC17-zhn-tbxg2iah-win.md`。
+
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-20 11:31 UTC+8] 【工具申请待审核】项目：pCryoxy | PC-17 | Rust 1.100.0 三组件与 Zig 0.16.0 非全局 WSL 工具链方案见 `handoff/2026-11-20-pCryoxy-PC17-zhn-tbxg2iah-win.md`；官方来源/摘要、下载及解压估计、许可边界、隔离位置、验证和回滚已列，实际兼容性及安装占用待验证；未安装，待 WorkBuddy 审核及用户批准。

@@ -57,3 +57,21 @@ pCryoxy 无 suspended 项；PC-17 是 doing/blocked，不是自行解挂或审�
 - 锁文件 JSON 核对和差异 `git diff --cached --check` 退出 0；代码增量 `gitleaks protect --staged` 退出 0、无命中。未新增项目依赖或安装工具。
 - 工具申请准备：官方 Rust 1.100.0 Linux x86_64 GNU 完整包 `https://static.rust-lang.org/dist/2026-11-12/rust-1.100.0-x86_64-unknown-linux-gnu.tar.xz` 官方清单 SHA-256 `98ee6bec240e1cfe944f17e7092412dc5ef6e008484bb668c6936d35a7d15acd`，HEAD 长度 211,225,068 字节；安装占用尚未核实。Rust 用于构建、不是项目运行时依赖，Rust 项目许可证为 MIT/Apache-2.0；包内组件各自许可仍需核查。Linux 还缺 C 编译器和开发头文件；`apt-get -s install --no-install-recommends gcc libc6-dev` 仅模拟，显示 27 个候选包，未安装。非全局的编译器及 sysroot 方案、其完整来源/摘要/许可证/体积和回滚方式尚未确定，不能据此申请或执行安装。
 - 当前状态仍 `doing/blocked`，须取得符合裁定的完整工具申请批准或由用户提供已安装的合规 Linux 工具链，再做真实构建；不标交付待审核或 done。
+
+## 非全局 Linux 工具链申请草案（2026-11-20 11:31 UTC+8）
+
+**待 WorkBuddy 审核并由用户批准；本节不是安装授权。** 目标 Ubuntu 24.04 WSL2 / x86_64 / glibc、Rust target `x86_64-unknown-linux-gnu`；只服务本卡既有 `core-ir` 和 `plugin-sdk` release 构建，不是新增项目运行时依赖，不安装 Go、Node、桌面或 WebKitGTK。
+
+| 工具/组件 | 官方固定资产（以下 `R` 为 `https://static.rust-lang.org/dist/2026-11-12/`） | SHA-256（官方清单） | 下载字节 | tar 解压字节估计 |
+|---|---|---|---:|---:|
+| Rust compiler 1.100.0 | `R` + `rustc-1.100.0-x86_64-unknown-linux-gnu.tar.xz` | `f1d0b1dec81dab6f523cd098507763487b0d4bd7fd2c87582f154128719be03b` | 84,955,936 | 422,562,304 |
+| Cargo 1.100.0 | `R` + `cargo-1.100.0-x86_64-unknown-linux-gnu.tar.xz` | `7e29ce07d7c6e92d1826870575ba27d57fff6cb3e754aa57d99099cb88fab35d` | 10,946,408 | 36,781,568 |
+| Rust std 1.100.0，GNU target | `R` + `rust-std-1.100.0-x86_64-unknown-linux-gnu.tar.xz` | `4591b6486594ded52ecd6135db95bf9355bbd3ca7a380888b141528bbcf9a5d4` | 31,283,108 | 168,334,848 |
+| Zig 0.16.0，作 `zig cc` 编译器/链接器候选 | `https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz` | `70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00` | 55,478,392 | 373,923,840 |
+
+- 摘要来自 Rust 官方 `channel-rust-1.100.0.toml` 和 Zig 官方 `download/index.json`；体积来自 HTTP HEAD 及只读 XZ 索引。合计下载 182,663,844 字节，tar 流合计 1,001,602,560 字节；不是已核验的实际安装占用，安装、缓存和临时空间需另留余量，完成后实测登记。四个包均尚未下载或本地校验。
+- Rust 项目主许可证 MIT/Apache-2.0，Zig 主许可证 MIT；发行包内 LLVM、libc 等组件许可需核对包内文件后完整登记，不假称全部组件只受主许可证约束。两个工具均为构建工具，不进入项目发布产物；最终二进制、链接效果和运行时影响仍待实测。
+- 拟放唯一 Windows 侧 `~/.agent-tools/venvs/copilot/linux-tools/` 下，分别以 `rust-1.100.0/`、`zig-0.16.0/` 命名；WSL 只通过 `wslpath` 映射访问该唯一路径，不创建 WSL 侧共享工作区副本。拟设同目录专属 Cargo 缓存及 Zig 缓存，临时文件放本会话目录；不修改全局 PATH、系统包、包源或配置。
+- 拟先验证各包 SHA-256，检查官方安装脚本及包内许可后将 Rust 三组件安装到指定 prefix、Zig 解压到指定目录；只在单次构建进程设置 PATH、CARGO_HOME、ZIG_GLOBAL_CACHE_DIR，以及指向 `zig cc` 封装的 `CC` 和 Cargo target linker。该方案的 proc-macro 链接、glibc 和 WSL 驱动器执行兼容性尚未实测，不能保证构建成功；不执行 `apt install`。
+- 拟验收：`rustc --version`、`cargo --version`、`rustc --print target-libdir --target x86_64-unknown-linux-gnu`、`zig version`、C 链接试编、`tools/build-linux`、库产物大小/摘要及锁定依赖树；任何失败如实记录。先离线构建，只有明确缺少 `Cargo.lock` 中已有 crate 时，才恢复这些锁定依赖，不新增清单依赖。
+- 回滚：先确认无人使用，仅移除本次安装的两个具体版本目录及本次专属缓存/临时文件；不动共享工具、工作区或系统配置。安装成功后按规范追加工具登记、实际版本与占用并提交同步。请审核候选安装位置与工具区规范的一致性、Zig 是否适合作为本卡 C linker、包内许可和空间预算；用户批准具体方案后才执行。
