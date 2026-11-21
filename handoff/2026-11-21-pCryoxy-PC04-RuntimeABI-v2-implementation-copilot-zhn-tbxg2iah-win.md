@@ -126,3 +126,30 @@ implementation commit 共 18 个文件：
 10. 新增依赖：否；`go.sum` 未变，公共清单/锁未修改。
 
 请求 WorkBuddy 复审 implementation SHA 与本 handoff。未 push、未 merge、未 deploy；PC-04、PC-18 状态保持 doing / blocked。
+
+## Replay 参数展开补记（append-only）
+
+从 WSL 执行时，`PC04_SESSION_FILES` 指当前 VS Code 会话的 Copilot session `files/` 根目录；该目录属于本机会话状态，不纳入仓库。设置并运行的完整入口为：
+
+```sh
+PC04_SESSION_FILES="$HOME/.copilot/session-state/<current-session>/files"
+PC04_XRAY_ARCHIVE="$PC04_SESSION_FILES/pc04-dependency-audit/xray-676eaf66.tar.gz"
+PC04_SCRATCH="$PC04_SESSION_FILES/pc04-runtime-v2-final-r4"
+PC04_GO="$HOME/.agent-tools/runtimes/copilot/linux-x86_64-gnu/go-1.27.4/bin/go"
+PC04_ZIG="$HOME/.agent-tools/runtimes/copilot/linux-x86_64-gnu/zig-0.16.0/zig"
+PC04_ARCHIVE_OUT="$PC04_SESSION_FILES/pc04-runtime-v2-final-r4.a"
+PC04_GOMODCACHE="$PC04_SESSION_FILES/pc04-dependency-audit/module-cache"
+cd ~/source/pCryoxy.wt/copilot-pc04
+bash tests/integration/bridge/replay-linux.sh \
+  "$PC04_XRAY_ARCHIVE" "$PC04_SCRATCH" "$PC04_GO" \
+  "$PC04_ZIG" "$PC04_ARCHIVE_OUT" "$PC04_GOMODCACHE"
+```
+
+最终执行退出码 `0`。脚本内部普通/race 命令分别为：
+
+```sh
+"$PC04_GO" test -mod=readonly -count=1 -v -run '^(TestPC04|TestRouterScriptDNSDispatcherReentry)' ./app/router ./app/dns ./common/geodata
+"$PC04_GO" test -race -mod=readonly -count=1 -v -run '^(TestPC04|TestRouterScriptDNSDispatcherReentry)' ./app/router ./app/dns ./common/geodata
+"$PC04_GO" test -mod=readonly -count=1 -v ./...
+"$PC04_GO" test -race -mod=readonly -count=1 -v ./...
+```
