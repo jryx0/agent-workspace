@@ -108,6 +108,8 @@ BT=C:/Users/Zhn_X/.agent-tools/android-sdk/build-tools/36.0.0
 
 **M4｜用例 9 的可执行写法**（避免"沙箱理应如此"）：以 `adb shell`（uid 2000）`ls` 宿主私有目录须 `Permission denied`；另用第二个不同 UID 应用尝试读取同路径，双证据。**M5｜用例 8**：给 `context.noBackupFilesDir` 实际绝对路径（形如 `/data/user/0/<pkg>/no_backup`）+ `dumpsys backup` 排除项，两者都要。
 
+**M6｜宿主改由独立授权项提供（2026-11-21 23:22 追加，人类裁定）**：D2／D3／D4 三条前置**作废**，宿主统一由 `PC-03-AND-HOST-V1`（`handoff/2026-11-21-pCryoxy-PC03-AND-HOST脚手架授权-copilot-zhn-tbxg2iah-win.md`）产出，置于 `~/.agent-shared/scaffold/pc03-and-host/`；卡 B 只复用该脚手架，**不得另造第二套宿主**。D1（解锁亮屏）、D5（minSdk 29 / targetSdk 36，不下载组件）继续有效。卡 B 在该项交付并复核前不开工。
+
 ## 四、可直接转发给实施方的回复（PC-03-AND-V1 补证要求）
 
 ```text
