@@ -1,5 +1,7 @@
 # pCryoxy 任务认领入口
 
+> **2026-11-22 同步（workbuddy）**：实施任务卡升至 **v1.2**（新增 PC-04b；PC-18 拆为 18a/18b；PC-21 拆为 21a/21b；依赖无环），依据人类 2026-11-22 00:11 裁定。当前有效版本：需求基线 v1.1 + v1.2 日志增量、蓝图 v0.3 + v0.4 日志增量、API Spec v1.2 + v1.3 日志契约增量、实施任务卡 v1.2。卡状态与可认领性以 §5 和任务卡 v1.2 §7 为准；下文 2026-11-19/20 的状态描述为历史。项目文档索引见代码仓 `docs/README.md`。
+
 - 2026-11-20 修订发布：需求基线 v1.1、工程蓝图 v0.3、实施任务卡 v1.1、API Spec v1.2 已作为当前权威版本发布；API Spec v1.2 为 v1.1 全文加 §9 Linux RuntimeDto/兼容性增补；原 v1.0/v0.2/v1.1 版本保留为历史基线。PC-01 二修 `3a99401` 已由 WorkBuddy 复审通过；PC-02 已于 2026-11-20 09:21 恢复并于 `78cf166` 复审通过。
 
 - 项目: pCryoxy
@@ -14,8 +16,8 @@
 |---|---|---|---|---|
 | 1 | 需求确认基线 | v1.1（Linux/daemon/Web 修订） | 已发布 | `handoff/2026-11-20-pCryoxy-需求确认基线-v1.1-zhn-tbxg2iah-win.md` |
 | 2 | 工程蓝图 | v0.3（Linux/daemon/Web 修订，G1～G5 保持） | 已发布 | `handoff/2026-11-20-pCryoxy-工程蓝图-v0.3-zhn-tbxg2iah-win.md` |
-| 3 | 实施任务卡 | v1.1（21 张 P0 + 4 张 P1） | 已发布 | `handoff/2026-11-20-pCryoxy-实施任务卡-v1.1-zhn-tbxg2iah-win.md` |
-| 4 | API Spec（核心文件与通信接口契约） | v1.1（双通道/兼容性修订） | 已发布 | `handoff/2026-11-20-pCryoxy-API-Spec-v1.1-zhn-tbxg2iah-win.md` |
+| 3 | 实施任务卡 | **v1.2**（26 张 P0 + 4 张 P1；v1.1 为历史） | 已发布 | `handoff/2026-11-22-pCryoxy-实施任务卡-v1.2-zhn-tbxg2iah-win.md` |
+| 4 | API Spec（核心文件与通信接口契约） | v1.2 + v1.3 日志契约增量 | 已发布 | `handoff/2026-11-20-pCryoxy-API-Spec-v1.2-zhn-tbxg2iah-win.md`、`handoff/2026-11-21-pCryoxy-API-Spec-v1.3日志契约增量-zhn-tbxg2iah-win.md` |
 
 阅读顺序：需求基线（范围与门禁）→ 工程蓝图（技术方案与已批准裁定）→ API Spec（逐文件契约）→ 实施任务卡（认领与验收口径）。
 
@@ -47,11 +49,14 @@
 
 | 分组 | 任务ID | 数量 | 状态 |
 |---|---|---|---|
-| P0 实施卡 | PC-00～PC-20（含 PC-17～PC-20 新增） | 21 | PC-00 done；PC-01 done；PC-02 done（`78cf166`）；PC-17 doing/blocked；PC-03/04 等待 PC-17；其余 todo／未认领 |
+| P0 实施卡（v1.2） | PC-00～17、PC-04b、PC-18a/18b、PC-19、PC-20、PC-21a/21b | 26 | 2026-11-22：PC-00/01/02/17 done（01/02/17 待集成进 main）；PC-03、PC-04 doing（copilot）；其余 todo／未认领 |
 | P1 后续卡 | PC-P1-01～PC-P1-04 | 4 | `todo`／未认领，**不在本轮实施** |
-| 合计 | — | 25 | 2 张 done、1 张 doing/blocked、22 张 todo／未认领 |
+| 合计 | — | 30 | 4 张 done、2 张 doing、24 张 todo |
+| 作废卡号 | v1.1 `PC-18`、PC21 卡 v1.0 `PC-21` | — | 无认领、无代码，由 18a/18b、21a/21b 替代 |
 
-**当前认领状态**：PC-02 已完成并经 WorkBuddy 复审通过，交付 `78cf166` 基于依赖集成基座 `2ccffd0`；PC-17 已由 Copilot 认领但当前 `doing/blocked`。WorkBuddy 已确认本机 Ubuntu 24.04.4 LTS WSL2 可作为 Linux 环境，并裁定 PC-17 不实现桥或 daemon；工具安装另列申请。PC-03/04 仍须等待 PC-17 最终审核通过；其余卡按 v1.1 拓扑和审核前置认领，`todo` 不等于可立即并行。
+**当前认领状态（2026-11-22）**：暂无可新认领卡。PC-04 按 v1.2 §2 六条结卡条件提交结卡清单；PC-04 done 后放行 PC-04b、PC-05、PC-18a；PC-21a 还需用户先确认日志需求。代码仓地址已建立（`env/repos.md`），§4 “尚未建立”为历史描述。
+
+**历史（2026-11-20）**：PC-02 已完成并经 WorkBuddy 复审通过，交付 `78cf166` 基于依赖集成基座 `2ccffd0`；PC-17 已由 Copilot 认领但当前 `doing/blocked`。WorkBuddy 已确认本机 Ubuntu 24.04.4 LTS WSL2 可作为 Linux 环境，并裁定 PC-17 不实现桥或 daemon；工具安装另列申请。PC-03/04 仍须等待 PC-17 最终审核通过；其余卡按 v1.1 拓扑和审核前置认领，`todo` 不等于可立即并行。
 
 认领流程：① 读本入口与最新交接；② 查 `memory/projects/pCryoxy.md` 任务登记节与挂起快照防撞（防撞键＝**项目 + 任务ID**）；③ 先追加认领行再开工；④ 完成或放弃追加状态行，不改写旧行。禁止替其他 agent 认领或标记完成。
 
