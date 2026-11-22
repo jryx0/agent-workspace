@@ -37,6 +37,18 @@
 - 之后 agent 只需把精确提交的测试二进制和请求放进 inbox，等 outbox 出结果，不需要人类再登录。
 - **预检要包含批处理登录下的 DPAPI 和凭据管理器可用性**。如果批处理登录写凭据失败（比如 1312 错误），就退回由人类执行 `runas /user:pcx-t2` 一次，并在证据包里写明登录类型。
 
+### 3.2a 跨账户交接约定（2026-11-22 08:35 补，供泳道 B 实现）
+
+- 人类已于 08:27 新建标准用户 `pcx-t2`（尚未登录，配置文件将在计划任务首次批处理登录时自动生成；**不得给其配置文件添加任何其他用户的 ACE**）。
+- 目录与权限（人类管理员执行）：`C:\Users\Public\pcryoxy-xacct\` 断开继承；Administrators/SYSTEM 完全控制，`Zhn_X` 修改，`pcx-t2` 只读执行；仅 `outbox\` 给 `pcx-t2` 修改。
+- 计划任务 `pcryoxy-xacct`：以 `pcx-t2` 运行、不管是否登录、每 2 分钟、`IgnoreNew`、单次限时 30 分钟，执行固定路径 `C:\Users\Public\pcryoxy-xacct\run-xacct.ps1`。
+- **`run-xacct.ps1` 由 copilot 泳道 B 提供**（纯 ASCII，放上述固定路径），约定：
+  1. 只处理 `inbox\<id>.request.json`（含精确提交、测试二进制相对路径、SHA-256、用例清单）；先校验二进制 SHA-256，不符则写 `outbox\<id>.rejected`。
+  2. pcx-t2 对 inbox 无写权限，以 `outbox\<id>.done` 存在作为“已处理”标记，不重复执行。
+  3. 结果按 §2 第 3 条写 `outbox\<id>\`（manifest 含 `whoami /user` SID 与登录类型、results.tsv、原始输出、预检、SHA-256 清单）。
+  4. 预检含批处理登录下 DPAPI / 凭据管理器可用性；失败写 `ENV_BLOCKED`。
+- 计划任务登记后，人类或 workbuddy 用 `schtasks /query /tn pcryoxy-xacct /v /fo list` 核对“上次运行结果”。
+
 ### 3.3 同账户部分
 
 - 同账户写读、真实进程重启、密钥缺失不重新生成、4097 字节大秘密、Token 轮换、1168 并发问题复现：这些全部在 Zhn_X 下由 agent 自动执行，不需要人类参与。
