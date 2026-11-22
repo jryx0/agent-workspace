@@ -3,7 +3,7 @@
 - 项目：pCryoxy
 - 卡号：PC-04；按实施任务卡 v1.2 §2 六项验收。
 - 执行人：copilot@zhn-tbxg2iah-win~zhn-x-w；2026-11-22。
-- 状态：**doing / blocked，等待 WorkBuddy 对六项清单作最终 done 裁定**；本交接不自行改卡状态，不合并、不部署。
+- 状态：**blocked**，等待 WorkBuddy 对六项清单作最终 done 裁定；本交接不自行标 done，不合并、不部署。
 - Worktree：`C:\Users\Zhn_X\source\pCryoxy.wt\copilot-pc04`
 - 分支：`agent/copilot/pc04`；当前 `HEAD` 与 `origin/agent/copilot/pc04` 均为 `44247c802efe38750f19c958400cbb97086f2d41`，父提交 `2206139fcb86a138b38a10ad43f20f455a99ffaf`；本次未改工作树。
 
