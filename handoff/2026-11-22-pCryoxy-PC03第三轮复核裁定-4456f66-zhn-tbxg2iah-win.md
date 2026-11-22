@@ -119,3 +119,7 @@ H4 影响小，**转 PC-11 修复**，不作为 PC-03 结卡条件；已记入�
 | `x\pcx-t2\`（新建） | 只读执行 | 修改 |
 
 三个目录都断开继承，保留 SYSTEM 与 Administrators 完全控制，所有者保持 Administrators（Zhn_X 以非提权令牌运行时，Administrators 组只作拒绝使用，不构成写权限）。runner 预检须核对上述 ACL，对方账户在本账户子目录有写权限时写 `ENV_BLOCKED` 并停止。
+
+### 10.3 ACL 落实核对（审核方 21:07）
+
+人类 21:03～21:06 在管理员窗口执行完毕。另把中间层 `x\` 断开继承并改为两账户均只读执行（原继承根目录的 Zhn_X 修改，可被改名后伪造 `x\pcx-t2\`）。现状：`outbox\` Zhn_X RX／pcx-t2 M；`x\` 双方 RX；`x\zhn_x\` Zhn_X M／pcx-t2 RX；`x\pcx-t2\` pcx-t2 M／Zhn_X RX；四者均断开继承，所有者 Administrators，保留 SYSTEM、Administrators F。审核方以 Zhn_X 非提权令牌（Medium）实测：在 `x\`、`x\pcx-t2\`、`outbox\` 新建文件均被拒，改名 `x\` 被拒，在 `x\zhn_x\` 新建与删除成功（探测文件已删）。pcx-t2 一侧待 W5 runner 预检核对。runner 预检须同时核对 `x\` 本身：任一账户对 `x\` 有写入／删除权限即写 `ENV_BLOCKED`。
