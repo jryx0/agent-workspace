@@ -1,5 +1,11 @@
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+if (-not ('System.Security.Cryptography.ProtectedData' -as [type])) {
+    Add-Type -AssemblyName System.Security -ErrorAction Stop
+}
+if (-not ('System.Security.Cryptography.ProtectedData' -as [type])) {
+    throw 'system-security-dpapi-unavailable'
+}
 
 $InboxRoot = 'C:\Users\Public\pcryoxy-xacct\inbox'
 $OutboxRoot = 'C:\Users\Public\pcryoxy-xacct\outbox'
@@ -430,7 +436,7 @@ function Get-W5TestResult($Outcome) {
         @($checks | Where-Object { $_.expected -cne $_.actual }).Count -eq 0) { 'PASS' } else { 'FAIL' }
     return [pscustomobject]@{
         case = $Outcome.case; status = $status; exitCode = $Outcome.exitCode
-        elapsedMs = $Outcome.elapsedMs; checks = @($checks); metadata = $metadata
+        elapsedMs = $Outcome.elapsedMs; checks = $checks.ToArray(); metadata = $metadata
         stdout = $Outcome.stdout; stderr = $Outcome.stderr; processError = $Outcome.processError
         structuredStatus = $resultStatus
     }
@@ -701,7 +707,7 @@ foreach ($file in $requests) {
         $phaseStatus = if (@($w5Results | Where-Object { $_.status -ne 'PASS' }).Count -eq 0) { 'PASS' } else { 'FAIL' }
         $stageResult = [pscustomobject]@{
             status = $phaseStatus; phase = $request.phase; fixtureId = $fixtureId; runAs = $currentAccount
-            checks = @($w5Results)
+            checks = $w5Results.ToArray()
         }
         $manifestOutcomes = @($stageResult)
         Write-Utf8NoBom (Join-Path $package 'results.json') ($stageResult | ConvertTo-Json -Depth 10)
