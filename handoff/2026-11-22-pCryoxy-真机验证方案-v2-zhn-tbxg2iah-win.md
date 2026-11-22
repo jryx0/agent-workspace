@@ -74,7 +74,7 @@
 - 模拟器的 Keystore 是软件实现，**只能做冒烟，不能作为验收**。
 - **可选技能**：「腾锐Ai安卓」（`android-phone-agent`），可以截屏识别并自动点击华为/荣耀的安装确认弹窗，解决 R5 中仍需人手点的部分。它会截取手机屏幕，人类同意后才安装。
 
-## 5. PC-03 冻结验收矩阵（v1.2 口径，**人类 2026-11-22 08:25 确认，已冻结**）
+## 5. PC-03 冻结验收矩阵（v1.2 口径，**人类 2026-11-22 08:25 确认，已冻结；14:50 升为矩阵 v1.1，A1～A3 改为双机**）
 
 > 冻结后审核只能逐项对照本表判定通过/不通过，不得追加口径；任何增删改须报人类裁决并发新版本。
 
@@ -86,9 +86,14 @@
 | W4 | Win | 并发 provisioning 互不覆盖；1168 问题定性 | 自动 |
 | W5 | Win | 异账户 `pcx-t2` 读不到、解不开 Zhn_X 的数据，反之亦然 | 计划任务跨账户 |
 | W6 | Win | Token 轮换 | 自动 |
-| A1 | Android | Keystore 生成、写读 | adb 自动 |
-| A2 | Android | 重启后可读、密文不变 | adb reboot 自动 |
-| A3 | Android | 卸载重装后旧数据不可解 | adb 自动 |
+| A1 | Android | Keystore 生成、写读 | adb 自动，**双机** |
+| A2 | Android | 重启后可读、密文不变 | adb reboot 自动，**双机** |
+| A3 | Android | 卸载重装后旧数据不可解 | adb 自动，**双机** |
+
+**矩阵 v1.1（人类 2026-11-22 14:50 裁定，方案 A）**：A1～A3 必须在下面两台真机上**各自**通过，才判通过；任一台不通过即判 FAIL。W/L/X 各项不变。
+- D1：荣耀 TEL-AN10，Android 10 / API 29（最低支持版本，Keymaster），指纹 `HONOR/TEL-AN10/HWTEL-H:10/HONORTEL-AN10/103.0.0.165C00:user/release-keys`；
+- D2：荣耀 MAG-AN00，Android 16 / API 36（目标版本，`hardware_keystore=200`，即 KeyMint 2.0；页大小 4KB），指纹 `HONOR/MAG-AN00/HNMAG:16/HONORMAG-AN00/10DLDLD175C00E170:user/release-keys`。
+- 证据包按设备序列号分开存放，manifest 里记录型号、API 和指纹。换设备属于口径变更，须由人类裁决。
 | L1 | Linux | 0600 权限 + 目录属主、异账户拒绝 | 已采信，审核方复跑一次 |
 | X1 | 全平台 | 日志、事件、崩溃通道无明文泄漏（gitleaks 扫描证据包） | 自动 |
 
