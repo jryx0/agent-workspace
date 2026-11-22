@@ -87,3 +87,35 @@ H4 影响小，**转 PC-11 修复**，不作为 PC-03 结卡条件；已记入�
 ## 9. 补记：W5 请求未被处理的原因（2026-11-22 20:55）
 
 人类在管理员窗口查得：`pcryoxy-xacct` 状态 Ready、运行账户 pcx-t2（Password）、触发器每 2 分钟有效；上次运行 19:58:52 结果 0，之后错过 27 次（约 54 分钟）。设置 `DisallowStartIfOnBatteries=True`、`StopIfGoingOnBatteries=True`，审核方查得当时 `Win32_Battery.BatteryStatus=1`（电池供电，47%）。结论：19:58 后笔记本改用电池，任务被条件拦下，与 runner 无关。20:54 人类已接回交流电源（BatteryStatus=2）。建议在 W5 复跑前把两项电池条件改为 False（需重新录入 pcx-t2 密码），避免长时间测试中途被打断。runner 的功能缺陷（§3）仍须返工。
+
+## 10. 范围确认（答复 copilot 2026-11-22 20:58 的两项提问，审核方 21:05）
+
+人类 20:58 承诺 W5 测试完成前不拔电源。
+
+### 10.1 允许新增 W5 测试入口（§3 第 3 项的落实方式）
+
+- **允许**在 `crates/secure-store/src/tests.rs` 新增两个 `#[ignore]` 测试入口（名称自定，如 `w5_write_own`、`w5_read_foreign`），参数经环境变量传入；必须调用 secure-store 的公开 API（`Windows::initialize`、写入、打开、读取），不得在测试里另写一套 DPAPI/CredRead 来代替产品路径（第 4 项的直调对照除外）。
+- `windows.rs` 只允许新增 `#[cfg(test)]` 内容（例如 W5 专用凭据前缀 `pCryoxy/pc03-xacct/`）；`#[cfg(not(test))]` 产品代码 diff 必须为 0。不得使用 `pCryoxy/v1/`。不改 Android 文件。
+- **写入方**（write-own）：在本账户 `%LOCALAPPDATA%\pcryoxy-xacct\<id>\vault` 用 secure-store 建库并写入随机值（只输出哈希，不输出明文）；再把库内全部文件逐字节复制到交换目录（见 10.2）本账户子目录，附 SHA-256 清单和原始路径。
+- **读取方**（read-foreign）对同一 `<id>` 逐项记录 expected / actual / errorCode：
+  1. 直接读对方 profile 里的原始库路径 → 预期**拒绝访问**；
+  2. 读交换目录里的副本、核对 SHA-256 → 预期**成功**；
+  3. 把副本复制到本账户临时目录，用 secure-store 打开并读取 → 预期**失败**（返回具体 StoreError，不得返回任何明文）；
+  4. 对副本中的 DPAPI 密文直接调用 CryptUnprotectData → 预期**失败**；对写入方的凭据目标名 CredRead → 预期 **1168**。
+  四项全部符合预期，该方向才算 PASS；双向都 PASS，W5 才 PASS。
+- runner 只负责调度：按请求文件里的提交、相对路径、SHA-256 校验二进制后，用 `--ignored --exact` 调用上述入口；脚本里现有的 DPAPI/CredRead 直调可保留为预检，但不作为 W5 判定依据。
+- cleanup 阶段：用同一测试二进制按 fixture 精确路径删除本账户的库目录、交换目录子目录、`pCryoxy/pc03-xacct/<id>` 凭据，回报删除清单与残留数。
+- 审核影响：tests.rs 有改动，审核方将重跑全量测试 10 次与跨进程用例 3 次；若 `windows.rs` 的非测试部分 diff 为 0，W1～W4、W6 不重跑。
+
+### 10.2 交换目录 ACL（由人类在管理员窗口执行，copilot 与 runner 不得改 ACL）
+
+现状：根目录 Zhn_X 修改、pcx-t2 只读执行；outbox 两个账户都可修改；所有者均为 Administrators。目标：
+
+| 目录 | Zhn_X | pcx-t2 |
+|---|---|---|
+| `inbox\` | 修改 | 只读执行（不变） |
+| `outbox\` | **只读执行**（改） | 修改 |
+| `x\zhn_x\`（新建） | 修改 | 只读执行 |
+| `x\pcx-t2\`（新建） | 只读执行 | 修改 |
+
+三个目录都断开继承，保留 SYSTEM 与 Administrators 完全控制，所有者保持 Administrators（Zhn_X 以非提权令牌运行时，Administrators 组只作拒绝使用，不构成写权限）。runner 预检须核对上述 ACL，对方账户在本账户子目录有写权限时写 `ENV_BLOCKED` 并停止。

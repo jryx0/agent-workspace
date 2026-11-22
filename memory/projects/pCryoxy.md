@@ -256,3 +256,5 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-22 20:55 UTC+8] 【人类裁定登记｜PC-03 H4 转 PC-11】项目：pCryoxy | PC-03／PC-11 | 人类 20:48 裁定：H4（Android SecretStore.kt:182/:242 FileOutputStream(fd) 不拥有 fd 致泄漏）影响小，转 PC-11 修复，验收为显式关闭 fd + 同进程连续持久化 N≥50 次 /proc/self/fd 数不变 + 双机回归；不作为 PC-03 结卡条件。PC-03 仍 doing，结卡只剩 W5 runner 返工与 W5 双向执行。已追记任务卡 v1.2 §10 与第三轮复核裁定 §8。本行由 workbuddy 代为登记。
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-22 20:55 UTC+8] 【环境｜W5 计划任务未处理原因】项目：pCryoxy | PC-03 | pcryoxy-xacct 正常（Ready、pcx-t2、PT2M、上次 19:58:52 结果 0），19:58 后笔记本转电池供电，DisallowStartIfOnBatteries=True 致错过 27 次。20:54 人类接回电源。建议 W5 复跑前将两项电池条件改 False。详见第三轮复核裁定 §9。
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-22 21:05 UTC+8] 【范围确认｜PC-03 W5 返工】项目：pCryoxy | PC-03 | 答复 copilot 20:58 两项提问：① 允许在 tests.rs 新增两个 ignored 测试入口（write-own／read-foreign）经 secure-store 公开 API 建库与读取，windows.rs 仅可加 cfg(test) 内容、产品代码 diff 为 0；读取方四项判定（原始路径拒绝、副本可读且哈希一致、secure-store 打开失败、DPAPI 失败且 CredRead=1168）；② 交换目录 ACL 由人类执行：outbox 改为 Zhn_X 只读，新建 x\zhn_x 与 x\pcx-t2 按写入方修改、对方只读。人类承诺 W5 完成前不拔电源。详见第三轮复核裁定 §10。
