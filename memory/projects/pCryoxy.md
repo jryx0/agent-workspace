@@ -227,3 +227,4 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-22 08:26 UTC+8] 【人类裁定登记｜PC-03 验收矩阵冻结】项目：pCryoxy | PC-03 | 人类 08:25 确认《真机验证方案 v2》§5 矩阵 W1～W6、A1～A3（另含 L1 复跑、X1 泄漏扫描）即日冻结；审核只按矩阵逐项判定，不得追加口径，改动须人类裁决出新版。服务 SID/ACL/服务重启可读归 PC-10。W5 待人类选定测试账户（新建 pcx-t2 或清理 test1 多余 ACE）并登记计划任务后执行，未就绪前 blocked。手机“充电时保持唤醒”已由 workbuddy 经 adb 开启。卡状态不变。本行由 workbuddy 代为登记。
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-22 08:36 UTC+8] 【进展登记｜PC-03 W5 跨账户环境】项目：pCryoxy | PC-03 | 人类 08:27 新建标准用户 pcx-t2（未登录）；08:31 人类已将调度提示词发给 copilot。方案 v2 新增 §3.2a 跨账户交接约定：目录 C://Users//Public//pcryoxy-xacct（inbox/outbox，权限分离）、计划任务 pcryoxy-xacct（待人类管理员登记）、run-xacct.ps1 由 copilot 泳道 B 提供。卡状态不变。本行由 workbuddy 代为登记。
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-22 08:38 UTC+8] 【认领｜PC-03-AND-HOST-V1】项目：pCryoxy | 按已授权范围只新增共享仓 Android 测试宿主白名单文件，不改产品文件；复用当前 PC-03 既有认领与 worktree。宿主完成并复核前，Android 业务矩阵不开始。
