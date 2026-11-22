@@ -56,14 +56,17 @@ class HostInstrumentation : Instrumentation() {
                     result.putString("ciphertextSha256", probe.ciphertextSha256)
                     result.putInt("failureCode", probe.failureCode)
                 }
+                "recover-pending" -> SecretStoreDeviceChecks.recoverStalePending(targetContext)
                 "cleanup" -> cleanup(targetContext)
                 else -> throw IllegalArgumentException("invalid_phase")
             }
             result.putString("result", "PASS")
+            sendStatus(0, result)
             finish(Activity.RESULT_OK, result)
         } catch (error: Exception) {
             result.putString("result", "FAIL")
             result.putString("errorClass", error.javaClass.simpleName)
+            sendStatus(1, result)
             finish(Activity.RESULT_CANCELED, result)
         }
     }

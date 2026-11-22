@@ -38,8 +38,14 @@ The phone must be awake and unlocked before installation. Check `adb
 get-state`, `dumpsys power` (`mWakefulness=Awake`), and
 `dumpsys window` (`isStatusBarKeyguard=false`) first. Installation has a
 90-second timeout; a timeout while the phone is locked is an environment
-block, not a product test failure. Each instrumentation phase must exit 0 and
-report both `INSTRUMENTATION_CODE: -1` and `INSTRUMENTATION_STATUS: result=PASS`.
+block, not a product test failure. Use component
+`app.pcryoxy.andhost/.HostInstrumentation`. The `recover-pending` phase creates
+a stale pending file, writes the version again, and verifies the pending file
+is removed and the committed value reopens.
+`am instrument` can return exit code 0 even when a phase reports failure, so
+exit status alone is not sufficient. Each phase must exit 0 and report
+`INSTRUMENTATION_CODE: -1`, `INSTRUMENTATION_STATUS: result=PASS`, and
+`INSTRUMENTATION_RESULT: result=PASS`.
 
 ```powershell
 $adb = 'C:\Users\Zhn_X\.agent-tools\android-sdk\platform-tools\adb.exe'
@@ -57,16 +63,19 @@ function Invoke-HostPhase([string]$Phase, [string[]]$Extra = @()) {
     for ($i = 0; $i -lt $Extra.Length; $i += 2) {
         $adbArgs += @('-e', $Extra[$i], $Extra[$i + 1])
     }
+    $adbArgs += 'app.pcryoxy.andhost/.HostInstrumentation'
     $lines = & $adb @adbArgs 2>&1
     $exitCode = $LASTEXITCODE
     $text = $lines -join "`n"
     if ($exitCode -ne 0 -or $text -notmatch 'INSTRUMENTATION_CODE: -1' -or
-        $text -notmatch 'INSTRUMENTATION_STATUS: result=PASS') {
+        $text -notmatch 'INSTRUMENTATION_STATUS: result=PASS' -or
+        $text -notmatch 'INSTRUMENTATION_RESULT: result=PASS') {
         throw "instrumentation phase $Phase failed"
     }
     return $text
 }
 
+Invoke-HostPhase 'recover-pending' | Out-Host
 $prepare = Invoke-HostPhase 'prepare'
 $prepare | Out-Host
 & $adb reboot
@@ -115,6 +124,9 @@ Invoke-HostPhase 'probe-old-ct' @(
 The probe verifies the ciphertext hash and must report PASS with
 `failureCode=2`: a fresh install has no matching Android Keystore key.
 The probe removes its empty temporary namespace directory afterward.
+The `cleanup` phase uses the proof saved by `prepare`; after uninstall/reinstall
+that proof no longer exists, so cleanup of the pre-uninstall namespace is not
+applicable. Uninstall itself removes the test host's private proof file.
 
 ## Known limitations
 
