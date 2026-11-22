@@ -83,3 +83,7 @@ APK：审核方自建 `95829f81…8aadce` 与执行方 `9cc3c1c8…ef` 的 `clas
 ## 8. 人类裁定（2026-11-22 20:48）
 
 H4 影响小，**转 PC-11 修复**，不作为 PC-03 结卡条件；已记入任务卡 v1.2 §10。PC-03 结卡只剩 §3 第 1～6 项（W5 runner）返工与审核方 W5 双向执行；SecretStore.kt 若无改动，A1～A3 不重跑。
+
+## 9. 补记：W5 请求未被处理的原因（2026-11-22 20:55）
+
+人类在管理员窗口查得：`pcryoxy-xacct` 状态 Ready、运行账户 pcx-t2（Password）、触发器每 2 分钟有效；上次运行 19:58:52 结果 0，之后错过 27 次（约 54 分钟）。设置 `DisallowStartIfOnBatteries=True`、`StopIfGoingOnBatteries=True`，审核方查得当时 `Win32_Battery.BatteryStatus=1`（电池供电，47%）。结论：19:58 后笔记本改用电池，任务被条件拦下，与 runner 无关。20:54 人类已接回交流电源（BatteryStatus=2）。建议在 W5 复跑前把两项电池条件改为 False（需重新录入 pcx-t2 密码），避免长时间测试中途被打断。runner 的功能缺陷（§3）仍须返工。
