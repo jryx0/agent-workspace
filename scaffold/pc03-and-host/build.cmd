@@ -17,11 +17,12 @@ if not exist "%SOURCE_ROOT%\native\android\tests\SecretStoreDeviceChecks.kt" (
   echo product SecretStoreDeviceChecks.kt is missing 1>&2
   exit /b 2
 )
-if not exist "%USERPROFILE%\.agent-tools\runtimes\jdk-21\bin\java.exe" (
+set "JAVA_HOME=%USERPROFILE%\.agent-tools\runtimes\jdk-21"
+if not exist "%JAVA_HOME%\bin\java.exe" (
   echo approved local JDK 21 is missing 1>&2
   exit /b 2
 )
-set "JAVA=%USERPROFILE%\.agent-tools\runtimes\jdk-21\bin\java.exe"
+set "JAVA=%JAVA_HOME%\bin\java.exe"
 set "JAR=%USERPROFILE%\.agent-tools\runtimes\jdk-21\bin\jar.exe"
 set "ANDROID_HOME=%USERPROFILE%\.agent-tools\android-sdk"
 set "ANDROID_JAR=%ANDROID_HOME%\platforms\android-36\android.jar"

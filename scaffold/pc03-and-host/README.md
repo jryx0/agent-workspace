@@ -18,6 +18,8 @@ From PowerShell:
 `build.cmd` accepts the same two arguments. The output directory must be new
 and outside the project worktree. The build uses the installed JDK 21,
 Kotlin 2.3.21 compiler, Android API 36 platform, and build-tools 36.0.0.
+The batch file sets `JAVA_HOME` to that JDK only in its child process so
+`apksigner` uses the same runtime; it does not change user or system settings.
 An existing local Android debug keystore is used when available; the script
 does not create or replace a signing key. A custom test key can be selected
 with `PC03_TEST_KEYSTORE`, `PC03_TEST_KEY_ALIAS`, `PC03_TEST_STORE_PASS`, and
@@ -34,23 +36,39 @@ targets API 29+, uses target SDK 36, and includes Kotlin stdlib in `classes.dex`
 
 The phone must be awake and unlocked before installation. Check `adb
 get-state`, `dumpsys power` (`mWakefulness=Awake`), and
-`dumpsys window` (`isStatusBarKeyguard=false`) first. Set a 60-second timeout
-for installation; a timeout while the phone is locked is an environment block,
-not a product test failure.
+`dumpsys window` (`isStatusBarKeyguard=false`) first. Installation has a
+90-second timeout; a timeout while the phone is locked is an environment
+block, not a product test failure. Each instrumentation phase must exit 0 and
+report both `INSTRUMENTATION_CODE: -1` and `INSTRUMENTATION_STATUS: result=PASS`.
 
 ```powershell
 $adb = 'C:\Users\Zhn_X\.agent-tools\android-sdk\platform-tools\adb.exe'
 $apk = '<output-directory>\apk\pc03-host.apk'
-$install = Start-Process -FilePath $adb -ArgumentList @('install', '-r', '-t', '-g', $apk) -NoNewWindow -PassThru
-if (-not $install.WaitForExit(60000)) {
+$install = Start-Process -FilePath $adb -ArgumentList @('install', '--no-incremental', '-r', '-t', '-g', $apk) -NoNewWindow -PassThru
+if (-not $install.WaitForExit(90000)) {
     $install.Kill()
     'ENV_BLOCKED: install timed out'
     exit 2
 }
 if ($install.ExitCode -ne 0) { exit $install.ExitCode }
 
-& $adb shell am instrument -w -e phase prepare app.pcryoxy.andhost/.HostInstrumentation
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+function Invoke-HostPhase([string]$Phase, [string[]]$Extra = @()) {
+    $adbArgs = @('shell', 'am', 'instrument', '-w', '-e', 'phase', $Phase)
+    for ($i = 0; $i -lt $Extra.Length; $i += 2) {
+        $adbArgs += @('-e', $Extra[$i], $Extra[$i + 1])
+    }
+    $lines = & $adb @adbArgs 2>&1
+    $exitCode = $LASTEXITCODE
+    $text = $lines -join "`n"
+    if ($exitCode -ne 0 -or $text -notmatch 'INSTRUMENTATION_CODE: -1' -or
+        $text -notmatch 'INSTRUMENTATION_STATUS: result=PASS') {
+        throw "instrumentation phase $Phase failed"
+    }
+    return $text
+}
+
+$prepare = Invoke-HostPhase 'prepare'
+$prepare | Out-Host
 & $adb reboot
 & $adb wait-for-device
 $deadline = (Get-Date).AddMinutes(3)
@@ -68,16 +86,35 @@ if (-not $awake -or -not $unlocked) {
     'ENV_BLOCKED: unlock the device before verify and cleanup'
     exit 2
 }
-& $adb shell am instrument -w -e phase verify app.pcryoxy.andhost/.HostInstrumentation
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-& $adb shell am instrument -w -e phase cleanup app.pcryoxy.andhost/.HostInstrumentation
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+$verify = Invoke-HostPhase 'verify'
+$verify | Out-Host
+Invoke-HostPhase 'cleanup' | Out-Null
 ```
 
-The host persists only the random namespace and 16-byte version proof under
-its private no-backup directory. It never writes plaintext fixture bytes or
-prints key aliases. `cleanup` removes the test aliases, vault directory, and
-proof file. The APK, dex files, and raw logs must remain outside Git.
+The host persists only the random namespace, 16-byte version, and ciphertext
+SHA-256 proof under its private no-backup directory. `prepare` and `verify`
+report the ciphertext SHA-256 without printing plaintext or key aliases.
+`cleanup` removes the test aliases, vault directory, lock file, and proof file.
+The APK, dex files, and raw logs must remain outside Git.
+
+For A3, capture the `namespace`, `ciphertextSha256`, and
+`ciphertextBase64` status values from `prepare` and `export-ct` before
+uninstalling the test host. Run `Invoke-HostPhase 'prepare'` followed by
+`Invoke-HostPhase 'export-ct'` and capture their status values; do not continue
+through the reboot/verify/cleanup flow for this A3 namespace. Uninstall the
+test host, reinstall the same test APK, then run:
+
+```powershell
+Invoke-HostPhase 'probe-old-ct' @(
+    'namespace', '<namespace>',
+    'sha256', '<ciphertextSha256>',
+    'ciphertextBase64', '<ciphertextBase64>'
+)
+```
+
+The probe verifies the ciphertext hash and must report PASS with
+`failureCode=2`: a fresh install has no matching Android Keystore key.
+The probe removes its empty temporary namespace directory afterward.
 
 ## Known limitations
 
