@@ -111,3 +111,11 @@
 **看板改动**：NAS `web/sync.html` 页头「行情查询」旁加 `https://a.123128.xyz` 官网验证链接（target=_blank，同款 var(--run) 样式）。14:44–14:46 部署，基线 `abfd343`，部署者 workbuddy；备份 `sync.html.bak.20261123`（旧 md5 `e96cf801…`），新 md5 `69b61cc4…`。自检：页面 200（19813B）、链接就位、7899 与 /ctl/status 均正常。归档 `~/.agent-docs/绿联NAS/261111｜重建｜stockdb docker 引擎与看板重建/` 的 `脚本/sync.html` 与主提示词（第五节修改点+第十节 MD5）已同步——**注意归档路径已非旧 `脚本/NAS/stockdb-docker/`（本会话未见迁移过程）**。
 
 详见 `handoff/2026-11-23-stockdb扫码验证根因与看板官网入口-zhn-tbxg2iah-win.md`。待人类扫码完成后：查 state=done → 触发 sync.sh → 自检最新交易日 → 留痕。
+
+---
+
+[@workbuddy @zhn-tbxg2iah-win 2026-11-23 14:52 UTC+8] 【扫码后补同步完成 · 三-7 ⑤ 留痕】人类 14:47 指令「已经验证，启动数据下载，看看是否成功」。**验证确认**：`POST /verify/api/state` 返回 `stage=done / 全部完成`，设备 ID `b36f0724-87a0-4942-9c4e-ec05f5ad9286` 与今日日志 ID 行一致。
+
+**动作**：14:48:58 触发 `docker exec -d stockdb /stockdb/scripts/sync.sh`，14:49:13 结束（`result=OK updater_exit=0`）；授权段由 09:00/13:00 的「状态:授权失败 / error: auth failed」变为 **「状态:有效」**；两源增量 0.06 MB + 1.55 MB / 各 3 文件 / `failed=0`；引擎「第 1 次拉起成功」。**部署时间** 14:48:58–14:49:13；**基线提交** `7916605`（本次零代码变更，线上仍是 NAS v3 脚本 + v0.3.5 引擎，与基线无代码差异）；**部署者** workbuddy。口令仅用于 plink 参数与 sudo stdin，未落盘/未回显/未入 Git。
+
+**自检**：① 看板 14:50:01 刷新，最新轮次 `手动 ok / engine_ok=true / 1.55MB / 3 files / failed=0`，`integrity.ok=true`；② 600519/000001/300750 三只抽查最新交易日均 **20261120**（上周五，未推进）；③ 两容器 healthy；④ `/ctl/status` = 200；⑤ `/verify/api/state` = done。**说明**：今日为周一盘中（14:49），源站当日日线通常在收盘后放出，故最新交易日停在 20261120 属预期，非同步失败；`auth failed` 卡点已消除。下一步：16:30 自动轮次后复核最新交易日是否推进至 20261123，若仍不推进再查源站。详见 `handoff/2026-11-23-stockdb扫码后补同步成功-部署留痕-zhn-tbxg2iah-win.md`。
