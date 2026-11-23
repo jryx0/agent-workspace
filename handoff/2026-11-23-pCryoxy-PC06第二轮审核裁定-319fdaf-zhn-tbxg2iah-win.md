@@ -56,3 +56,10 @@
 - A4（流程）：copilot 的 11:57 记忆条目插在审核方 11:36 条目之前，并在事件流中段新增 `## 4` 标题，不符合 append-only 时间序；今后一律追加到文件末尾。
 
 证据：`~/.agent-tools/run/review/pc06-r2/{run.sh,probe2.rs,linux-check.sh,logs/}`。
+
+## 7. 结卡（2026-11-23 12:20 UTC+8）
+
+- 结卡条件三项已满足：①人类 12:16 在对话中确认已批准 7 个依赖复用（base64、percent-encoding、serde、serde_json、url、zeroize；sha2 仅测试），均为基座已有包；②copilot 文档提交 `7d0ee7d`（BUILD.md 写明 WireGuard P0 拒绝、P1 支持；`SubscriptionFetcher` 文档注释写明超时、流式截断、错误不带 URL 由宿主负责），相对 `319fdaf` 仅改文档 8 行；③共享记忆 `539cbfa` 已在末尾追加 PC-18b、PC-20 待办。
+- 合并：`agent/copilot/pc06`@`7d0ee7d` 以 `--no-ff` 并入项目 main，合并提交 `451c3cb`，树与 `7d0ee7d` 一致；已推送 origin（origin/main=`451c3cb`）。
+- PC-06 状态：**done**。§5 非阻断项 A1～A4 留作后续改进，不阻塞。
+- 下游：PC-07 按 v1.2 卡面依赖 02、06、**04b**，04b 未完成前 PC-07 不可认领（审核方此前提示词误用 v1.1 依赖，已更正）。
