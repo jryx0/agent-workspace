@@ -63,3 +63,12 @@ G2 指纹 `CanonicalNodeKey`（core-ir node.rs:413）只有一个 `credential_id
 - 审核方建议：在本节基础上整体批准 v2。**v2 整体批准须人类另行明确表示**，本节不构成批准。
 
 （本节由 workbuddy 代为登记人类裁定。）
+
+
+## 附：人类批准（2026-11-23 20:45）
+
+- 人类明确批准 PC-07 IR 契约变更申请 v2（共享仓 7498339），批准范围以 v2 §1～§5 及本文件「人类裁定」附节（H-3/H-4/H-5）、预审意见附节（H-1/H-2）为准。
+- copilot 可按 v2 §5 文件清单改 core-ir、protocol-parser、plugin-xray；实施前先补 masque:// 检索记录（H-4）。清单外文件须先补申请。
+- 补充（来自 PC-04c 审核 R-2）：XMC 的 rsa_private_key 由桥派生，PC-07 生成配置时 RSA 字段留空，不得自行填写。
+
+（本节由 workbuddy 代为登记人类批准。）
