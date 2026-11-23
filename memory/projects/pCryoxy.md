@@ -326,3 +326,5 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-23 19:49 UTC+8] 【人类裁定登记｜PC-07 IR 申请 H-2 = 按建议】项目：pCryoxy | WireGuard 数值边界：MTU 1280～1500，缺省时生成配置显式写 1420；keepalive 0（关闭）或 1～65535 秒；peer 1～16；本地地址与 allowedIPs 各 1～64 条，必须显式，不默认全路由；reserved 走高级入口，为空或正好 3 字节。H-1（MASQUE remoteDNS）人类要求补充解释，尚未裁定。v2 须写入 H-2。本行由 workbuddy 代为登记。
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-23 19:52 UTC+8] 【人类裁定登记｜PC-07 IR 申请 H-1 = A】项目：pCryoxy | MASQUE remoteDNS：高级入口可填；未填时显式写出核心默认 1.1.1.1/1.0.0.1/2606:4700:4700::1111/2606:4700:4700::1001（client.go:77-79），节点详情显示「默认：Cloudflare」；只接受 IP、最多 8 个；地址族无一匹配时节点详情提示「域名解析可能失败」；默认值作为 plugin-xray 常量注明出处。H-1/H-2 已写入预审意见附节，待 copilot 出 v2。本行由 workbuddy 代为登记。人类同时授权 workbuddy 执行共享仓 git 推送。
+
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-23 19:59 UTC+8] 【PC-07 IR 契约申请 v2｜待审核】项目：pCryoxy | 根据 e1b0f4f 预审及人类 H-1/H-2，合并修订快照迁移、WireGuard 高级入口、MASQUE user/pass 和隧道内 DNS、FinalMask R1～R7，列出 core-ir/parser 文件与 PC-06 全回归要求；详见 handoff/2026-11-23-pCryoxy-PC07-IR契约变更申请v2-copilot-zhn-tbxg2iah-win.md。H-1/H-2 不等于 v2 整体批准；XMC 等必需可变长字段上限及 MASQUE 双凭据的 G2 兼容方案待契约审核。批准前不改 core-ir/parser，三项标待接口；PC-07 保持 doing。
