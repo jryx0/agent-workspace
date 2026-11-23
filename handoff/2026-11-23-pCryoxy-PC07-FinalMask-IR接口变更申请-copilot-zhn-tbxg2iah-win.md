@@ -65,3 +65,66 @@
 - 固定核心范围/转换依据：[`infra/conf/transport_finalmask.go`](https://github.com/XTLS/Xray-core/blob/676eaf66f8f05d4d558ee7a74b4736623d3feeb9/infra/conf/transport_finalmask.go)、[`infra/conf/common.go`](https://github.com/XTLS/Xray-core/blob/676eaf66f8f05d4d558ee7a74b4736623d3feeb9/infra/conf/common.go)、[`fragment/conn.go`](https://github.com/XTLS/Xray-core/blob/676eaf66f8f05d4d558ee7a74b4736623d3feeb9/transport/internet/finalmask/fragment/conn.go)、[`sudoku/table.go`](https://github.com/XTLS/Xray-core/blob/676eaf66f8f05d4d558ee7a74b4736623d3feeb9/transport/internet/finalmask/sudoku/table.go)、[`salamander.go`](https://github.com/XTLS/Xray-core/blob/676eaf66f8f05d4d558ee7a74b4736623d3feeb9/transport/internet/finalmask/salamander/salamander.go)、[`xmc/derivation.go`](https://github.com/XTLS/Xray-core/blob/676eaf66f8f05d4d558ee7a74b4736623d3feeb9/transport/internet/finalmask/xmc/derivation.go)。
 
 本申请不构成审核通过或人类批准。PC-07 在接口审核/批准前可继续实现非 FinalMask 能力，但 FinalMask 不得进入候选实现，也不得结卡。
+
+## 合并补充申请：IR 版本、WireGuard 与 MASQUE
+
+- 申请者：copilot@zhn-tbxg2iah-win~zhn-x-w
+- 关联：本节与上文 FinalMask 申请、需求基线 v1.3 的 G-09 合为**一份 PC-07 IR 契约变更申请**，一次契约所有者审核、一次人类批准、一次 schema 版本升级和一次迁移；不另立平行的 IR 版本申请。
+- 状态：仅申请评审，尚未获契约所有者审核或人类批准。以下内容在获批前均不得实施。
+- 固定核心：Xray v26.11.9，`676eaf66f8f05d4d558ee7a74b4736623d3feeb9`。
+
+### A. G-09：IR snapshot schema 版本和单次迁移
+
+当前 `Snapshot.revision` 是快照内容修订号，不是 schema 版本。`StoredSnapshot`（`crates/core-ir/src/validated.rs:43`）目前保存 revision、nodes、groups、rules，没有 schema version；仓内只有 `to_stored()`/`restore()` 内存往返测试，没有序列化实现或持久化调用方。因此不能把 revision 误当格式版本，也没有证据声称已有磁盘格式。
+
+请求审核以下一次性方案：
+
+1. 在实际持久化边界增加独立的 `schemaVersion`，建议把当前无版本表示作为 legacy v0，把首次显式 schema 定为 v1；快照内容 `revision` 原样保留，不因迁移递增。
+2. 只定义一个 `v0 → v1` 迁移；FinalMask、WireGuard 新字段、SecretRef 引用和 legacy 字段处置在同一个 v1 中定版，不先建中间版本再二次迁移。未知版本、损坏字段或无法无损迁移的值必须明确失败，不回退成默认值。
+3. 迁移不得解引用或复制任何秘密。旧 FinalMask `None`/`Header` 保持原值；旧 WireGuard `peers: Vec<IpAddr>` 原样保留为 legacy 数据，不能猜测为本地地址、peer endpoint 或 AllowedIPs。
+4. 现有代码未找到外部持久化消费者。若契约所有者发现仓外消费者，需先确认实际 legacy 编码；不得据此宣称已完成用户数据迁移。若需要序列化依赖，须另按依赖申请流程批准，本文不授权新增依赖。
+
+### B. WireGuard：明确字段、边界及来源
+
+当前 `WireGuardOptions`（`crates/core-ir/src/node.rs:149`）只有 `peers: Vec<IpAddr>` 与 `reserved: Option<[u8; 3]>`。PC-06 的 `parse_wireguard`（`crates/protocol-parser/src/validate.rs:261`）将 `peer`/`peers` 查询值按逗号拆分并解析为 IP 地址，将私钥放入 Node 的 `SecretRef`；没有证据说明该 IP 列表是本地 interface address、peer endpoint 还是 allowed IP，更不是公钥。固定核心客户端配置需要的字段见下表。
+
+| 字段 | 建议 IR 类型 / 可证实范围 | 有依据的输入来源 | 当前状态 |
+|---|---|---|---|
+| 本地 private key | `SecretRef`，继续使用节点凭据引用；解码后为 32-byte WireGuard key | 官方 WireGuard Interface `PrivateKey`；当前 `wireguard://` 输入虽有私钥但 URI 格式未有标准依据 | 没有获批输入格式前不解析；明文不得进 IR/StoredSnapshot |
+| 本地地址 | `Vec<IpCidr>`；每项 IPv4 prefix `0..=32` 或 IPv6 prefix `0..=128` | 官方 Interface `Address` 配置字段；当前 parser 不读取 | 待接口；不从 `peers` 推导 |
+| peer 公钥 | `[u8; 32]` 的封闭 key 类型；编码必须无损解码为 32 bytes | 官方 Peer `PublicKey`；当前 parser 不读取 | 待接口；无来源时不支持 |
+| peer preshared key | `Option<SecretRef>`；解码后为 32-byte key | 官方 Peer `PresharedKey`；当前 parser 不读取 | 待接口；只能存 SecretRef |
+| peer endpoint | `Endpoint`（host + `NonZeroU16` port，即 `1..=65535`） | 官方 Peer `Endpoint`；当前 parser 不读取 | 待接口；无来源时不支持 |
+| peer allowed IPs | 非空 `Vec<IpCidr>`；prefix 按 IPv4/IPv6 地址族分别为 `0..=32` / `0..=128` | 官方 Peer `AllowedIPs`；当前 parser 不读取 | 待接口；生成时必须显式提供，不能触发核心默认全路由 `0.0.0.0/0`、`::/0` |
+| PersistentKeepalive | wire 字段为 `uint32` 秒；核心配置构造器未给出更窄上限；`0` 表示不设置 | 官方 Peer `PersistentKeepalive`；当前 parser 不读取 | 可证实语义范围不足，等待契约所有者确定可接受上限；不得自行截断或设默认 |
+| MTU | wire 字段为 `int32`；核心构造器未给出有效范围，且 `0` 会静默采用 1420 | 官方 Interface `MTU`；当前 parser 不读取 | 可证实边界不足；等待裁定明确范围与缺省语义，当前不得依赖 0/1420 默认值 |
+| reserved | 核心构造器接受空或恰好 3 bytes | Xray 扩展字段；不是已确认的 WireGuard 标准配置字段，当前仅来自未标准化 query | 无标准输入来源时不支持；不得仅凭核心有字段就开放 |
+
+peer 数量及 interface/allowed-IP 列表数量在固定核心 schema 中没有经本申请核实的安全上限；没有经审核的上限前不接受外部输入。WireGuard 官方 Quick Start 说明通过 `wg`/Interface/Peer 配置设置私钥、peer 公钥、endpoint 和 allowed IP，并未定义 `wireguard://` 分享 URI（<https://www.wireguard.com/quickstart/>）。因此：
+
+- 当前 `peers: Vec<IpAddr>` 的已实现语义仅是“来自自定义 `peer`/`peers` query 的 IP 列表”，其业务含义未定义；不能重命名后自动映射到上述任何字段。
+- 建议 schema 迁移时将旧列表原样保留为 deprecated `legacy_peer_ips`；新本地地址、peer 公钥、endpoint、AllowedIPs 等字段只能由契约审核明确批准的标准 Interface/Peer 输入提供。若后续批准标准配置文件输入，PC-06 必须另行确认该输入格式和解析验收。
+- 所有无标准来源的字段输入均明确拒绝；不发明 query 参数、分享链接或订阅字段。
+
+### C. MASQUE：token 语义及无损映射审查
+
+IETF [RFC 9298](https://www.rfc-editor.org/rfc/rfc9298.html) 定义 HTTP CONNECT-UDP 与客户端 URI Template；[RFC 9484](https://www.rfc-editor.org/rfc/rfc9484.html) 定义 HTTP CONNECT-IP 与 URI Template。两份标准均未定义 `masque://` 分享链接 scheme，也未定义把 URL userinfo 当作 MASQUE token、bearer token 或核心客户端密码的映射。RFC 9484 的 URI Template 示例中出现 `user` 变量，不构成通用认证语义。
+
+固定 Xray 源码进一步表明目前没有可证实的无损映射（均固定到 commit `676eaf66f8f05d4d558ee7a74b4736623d3feeb9`）：
+
+- [`proxy/masque/config.proto`](https://github.com/XTLS/Xray-core/blob/676eaf66f8f05d4d558ee7a74b4736623d3feeb9/proxy/masque/config.proto) 的 `ClientConfig` 只有 `server` 和 `remote_dns`；`Account.password` 属于 server-side account，并非 client config 字段。
+- 固定版本 [`infra/conf/masque.go`](https://github.com/XTLS/Xray-core/blob/676eaf66f8f05d4d558ee7a74b4736623d3feeb9/infra/conf/masque.go) 的客户端 builder 只生成 server 与 remoteDNS；[`proxy/masque/client.go`](https://github.com/XTLS/Xray-core/blob/676eaf66f8f05d4d558ee7a74b4736623d3feeb9/proxy/masque/client.go) 只从客户端配置读取 Server/RemoteDns 与 TLS transport，没有读取 client account/token，也没有 Authorization/Proxy-Authorization header 配置入口。
+- `MasqueOptions` 目前只有 congestion control，而 parser 将 `masque://` 的 username/password 当成 token 放入 SecretStore。将其映射成核心 `Account.password`、HTTP Basic/Bearer 或任意 header 都会改变语义，没有源码或标准依据。
+
+因此请求审核：
+
+1. token 若在 IR 中保留，只能表示为 `SecretRef`，不允许明文进入 IR、日志或 fixture；但它在固定核心 client path 未有可用消费点。
+2. 未能提供经审核的标准链接/订阅来源及固定核心消费映射前，带 token 的 `masque://` 输入必须在解析阶段明确拒绝；不发明认证映射。没有其他标准输入格式的 MASQUE 链接同样不支持。
+3. PC-04b 明确拒绝远端 DNS 与 FakeDNS；固定核心 MASQUE client 在 `remote_dns` 为空时会默认使用公共 DNS IP。配置生成不得接受这一默认，也不得把远端 DNS 静默替换成另一种模式。除非审核出一个符合 P0 DNS 边界的明确配置来源，否则 MASQUE 配置保持待接口。
+
+### D. 合并范围、拒绝规则及结卡门禁
+
+- 本申请合并上文十种 FinalMask IR 变体、G-09 schema version/migration、WireGuard 字段和 MASQUE token/输入边界；一次审核后再实现，一次迁移，不拆成多轮 schema 版本。
+- 每个新增字段必须在契约中同时列明类型、范围、标准输入来源和迁移规则；无标准来源的值保持显式不支持。没有范围依据的字段不得由实现者自行设上限、截断、重排或默认。
+- 获批前，FinalMask、WireGuard、MASQUE 矩阵行均为“待接口”；`core-ir`、parser 与 `StoredSnapshot` 不改。获批后也须逐项完成解析、配置、候选核心 `run -test`、PC-04c bridge prepare 与受控互通取证；核心直跑仅为预验，不能冒充桥或实际连接的验收证据。
+- PC-07 在 FinalMask、WireGuard、MASQUE 的要求和证据全部完成前不得结卡；P0 范围不缩减。PC-04c 由审核方另出任务卡，PC-07 不修改 bridge/ABI/proto。
