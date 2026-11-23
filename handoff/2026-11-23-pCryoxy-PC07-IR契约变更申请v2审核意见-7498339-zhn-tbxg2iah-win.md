@@ -54,3 +54,12 @@ G2 指纹 `CanonicalNodeKey`（core-ir node.rs:413）只有一个 `credential_id
 ## 3. 下一步
 
 人类裁定 H-3、H-4、H-5 后，审核方登记并给出整体批准建议；人类批准 v2 后，copilot 按 v2 §5 清单实施，批准前不改 core-ir / protocol-parser。
+
+## 附：人类裁定（2026-11-23 20:18）
+
+- H-3：按建议。密码类 1～256 字节（salamander 下限 4）；域名按 RFC 1035（总长 ≤253、label ≤63、合法主机名）；XMC profiles 1～8；texturesValue/texturesSignature 各 1～8192 字节；noise items 1～32、单项 packet/segments ≤2048 字节；超限明确拒绝，不截断。依据写「人类裁定（资源控制）」，域名写 RFC 1035。
+- H-4：A。P0 MASQUE 由高级入口（JSON/手工，PC-14/15）录入；masque:// 带行号明确拒绝并提示走高级入口；copilot 实施前补检索记录（客户端/规范名称与版本），找到可核实参考实现后另行审核开放。
+- H-5：按建议。不加第九字段；"pcryoxy/masque-basic/v1" ‖ u32(len user) ‖ user ‖ u32(len pass) ‖ pass 交现有 credential_id() 计算；旧 MASQUE 节点指纹不兼容、迁移标记需重新录入；两个 SecretRef 同进同退，任一失败整体回滚。
+- 审核方建议：在本节基础上整体批准 v2。**v2 整体批准须人类另行明确表示**，本节不构成批准。
+
+（本节由 workbuddy 代为登记人类裁定。）
