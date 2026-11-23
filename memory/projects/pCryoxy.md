@@ -275,4 +275,16 @@
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-23 11:10 UTC+8] 【审核裁定｜PC-06 首轮：不通过，退回返工，保持 doing】项目：pCryoxy | PC-06 | 3cf459d。独立复跑：fmt、parser clippy -D warnings、parser test 9/0、三平台 cargo tree、Android／Linux(WSL) check 均 0；workspace clippy/test 未独立完成，下轮补。探针 10/10 复现：阻断 P1 IPv6 字面量拒收、P2/P3 线上 path 被改写并误去重、P4/P5/P6/P8 参数静默丢弃（WS Host、tcp http 伪装、ed、grpc multi）、P9 冲突回 Validation 无 fingerprint_conflict／行号；须修 P7 UUID 大小写去重；P10 WireGuard 显式拒绝不阻断，转人类 H1（扩 IR 或转 P1）。另阻断：F-A1 新增依赖（lock 449→494，reqwest+rustls→aws-lc-sys/ring/quinn）未走 v1.1 第 94 行依赖申请；F-B1 offline 证据仅 Windows（Android/Linux 缺 8 包，审核方经人类授权已代理补入缓存，lock 未变）；F-C1 嵌套拒绝无测试；F-D1 第 30 行任务表仍 todo 须改 doing。待人类：H1、H2（HTTPS 客户端放 parser 还是宿主）。详见 handoff/2026-11-23-pCryoxy-PC06首轮审核裁定-3cf459d-zhn-tbxg2iah-win.md。
 
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-23 11:57 UTC+8] 【首轮返工交付待复核】项目：pCryoxy | PC-06 | 原提交 `3cf459d6cc9955eb7a00b2ac845eda38b7cc57b3`，返工提交链 `ad37056aff8bf40e497400cc81139d68f6d325bd` → `319fdafd2fd14024f257c88a6256ca6d8e1a4657`。P1～P9 修复并加入 20 项 parser 测试；WireGuard 真实分享显式拒绝；path 原样保留；冲突带行号+fingerprint_conflict；Host/VMess/ed/grpc 参数映射或显式拒绝；订阅下载由宿主 `SubscriptionFetcher` 承担，parser 强制字节/超时/大小上限并脱敏 fetch error。锁文件对 main 外部 package delta 0（仅 protocol-parser 成员 +16 行）；人类 11:57 批准复用 base64/percent/serde/json/url/zeroize/sha2，申请见对应 handoff。workspace fmt/clippy/test 61/0/4；Windows、Android、Linux locked offline check 均 0；Gitleaks 0。PC-06 状态仍 doing；未合并、未 push。逐项证据及参数清单见 `handoff/2026-11-23-pCryoxy-PC06首轮返工交付待复核-copilot-zhn-tbxg2iah-win.md`。
+
+## 4. 当前任务状态覆盖（append-only；覆盖历史初始登记表）
+
+> §2 初始任务表是 2026-11-19 的历史批次快照，按 append-only 不原位改写；本节为当前权威状态补充。
+
+| 任务ID | 当前认领agent | 当前状态 | 证据 |
+|---|---|---|---|
+| PC-06 | copilot@zhn-tbxg2iah-win~zhn-x-w | doing | 认领 `6daa2e8`；首轮返工提交链 `ad37056` → `319fdaf`，待复核 |
+
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-23 11:36 UTC+8] 【人类裁定｜PC-06 H1/H2】项目：pCryoxy | PC-06。H1：P0 对常见 `wireguard://` 分享链接保持显式拒绝（带行号的“不支持”），完整支持转 P1，不改 PC-02 IR／契约。H2：PC-06 移除内置 reqwest+rustls，parser 仅接受受控字节并提供 Fetcher 抽象（字节、大小上限、超时、错误不含 URL），下载由宿主 PC-18b/PC-20 承担，宿主 HTTPS 客户端选型届时走依赖申请；PC-06 返工须以假 Fetcher 测试覆盖成功/失败保留/超限/脱敏/回滚，Cargo.lock 回到基座规模，剩余新增依赖仍走申请，三平台 offline 证据仍须提供。PC-06 仍 doing，退回 copilot 返工。详见 handoff/2026-11-23-pCryoxy-PC06首轮审核裁定-3cf459d-zhn-tbxg2iah-win.md §6.1。
+
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-23 11:57 UTC+8] 【依赖复用批准】项目：pCryoxy | PC-06 | 人类批准最小依赖复用申请：base64 0.23.1、percent-encoding 2.3.2、serde 1.0.229、serde_json 1.0.154、url 2.5.8、zeroize 1.8.2、dev-only sha2 0.10.9；全部已在 main `1b1ae3d` 锁中，外部 package delta 0，未批准任何新 HTTP/TLS 栈。申请见 `handoff/2026-11-23-pCryoxy-PC06依赖复用申请-copilot-zhn-tbxg2iah-win.md`。
