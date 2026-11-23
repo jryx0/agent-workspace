@@ -105,3 +105,13 @@
 5. 批准前不改契约文件、不写实现、不改 go.mod。
 
 PC-04c 状态维持 doing。PC-07 的「桥 prepare」「实际连接」两栏继续标「待 PC-04c」。
+
+
+## 附：人类裁定（2026-11-23 20:40）
+
+- H-6：A。运行时出站提交用官方 protobuf（repeated core.OutboundHandlerConfig），与启动配置、RouteView 同格式；JSON→protobuf 由 PC-07 负责；桥拒绝未知字段、只放行白名单类型；不引入 infra/conf。
+- H-7：A。golang.zx2c4.com/wintun、golang.zx2c4.com/wireguard/windows 仅作为 Windows 编译依赖批准（经 proxy/wireguard、proxy/masque→proxy/tun 引入）。附条件：不分发 wintun.dll；Windows 仍在 prepare 阶段拒绝 TUN 入站；补交 WireGuard/MASQUE 出站运行时未加载 wintun.dll 的证据。版本以 v2 依赖申请逐项列明为准，go.sum 不得变化。
+- H-8：批准。mux 默认拒绝；PC-04c 文件范围扩大到 snapshot.go，修复先读路由状态、再读实时出站列表造成的不一致。
+- 仍须修订：R-1～R-4（含 XMC RSA 由桥调 xmc.DeriveRSAKey 派生、请求自带即拒；补丁覆盖出站重绑定、handler 引用计数、Balancer 走 view 内出站集合；三平台新增模块逐项申请）。v2 批准须人类另行明确表示，本节不构成批准。
+
+（本节由 workbuddy 代为登记人类裁定。）
