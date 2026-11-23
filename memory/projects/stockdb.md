@@ -101,3 +101,13 @@
 **归档**：`~/.agent-docs/脚本/NAS/stockdb-docker/重建/`（zhn-docs-std v1.3.0 批量结构：批次目录 `重建/` + 顶层主文件 + 唯一关联子目录 `脚本/` 18 个原名平铺文件，共 19 个；1:1 于 NAS 11-11 现状，唯 `脚本/default.conf` token 置换为 `__STOCKDB_CTL_TOKEN__`）。主文件 `261111｜重建｜stockdb 引擎与看板重建提示词.md`，内含「脚本/下文件 → NAS 目标路径」逐文件落位表（**归档目录结构 ≠ NAS 部署结构**）。**归档为静态快照，NAS 后续变更不自动同步，改动时须手动更新归档**。提示词含架构图、9 步重建流程、自研修改点对照、闭源二进制获取、8 条已知坑、8 项验证清单、指纹表。
 
 详见 `handoff/2026-11-11-stockdb-看板远程启动引擎上线与全套归档-zhn-tbxg2iah-win.md`。
+
+---
+
+[@workbuddy @zhn-tbxg2iah-win 2026-11-23 14:47 UTC+8] 【扫码验证根因定位 + 看板官网入口 · 三-7 留痕】人类指令三条（确认设备 ID / 看板加官网链接 / 读网页协助验证）。**根因**：源站 11-22 公告开启微信扫码验证；今日 09:00/13:00 两轮同步 `状态:授权失败 / 未初始化验证 / error: auth failed` → `result=FAIL`，失败的是数据更新器的设备授权而非引擎；v3 门禁仍拉回引擎，7899=200、历史可查、新数据下不来。**升级非必需**：当前 v0.3.5（md5 `99d59f4e…`，09-08）`/version` 校验 status:true，更-power 包不解决设备授权，已暂缓待扫码后定。
+
+**设备 ID**：`/volume1/docker/stockdb/data/.node_id` = `b36f0724-87a0-4942-9c4e-ec05f5ad9286`（36B，容器内外三处+日志一致）；验证链接 `https://a.123128.xyz/verify?id=b36f0724-87a0-4942-9c4e-ec05f5ad9286`，流程=填微信昵称（首字须完全一致）→微信扫码→stage=done，当前 stage=input 未验证。**扫码必须人类本人，agent 无法代劳**。
+
+**看板改动**：NAS `web/sync.html` 页头「行情查询」旁加 `https://a.123128.xyz` 官网验证链接（target=_blank，同款 var(--run) 样式）。14:44–14:46 部署，基线 `abfd343`，部署者 workbuddy；备份 `sync.html.bak.20261123`（旧 md5 `e96cf801…`），新 md5 `69b61cc4…`。自检：页面 200（19813B）、链接就位、7899 与 /ctl/status 均正常。归档 `~/.agent-docs/绿联NAS/261111｜重建｜stockdb docker 引擎与看板重建/` 的 `脚本/sync.html` 与主提示词（第五节修改点+第十节 MD5）已同步——**注意归档路径已非旧 `脚本/NAS/stockdb-docker/`（本会话未见迁移过程）**。
+
+详见 `handoff/2026-11-23-stockdb扫码验证根因与看板官网入口-zhn-tbxg2iah-win.md`。待人类扫码完成后：查 state=done → 触发 sync.sh → 自检最新交易日 → 留痕。
