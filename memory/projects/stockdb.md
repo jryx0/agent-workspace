@@ -119,3 +119,11 @@
 **动作**：14:48:58 触发 `docker exec -d stockdb /stockdb/scripts/sync.sh`，14:49:13 结束（`result=OK updater_exit=0`）；授权段由 09:00/13:00 的「状态:授权失败 / error: auth failed」变为 **「状态:有效」**；两源增量 0.06 MB + 1.55 MB / 各 3 文件 / `failed=0`；引擎「第 1 次拉起成功」。**部署时间** 14:48:58–14:49:13；**基线提交** `7916605`（本次零代码变更，线上仍是 NAS v3 脚本 + v0.3.5 引擎，与基线无代码差异）；**部署者** workbuddy。口令仅用于 plink 参数与 sudo stdin，未落盘/未回显/未入 Git。
 
 **自检**：① 看板 14:50:01 刷新，最新轮次 `手动 ok / engine_ok=true / 1.55MB / 3 files / failed=0`，`integrity.ok=true`；② 600519/000001/300750 三只抽查最新交易日均 **20261120**（上周五，未推进）；③ 两容器 healthy；④ `/ctl/status` = 200；⑤ `/verify/api/state` = done。**说明**：今日为周一盘中（14:49），源站当日日线通常在收盘后放出，故最新交易日停在 20261120 属预期，非同步失败；`auth failed` 卡点已消除。下一步：16:30 自动轮次后复核最新交易日是否推进至 20261123，若仍不推进再查源站。详见 `handoff/2026-11-23-stockdb扫码后补同步成功-部署留痕-zhn-tbxg2iah-win.md`。
+
+---
+
+[@workbuddy @zhn-tbxg2iah-win 2026-11-23 15:05 UTC+8] 【部署完成 · 看板授权失败提示横幅 · 三-7 ⑤ 留痕】人类 14:58 指令：截图（Windows 弹窗「未初始化验证…error: auth failed, 状态:授权失败」）问 Linux 是否同样报错、若有则 sync.html 需提示用户。**确认**：Linux/NAS 有完全相同的报错，只是不弹窗而写进 `logs/sync_2026-11-23.log` 与看板 `data/sync-history.json`（今日 09:00/13:00 两轮 excerpt 含「状态:授权失败 / 未初始化验证…/ error: auth failed」）。
+
+**改动**（仅 NAS `web/sync.html`，零后端/配置变更）：① 新增 `renderAuthBanner()`——扫描 `data.runs`（新→旧），在最新 `status=ok` 且日志含「状态:有效」的成功轮次之前若遇 auth 失败即显示醒目横幅，列出三条错误原文、设备 ID（从日志 ID 行提取）、`/verify?id=<ID>` 专属验证链接；当前已恢复则自动隐藏；② 运行明细中 auth 失败行的「说明」列标红「设备授权失败 · 需官网扫码验证」。**部署时间** 15:00–15:03；**基线提交** `58bd91e`（本地领先双远端 1 提交，本次零代码变更、线上为 NAS 静态页）；**部署者** workbuddy。备份 `sync.html.bak.20261123-authbanner`（19813B），旧 md5 `69b61cc4…` → 新 md5 **`40e231b7388bba1ef5ea0ddc95532537`**（22513B）。
+
+**自检**：① 线上页面 HTTP 200 / 22513B，关键特征命中 9 处；② JS `node --check` 通过；③ 检测逻辑用线上数据验证——当前（最新轮 14:48 ok / 状态:有效）横幅隐藏，仅失败子集命中且正确提取设备 ID；④ 归档 `~/.agent-docs/绿联NAS/261111｜重建｜stockdb docker 引擎与看板重建/` 下 `脚本/sync.html` 已同步，主提示词第五节修改点表 + 第十节 MD5 已更新；⑤ `/tmp` 上传残留已清理。口令仅用于 plink 参数与 sudo stdin，未落盘/未回显/未入 Git。详见 `handoff/2026-11-23-stockdb看板授权失败提示横幅-部署留痕-zhn-tbxg2iah-win.md`。
