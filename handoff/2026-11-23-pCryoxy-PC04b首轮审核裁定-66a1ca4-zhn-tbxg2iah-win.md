@@ -62,3 +62,13 @@
 2. 给出 Windows、Android、Linux 三平台 `-mod=readonly`、`GOPROXY=off` 的 bridge archive 构建证据，以及 go.mod 前后 require 对比。
 3. 在新提交上重跑完整 replay，报 first.a/second.a 字节与 SHA-256。
 4. 提交后回报提交号；PC-04b 保持 doing / 待审核，不合并、不 push。
+
+### 6.1 人类裁定结果（2026-11-23 16:23 UTC+8）
+
+人类在对话中裁定 **H1 采用 §4 第 1 项（审核方建议）**：tun 入站只在 Android/Linux 构建放行，Windows 构建不引入 `proxy/tun`，go.mod 不新增依赖。wintun、wireguard/windows **未获批准**。返工具体要求：
+
+1. `proxy/tun` 的 import 与 tun 校验分支移到带 `//go:build !windows` 的文件；Windows 侧用 `//go:build windows` 的对应文件，在 prepare 阶段对 tun 入站返回明确的「不支持」错误（错误码与现有未纳管拒绝一致），active 状态不变。
+2. 反向测试：Windows 下 tun 入站被拒、active 不变。该测试须能在 Windows 上实际运行（Windows 原生 Go `go test -run`），或至少以 `GOOS=windows go test -c` 编译通过并附说明；Linux 侧原有 tun 正向／必开 sniffing 测试保持不变。
+3. go.mod 的 require 相对基座 `451c3cb` 只允许多 netlink v1.3.1、netns v0.0.5，go.sum 不得新增条目。注意：`go mod tidy` 会按全平台加载被引用包，可能要求补 wintun；**不得执行会写回 go.mod 的 tidy**，如遇工具要求补模块，回报审核方。
+4. 文档（`tests/integration/bridge/profile.md` 或 BUILD.md）写明：P0 Windows 走系统代理（socks/http），Windows tun 入站不支持；并在共享记忆末尾登记后续待办「Windows tun（wintun.dll 分发、签名、管理员权限、依赖申请）由后续卡承接」。
+5. 交付证据：Windows（Windows Go 或 zig `x86_64-windows-gnu`）、Android（NDK 29）、Linux 三平台 `-mod=readonly`、`GOPROXY=off` 的 bridge archive 构建；新提交上的完整 replay（first.a/second.a 字节与 SHA-256）；go.mod require 前后对比。
