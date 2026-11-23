@@ -61,4 +61,14 @@
 - **H1（P10）**：WireGuard 真实分享格式需要 IR 增加对端公钥、本地地址、MTU 等字段（PC-02 契约变更）。选项：① 扩 IR（回 PC-02 所有者）后由 PC-06 支持；② P0 保持显式拒绝，WireGuard 仅支持 JSON/手工构造，转 P1。审核建议 ②，避免为 PC-06 重开已冻结契约。
 - **H2（F-A1 方向）**：订阅刷新是否必须 HTTPS 客户端内置于 parser crate，还是后移到宿主（PC-18b/PC-20）由已有依赖承担。审核建议依赖申请中二者择一并比较包体与三平台构建成本。
 
+### 6.1 人类裁定结果（2026-11-23 11:36 UTC+8）
+
+- **H1 → P0 保持显式拒绝，完整 WireGuard 分享链接转 P1**（即上文选项 ②；不改 PC-02 IR／契约）。返工要求：常见 `wireguard://` 格式返回明确的“不支持”错误并带行号，不得落为笼统解析错误；补测试固定此行为，审核探针 P10 改为断言“明确拒绝”；交付说明与 BUILD/README 注明“完整 WireGuard 分享链接留待 P1”。
+- **H2 → PC-06 移除内置 HTTP 客户端，提供“受控字节输入 + Fetcher 抽象”，下载由宿主（PC-18b/PC-20）承担**。返工要求：
+  1. 移除 `reqwest`／`rustls` 及其传递依赖（aws-lc-sys／ring／quinn 等），`Cargo.lock` 回到基座规模；剩余仍属新引入的依赖（如 `base64`）照常走 v1.1 第 94 行依赖申请。
+  2. 定义 Fetcher trait 契约：返回字节、大小上限、超时与失败语义、错误不含 URL。
+  3. 以假 Fetcher 测试覆盖：成功合并、失败保留旧节点、超大小上限拒绝、错误脱敏、staging 失败回滚。
+  4. 交付说明写明下载由宿主实现，并在共享记忆中为 PC-18b、PC-20 各登记一条待办（宿主 HTTPS 客户端选型届时走依赖申请）。
+- 因 H2，F-A1 的 reqwest+rustls 部分与 F-B1 的大部分缺包问题随移除消解；但返工仍须给出三平台 `--locked --offline` 构建证据。
+
 证据：`~/.agent-tools/run/review/pc06-r1/{logs/,probe.rs,run2.sh,linux-check.sh}`。
