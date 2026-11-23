@@ -127,3 +127,9 @@
 **改动**（仅 NAS `web/sync.html`，零后端/配置变更）：① 新增 `renderAuthBanner()`——扫描 `data.runs`（新→旧），在最新 `status=ok` 且日志含「状态:有效」的成功轮次之前若遇 auth 失败即显示醒目横幅，列出三条错误原文、设备 ID（从日志 ID 行提取）、`/verify?id=<ID>` 专属验证链接；当前已恢复则自动隐藏；② 运行明细中 auth 失败行的「说明」列标红「设备授权失败 · 需官网扫码验证」。**部署时间** 15:00–15:03；**基线提交** `58bd91e`（本地领先双远端 1 提交，本次零代码变更、线上为 NAS 静态页）；**部署者** workbuddy。备份 `sync.html.bak.20261123-authbanner`（19813B），旧 md5 `69b61cc4…` → 新 md5 **`40e231b7388bba1ef5ea0ddc95532537`**（22513B）。
 
 **自检**：① 线上页面 HTTP 200 / 22513B，关键特征命中 9 处；② JS `node --check` 通过；③ 检测逻辑用线上数据验证——当前（最新轮 14:48 ok / 状态:有效）横幅隐藏，仅失败子集命中且正确提取设备 ID；④ 归档 `~/.agent-docs/绿联NAS/261111｜重建｜stockdb docker 引擎与看板重建/` 下 `脚本/sync.html` 已同步，主提示词第五节修改点表 + 第十节 MD5 已更新；⑤ `/tmp` 上传残留已清理。口令仅用于 plink 参数与 sudo stdin，未落盘/未回显/未入 Git。详见 `handoff/2026-11-23-stockdb看板授权失败提示横幅-部署留痕-zhn-tbxg2iah-win.md`。
+
+---
+
+[@workbuddy @zhn-tbxg2iah-win 2026-11-23 15:15 UTC+8] 【部署完成 · 失败时点卡片悬停报错提示 · 三-7 ⑤ 留痕】人类 15:10 指令（附截图：今日四时点中 09:00/13:00 显示「失败」）：再次新增——鼠标移到失败卡片上时显示报错信息。**改动**（仅 NAS `web/sync.html`）：① `renderToday()` 对 `fail/incomplete` 且带 `excerpt` 的时点卡片加 `.err` 类与 `tabindex=0`，内嵌 `.tip` 元素；② CSS `.slot.err:hover/:focus-within .tip` 显示浮层（等宽字体、`--fail` 边框、深色主题适配、`z-index:20`）；③ tip 内容为该轮错误行——关键词（error/失败/授权/未初始化/auth/...）过滤，无匹配取末 5 行，最多 8 行，经新增的 `esc()` 做 HTML 转义，超出提示去"日志"列看完整日志。**部署时间** 15:12–15:14；**基线提交** `0169958`；**部署者** workbuddy。备份 `sync.html.bak.20261123-tooltip`（22513B），md5 `40e231b7…` → **`4fae00f68158cc6988223f21a9145014`**（24345B）。
+
+**自检**：① 线上 HTTP 200 / 24345B，关键特征命中 9 处；② `node --check` JS 通过；③ 用线上 09:00/13:00 真实失败数据模拟——tip 精确提取出截图中的三条错误（状态:授权失败 / 未初始化验证… / error: auth failed）；④ 归档 `~/.agent-docs/绿联NAS/261111｜重建｜stockdb docker 引擎与看板重建/` 的 `脚本/sync.html` 同步，主提示词第五节修改点、第 69 行版本标记（★v4）、第十节 MD5 已更新；⑤ `/tmp` 残留清理。口令未落盘/未回显/未入 Git。详见 `handoff/2026-11-23-stockdb看板失败卡片悬停报错-部署留痕-zhn-tbxg2iah-win.md`。
