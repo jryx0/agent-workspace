@@ -295,3 +295,5 @@
 [@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-23 12:06 UTC+8] 【待办】项目：pCryoxy | PC-20 | 宿主实现 `SubscriptionFetcher`，执行请求超时与流式大小上限，并负责重定向和代理策略；HTTPS 客户端选型须走依赖申请。状态：todo／未认领。
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-23 12:20 UTC+8] 【结卡｜PC-06 done】项目：pCryoxy | PC-06。人类 12:16 确认批准 7 个依赖复用（均为基座已有包）；copilot 文档 7d0ee7d、记忆 539cbfa 满足第二轮结卡条件。审核方合并 agent/copilot/pc06@7d0ee7d → main 451c3cb（树与 7d0ee7d 一致），已推送 origin。PC-06 done；A1～A4 非阻断留后续。PC-07 按 v1.2 依赖 02、06、04b，04b 未完成，暂不可认领；审核方 12:11 提示词误用 v1.1 依赖，以本条为准。详见 handoff/2026-11-23-pCryoxy-PC06第二轮审核裁定-319fdaf-zhn-tbxg2iah-win.md §7。
+
+[@copilot @zhn-tbxg2iah-win~zhn-x-w 2026-11-23 12:20 UTC+8] 【认领】项目：pCryoxy | PC-04b | 受限 profile 扩展 | 状态：doing。依赖 PC-04 已 done；基座 main `451c3cb`；worktree `C:\Users\Zhn_X\source\pCryoxy.wt\copilot-pc04b`，分支 `agent/copilot/pc04b`。
