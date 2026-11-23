@@ -159,3 +159,11 @@
 **排除**：非源站故障（验证接口可达、返回正常）、非引擎离线（7899 查询正常）、非脚本 v3 门禁问题（本轮正常执行未跳过）、非配置完整性问题（integrity.ok=true）。
 
 **处置（需人类本人，agent 无法代劳扫码）**：用新 ID 打开 `https://a.123128.xyz/verify?id=11084fcf-527e-4ee4-8205-b524bbd85284` → 填微信昵称（首字完全一致）→ 微信扫码 → `stage=done`；完成后由 agent 触发 `sync.sh` 并自检最新交易日。**长期风险**：ID 反复漂移意味着每次漂移都要重新扫码，需向官方反馈（截图提到官方称「会统一处理」），或核查 NAS 机器码为何变化（如硬件地址/容器重建/系统指纹）。本轮未改任何配置、未升级、未重启服务。
+
+### 2026-11-23 18:18 扫码后补同步成功（ID 漂移故障闭合）
+
+人类完成新 ID `11084fcf-…` 扫码验证。agent 查 state=`stage=done / 全部完成`，触发 `docker exec -d stockdb /stockdb/scripts/sync.sh`（18:16:35 开始，18:17:05 结束，`result=OK updater_exit=0`）。本轮为**全量补数据**：23 文件 / 459.39 MB / `failed=0`，引擎第 1 次拉起成功；日志授权段 `ID: 11084fcf…` + `状态:有效`，与验证通过 ID 一致。
+
+**线上自检（全通过）**：① 抽查 600519/000001/300750，最新交易日由 `20261120` 推进至 **`20261123`**（本周一当日数据已放出）；② 两容器 healthy、`ctl/status`=200；③ 手动触发 `sync-stats.py` 刷新看板（18:18:02，78 次运行 / 17 天），最新轮次 `手动 ok / engine_ok=true / 23 文件 / 459.39MB`，`integrity.ok=true`；④ 看板 `renderAuthBanner` 判定 `None`（最新成功轮含「状态:有效」→ 授权横幅自动隐藏）。
+
+**档位 T2 自检**：规范 v2.8；tools-scan --check ✅；proxy-check ✅ 可推；`.compact-lock` 无；挂起项 prnmgt S1/S2/S3 未认领。部署者 workbuddy；口令未落盘/未回显/未入 Git。详见 `handoff/2026-11-23-stockdb扫码后补同步成功-ID漂移闭合-zhn-tbxg2iah-win.md`。
