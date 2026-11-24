@@ -10,6 +10,7 @@
 | wps-enterprise-account | WPS 企业账号（承载 ~/.agent-docs 同步，凭证在 WPS 客户端） | 已登录本机 2026-11-04 | 密码不入库；账号变动会影响 agent-docs 同步 |
 | feishu-app-id-parva.txt / feishu-app-secret-parva.txt | 飞书自建应用 `agent-docs`（App ID `cli_aa77a9fe69385c13`，租户「潘恩塔」P1499QMSJ）凭证；CLI `--profile parva` 读写「agent-docs 索引」多维表格 | 已分发 2026-11-18 | 适用 zhn-tbxg2iah-win / WorkBuddy，两账号共用；值仅在 `config/`（0600），禁 Git。**Secret 曾于 2026-11-18 对话中明文出现，待人类重置后更新本机文件** |
 | lark-cli 用户登录态（profile parva） | 飞书 CLI OAuth 用户令牌（张皓 `ou_b051f3bfce5d7280bb599a2853572030`，14 项 scope） | 已登录本机 2026-11-18 | 非文件类凭证（本机 `~/.lark-cli/config.json` + DPAPI）；换设备须重新 device flow 授权，**禁复制配置到其他设备或 agent 软件** |
+| RackNerd-ssh-key-2026-11-24 / .pub | Ed25519 SSH 私钥：登录新 RackNerd VPS `23.94.211.70`（用户 `opstzih2`，端口 51727） | 已分发 2026-11-24 | 原件在 `~/.ssh/`，副本在 `config/`；仅用于该新机，与失效的旧机 `107.175.219.173` 无关；适用 zhn-tbxg2iah-win / WorkBuddy，两账号共用 |
 
 ---
 
