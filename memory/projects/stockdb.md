@@ -185,3 +185,9 @@
 - **改动**：仅 `web/sync.html` 的机器码悬浮窗——`.tip` 宽 `max(360px,100%)/min(92vw,520px)` → `max(520px,100%)/min(96vw,760px)`；去掉 `white-space:pre-wrap;word-break:break-all`（会换行），改为 `.tip .row{display:block;white-space:nowrap}`（每条历史独占一行且行内不换行），`.tt` 标题也 nowrap，容器加 `overflow-x:auto` 供窄屏横向滚动；渲染 `loadNodeId()` 的 join 由 `'\n'` 改为 `''`（改由 `.row` 块级分行）。控制服务、后端接口、数据均未动。
 - **部署与自检**：08:28 部署，备份 `sync.html.bak.20261124-widertip`（26885B），MD5 `0af38152…`→`7ef644a856ad9084d466d46a0938fcc0`（26929B）。自检：`node --check` ✅、CSS/渲染特征命中、页面 200/26929B、`/ctl/nodeid` 联动正常（current `d267b7c8…`、1 条历史）、临时文件清理。本机仍无浏览器二进制，未做真实 hover 截图。归档 `sync.html` + 提示词（版本★v6、修改点表、MD5）已同步。
 - **边界**：未改数据/服务/接口/token/nginx，未触发同步；口令未落盘/未回显/未入 Git。详见 `handoff/2026-11-24-stockdb悬浮窗加宽不换行-部署留痕-zhn-tbxg2iah-win.md`。
+
+### 08:29 悬浮窗可悬停复制（人类追加，T2）
+- **问题**：加宽后鼠标离开顶部机器码芯片、穿过 6px 间隙时浮窗消失，无法选中文字复制。
+- **修复**：仅 `web/sync.html` 的 `.nid .tip`——`top:calc(100% + 6px)` → `top:100%` 紧贴芯片，6px 外间隙移作内部 `padding-top:16px`（视觉间距不变、hover 路径连续），并加 `cursor:auto;user-select:text`。浮窗是 `.nid` 后代，鼠标在其上时 `.nid:hover` 持续成立，故可停留选中复制。失败卡片 `.slot .tip` 的间隙未动。
+- **部署与自检**：08:29 部署，备份 `sync.html.bak.20261124-selectable`（26929B），MD5 `7ef644a8…`→`53874d922b06a73d5cd13add986b3511`（26954B）。自检：`node --check` ✅、特征命中 4、页面 200/26954B、后台结构校验（tip 嵌套在 nid 内、hover 规则存在、间隙已消除、可选中）、临时文件清理。归档与提示词（★v7、修改点、MD5）已同步。
+- **边界**：仅改看板静态页，未动服务/数据/接口/token/nginx，未触发同步；口令未落盘/未回显/未入 Git。详见 `handoff/2026-11-24-stockdb悬浮窗可悬停复制-部署留痕-zhn-tbxg2iah-win.md`。
