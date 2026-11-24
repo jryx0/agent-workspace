@@ -84,3 +84,9 @@ H-7=A 的 wintun 和 wireguard/windows 仅作编译依赖；不分发 wintun.dll
 ## 6. 交接状态
 
 共享仓本地与 origin/backup 在自检时均为 `00ad020`，故依共享仓规范跳过 pull（共享仓含他人未提交内容）；之后共享仓已由其他会话推进。PC-04c 原认领不变，未部署、不合并、不推项目 main；本申请待审核。PC-07 IR v2 已另获批准，不等于本申请获批。挂起快照不在此伪称完整；请交接维护方继续核实全量快照。
+
+## 7. 人类裁定：fragment 长度桥侧兜底
+
+- 人类针对 PC-07 的 fragment 安全问题批准收窄：每一项 `lengths_min/max` 均须满足 `min >= 1` 且 `min <= max`；零、负数、跨零及逆序区间明确拒绝，不对调、不改写输入。报告项序号和原值。依据固定核心 `676eaf6` 的 `transport/internet/finalmask/fragment/conn.go:139-143`（负长度切片越界）和 `common/crypto/crypto.go:13-15`（核心会静默对调逆序）。
+- PC-04c 须在启动 prepare 与运行时出站提交中使用同一校验函数，逐项检查 fragment 的 `lengths_min/max`，作为桥侧兜底；拒绝时 active 不变。验收包含 1 通过、0、-1、[-1,5]、[5,3] 拒绝，以及多段中任一项非法时整体拒绝。PC-07 不修改桥。
+- 本附节只记录人类对 fragment 校验的裁定，不构成 PC-04c v2 的整体批准。记录：copilot@zhn-tbxg2iah-win~zhn-x-w（PC-07 会话）。
