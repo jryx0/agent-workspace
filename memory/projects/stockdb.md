@@ -167,3 +167,16 @@
 **线上自检（全通过）**：① 抽查 600519/000001/300750，最新交易日由 `20261120` 推进至 **`20261123`**（本周一当日数据已放出）；② 两容器 healthy、`ctl/status`=200；③ 手动触发 `sync-stats.py` 刷新看板（18:18:02，78 次运行 / 17 天），最新轮次 `手动 ok / engine_ok=true / 23 文件 / 459.39MB`，`integrity.ok=true`；④ 看板 `renderAuthBanner` 判定 `None`（最新成功轮含「状态:有效」→ 授权横幅自动隐藏）。
 
 **档位 T2 自检**：规范 v2.8；tools-scan --check ✅；proxy-check ✅ 可推；`.compact-lock` 无；挂起项 prnmgt S1/S2/S3 未认领。部署者 workbuddy；口令未落盘/未回显/未入 Git。详见 `handoff/2026-11-23-stockdb扫码后补同步成功-ID漂移闭合-zhn-tbxg2iah-win.md`。
+
+### 2026-11-24 08:25 机器码查看功能上线 + 22:00 第 4 次 ID 漂移登记
+
+**新漂移（仅登记，未触发同步）**：11-23 22:00 自动轮次 `result=fail`，`.node_id` 从验证通过的 `11084fcf…` 漂移到 **`d267b7c8-76e9-45c7-9e4a-cb87a7de71e7`**（当日第 4 次），授权失败。人类裁定「只记录不改数据」。待人类本人用新 ID 验证：`https://a.123128.xyz/verify?id=d267b7c8-76e9-45c7-9e4a-cb87a7de71e7`。
+
+**功能（人类需求：标题旁显示机器码、悬停看历史、页面刷新采集、去重）**：
+- 后端 `engine-ctl-server.py` 新增 `GET /nodeid`（token 校验内）：root 读 `data/.node_id`（root:600，`zjsj`/容器外读不到），维护去重历史 `data/node-history.json`（`{entries:[{ts,id}]}`，与最后一次相同则不记，`HIST_MAX=200`，`os.replace` 原子写），返回 `{ok,current,entries,recorded}`。时间戳**精确到秒** `YYYY-MM-DD HH:MM:SS`（人类 08:22 追加要求）。
+- 前端 `sync.html`：标题旁 `.nid` 芯片显示当前机器码前 8 位；`loadNodeId()` 在每次 `load()`（含 60s 自动刷新）fetch `ctl/nodeid`；悬停/键盘聚焦显示 `.tip`＝"时间(到秒)＋完整机器码"历史（最新在上、当前项标"← 当前"）。
+- 决策：人类选「服务端共享历史」（所有浏览器同一份、可追溯），非前端本地历史。
+
+**部署与自检**：08:24 部署，控制服务备份 `engine-ctl-server.py.bak.20261124-nodeid`，看板备份 `sync.html.bak.20261124-nodeid`。旧控制服务 k8:23 kill、cron 08:24:01 保活自动拉起新版（手动补拉的一个实例因端口占用退出，无影响）。MD5：控制 `52ff86b6…`→`e39ea9bcc672515a72f186003573e8cc`，看板 `4fae00f6…`→`0af381523e99cd9b38f8c954640b66d5`。自检：Python AST ✅、`node --check` ✅、去重实测（首记 true/重复 false/变化 true）、`/ctl/nodeid` 首次记录 `2026-11-24 08:24:13 d267b7c8…`、`/ctl/status` 回归正常、页面 200/26885B、特征命中 10、时间戳到秒复核通过；本机无浏览器二进制，未做真实 hover 截图，用 DOM+接口链路模拟与函数单元验证替代。归档 `~/.agent-docs/绿联NAS/261111｜重建｜stockdb docker 引擎与看板重建/` 两个文件与提示词（架构图/修改点表/版本★v5/MD5）已同步；`node-history.json` 为运行时生成、不入归档。
+
+**边界**：未改数据、未触发同步、未动 token/nginx；口令未落盘/未回显/未入 Git。档位 T2 自检同上一轮（v2.8、tools-scan ✅、proxy ✅、挂起 prnmgt S1/S2/S3 未认领）。详见 `handoff/2026-11-24-stockdb机器码查看功能上线-zhn-tbxg2iah-win.md`。
