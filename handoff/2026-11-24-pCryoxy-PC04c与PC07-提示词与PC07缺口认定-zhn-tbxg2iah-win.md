@@ -101,7 +101,7 @@
 > - 清单外文件先补申请。
 > - `go.sum` 不得变化。
 > - 每个提交单独跑 Gitleaks 留日志。
-> - `crates/secure-store/target/` 未跟踪目录：建议在根 `.gitignore` 加 `**/target/`，单独一个 chore 提交，不混进功能提交。
+> - `crates/secure-store/target/` **不归 PC-04c 处理**（见 §五修正：由合并方单独 chore 提交）。原「加 `**/target/`」一句作废。
 
 ## 二、PC-07 提示词
 
@@ -151,7 +151,7 @@
 > ### 三、分支推送与产物清理
 >
 > 1. `agent/copilot/pc07` 的 5 个提交（`837d620`、`a969729`、`c36a26f`、`c845bb0`、`aa7e7bc`）**只在本地**，远端 `git ls-remote origin | grep pc07` 无匹配。推到 `origin` 同名分支。
-> 2. `crates/secure-store/target/` 未跟踪。在根 `.gitignore` 加 `**/target/`，单独一个 chore 提交。
+> 2. `crates/secure-store/target/` 未跟踪。**原「加 `**/target/`」作废**（见 §五修正）：PC-07 只把该目录原样留在本地，不提交、不删除、不改根 `.gitignore`。
 > 3. 推送后给出 `git ls-remote` 的核对输出。
 >
 > ### 约束
@@ -178,3 +178,32 @@
 - 固定核心 `676eaf6`：`transport/internet/dialer.go:225-280`、`transport/internet/config.proto:104-153`、`proxy/blackhole/blackhole.go:34-46`、`features/policy/default.go:25-27`、`app/proxyman/outbound/outbound.go:102-122`
 - 复核记录 `fd6e9d3`（第一步与依赖提交复核 + C5 缺口）
 - 证据：`~/.agent-tools/run/pc04c/logs/`、`~/.agent-tools/run/pc07/logs/`、`~/.agent-tools/run/review/pc07-core-verify/`
+
+## 五、修正：`crates/secure-store/target/` 的归属（2026-11-24 14:40）
+
+**上一轮两份提示词里各写了一次「在根 `.gitignore` 加 `**/target/`」，是审核方的错误，两边同时改同一文件必然冲突，且与本文件自己划的「PC-07 只碰 `src|tests`」自相矛盾。此处作废，改为下列口径。**
+
+### 5.1 事实
+
+| 项 | 实测 |
+|---|---|
+| 目录内容 | `crates/secure-store/target/pc03-native-fixture.lock`，**0 字节**，共 1 文件 1 目录 |
+| 产生者 | **PC-03 的测试代码**，非 PC-07：`crates/secure-store/src/tests.rs:18` 用 `PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("target")` 自建目录，`:25` 在其下开跨进程锁文件 |
+| 是否构建目录 | **不是**。cargo 构建目录是仓库根的 `target/`（4.9G），已被 `.gitignore:1` 的 `/target/` 覆盖 |
+| 为何未被忽略 | `/target/` 的前导斜杠锚定仓库根，**不匹配嵌套路径**。实测：`git check-ignore -v crates/foo/target/x` → 未命中；追加 `**/target/` 后根与嵌套均命中 |
+| 安全性 | `git ls-files \| grep "/target/"` = **0**，加规则不会漏掉任何已跟踪文件 |
+| 分布 | 本机 6 个 worktree 有 `target/` 目录，仅 pc07 这份被 git 记为未跟踪（其余 worktree 未跑过 `cargo test -p secure-store` 或已被覆盖） |
+
+### 5.2 裁定
+
+- **A-5：`**/target/` 加，但不作为 PC-04c 或 PC-07 的交付范围。** 由合并方以独立 chore 提交，提交信息注明「仓库忽略规则补齐，非某卡产物」。两卡的目录边界因此保持干净。人类 14:31 选 1，本条为执行口径细化。
+- **A-6：PC-07 与 PC-04c 都不动根 `.gitignore`。** PC-07 只把 `crates/secure-store/target/` 原样留在本地，不提交不删除；PC-04c 不提该目录。
+- **A-7：根因另开小事，不阻断当前任何卡。** `crates/secure-store/src/tests.rs:18` 应改用 `CARGO_TARGET_TMPDIR`（Rust 给集成测试的专用临时目录，位于构建目录内、天然被忽略），而非 `CARGO_MANIFEST_DIR/target`。PC-03 已 done，属独立小修，可并入任一后续碰 secure-store 的卡，或单独 chore。**AGENTS-startup 类规范不涉及，无需另行申请。**
+
+### 5.3 替代提示词条文
+
+PC-07 第三条改为：
+
+> 2. `crates/secure-store/target/` 未跟踪。**不动根 `.gitignore`**（该目录由 PC-03 测试代码 `crates/secure-store/src/tests.rs:18` 自建，非本卡产物，由合并方统一以独立 chore 处理）。PC-07 只把该目录原样留在本地：不提交、不删除、不改忽略规则。
+
+PC-04c 约束条款撤回该项，不再出现 `target` 字样。
