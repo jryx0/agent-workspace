@@ -9,10 +9,10 @@
 
 ### 1.1 内核不消费 TCP 传输层（两处均已实测）
 
-| 协议 | 内核读取的 stream 字段 | 是否读 TCP 传输设置 | 位置 |
+| 协议 | 内核读取的 stream 字段 | 是否读 ws/xhttp/httpupgrade/grpc 等 TCP 传输设置 | 位置 |
 | --- | --- | --- | --- |
-| hysteria | `tlsConfig`、`ProtocolSettings.(*Config)`、`SocketSettings`、`FinalMask`、`QuicParams`；并强制 `dest.Network = net.Network_UDP` | **否** | `transport/internet/hysteria/dialer.go:327-376`（强制 UDP 在 `:334`） |
-| masque | 仅 `ProtocolSettings.(*masque.Config)` 与 TLS；不读 `QuicParams`/`FinalMask`/`SocketSettings` | **否** | `proxy/masque/client.go:61-66` |
+| hysteria | `tlsConfig`、`ProtocolSettings.(*Config)`、`SocketSettings`、`FinalMask`（真实承载点，`:122-123` 调 `DialUDP`）、`QuicParams`；并强制 `dest.Network = net.Network_UDP` | **否** | `transport/internet/hysteria/dialer.go:327-376`（强制 UDP 在 `:334`） |
+| masque | `ProtocolSettings.(*masque.Config)`、TLS、`QuicParams`、`FinalMask`（含 tcp/udp/quicParams 三部分）、`SocketSettings` | **否**（注意：FinalMask/QuicParams 是真实承载点，见 §2.4.1） | `transport/internet/masque/dialer.go:34-100`、`:150-152`（h2 判定）、`:163-166`；`hub.go:92/122/168` |
 
 配置层也不做交叉校验：`network` 只决定 `ProtocolName`（`infra/conf/transport_internet.go:82-89`），`wsSettings`/`hysteriaSettings` 等各自独立追加进 `TransportSettings`（`:204-222`），`GetTransportSettingsFor` 按名匹配（`transport/internet/config.go:62-75`）。唯一的绑定校验只给了 masque：
 
@@ -76,9 +76,46 @@ PC-07 现状 `config.rs:618` **无条件**写入 `"allowInsecure": options.allow
   - `hy2://…?insecure=1`、`vless`/`trojan` 的 `allowInsecure=1`：导入接受，生成阶段拒绝
   - `masque://` 链接：整体被拒（`validate.rs:124` `advanced-entry`），仅高级入口可配置
 
-### 2.4 附带待确认项：masqueSettings.path 恒为 null
+### 2.4 MASQUE 三题裁定（2026-11-24 16:15 人类拍板）
 
-`reject_inapplicable_transport_parameters`（`validate.rs:803-809`）禁止非 XHttp/WebSocket/HttpUpgrade 传输携带 `path` 参数；masque 默认 `native`，故 `node.link.path_or_service_name` 恒为 `None`，`masqueSettings.path` 恒为 `null`，核心回落 `masque.DefaultPath`。**请 PC-07 确认 P0 是否有意如此**，或属漏映射。本项未纳入裁定，待回答后再定。
+本节取代此前 §2.4「path 恒为 null」的待确认项。**该判断已被 PC-07 纠正，审核方承认有误**：当时只看了链接解析路径（`validate.rs:803-809` 禁止非 XHttp/Ws/HttpUpgrade 带 `path`），忽略了 IR 可由高级入口手工构造，故 `path_or_service_name` 并非恒为 `None`。
+
+#### 2.4.1 审核方前一轮的两处事实错误（须登记，避免继续传播）
+
+| 上一轮说法 | 实际 | 纠正依据 |
+| --- | --- | --- |
+| 「masque 不读 `QuicParams`/`FinalMask`/`SocketSettings`」 | **错**。只查了 `proxy/masque/`，漏掉传输层 | `transport/internet/masque/dialer.go:52-73` 读 `QuicParams`；`:84-92`（QUIC 分支）与 `:163-166`（h2 分支）读 `FinalMask`；`hub.go:92/122/168` 同理 |
+| 「hysteria 不读 `FinalMask`」 | **错** | `transport/internet/hysteria/dialer.go:37` 存字段、`:122-123` 调 `c.finalMask.DialUDP` |
+
+`FinalMask` 在 hysteria 与 masque 两侧**都是真实承载点**，不得以「内核不读」为由拒绝。下述裁剪是**产品范围决策**，不是内核能力判断。
+
+#### 2.4.2 path：保留手工 IR 传递（人类选 1）
+
+- MASQUE 的 `path` 是真实承载点：`infra/conf/transport_method.go:816-900` 的 `Build()` 读它，缺省回落 `DefaultPath = "/.well-known/masque/ip/*/*/"`（`transport/internet/masque/config.go:12`）；warp 模式缺省 `WarpPath = "/"`（`warp.go:17`）。
+- **允许非空 path**，但须校验：以 `/` 开头、仅 ASCII 可见字符、长度 1..=2048、不含 `#`；不满足返回 `BuildError::node(node, "masque-path")`。理由：该值直接拼进 HTTP/3 请求路径，不可信输入不得透传。
+- path 为**空**时，生成 JSON **不写 `path` 键**，由核心回落 `DefaultPath`；桥侧**不硬编码** `/.well-known/masque/ip/*/*/`，避免核心升级后漂移。
+- 矩阵注明：masque 的 path 仅高级入口可达（链接入口整体拒绝，`validate.rs:124`），显示时标注「默认：`/.well-known/masque/ip/*/*/`」。
+
+#### 2.4.3 FinalMask：P0 一律不输出（人类选 1，明确为裁剪）
+
+- **P0 范围决策**：`Protocol::Masque` 节点携带**非空** `final_mask` 时，生成阶段明确拒绝，返回 `BuildError::node(node, "masque-finalmask-unsupported")`；`final_mask` 为 `None` 或空数组时正常生成，产物**不出现 `finalmask` 键**。
+- **拒绝理由必须写对**：P0 不做 h2 分支判断（`transport/internet/masque/dialer.go:150-152` 的 `usesHTTP2`），tcp mask 是否被调用取决于 `tlsSettings.alpn` 是否含 `h2` 且不含 `h3`，该判断本轮**不做**。因此无法保证 tcp mask 生效，按「核心无确定承载点即生成阶段拒绝」口径整体裁剪。
+- **矩阵必须如实标注为 P0 裁剪**，字面写「P0 裁剪：内核支持，本版不开放」，**不得**写成「MASQUE 不支持 finalmask」或「内核不消费」。这一条是硬要求：矩阵若读起来像内核限制，下一轮会被当事实引用。
+- 未开放的子能力逐项列清（便于后续解禁）：
+  - `quicParams`：MASQUE 的 QUIC 调参承载点（`dialer.go:52-73` 直接读），与 Hysteria2 的 bbr 同一机制 —— P0 不开放。
+  - udp masks（`UdpNoise`/`UdpMkcpAes128Gcm`/`UdpMkcpHeader`/`UdpMkcpOriginal`/`UdpSalamander`/`UdpSalamanderGecko`/`UdpSudoku`）：对应 `dialer.go:84-92` 的 `DialUDP` 与 `hub.go:122` 的 `ListenPacket` —— P0 不开放。
+  - tcp masks（`TcpFragment`/`TcpSudoku`/`TcpXmc`）：仅 h2 分支（`dialer.go:163-166`）可达，依赖 `usesHTTP2` 判断 —— P0 不做该判断，故不开放。
+- **Hysteria2 不受本条影响**：其 `final_mask` 按既有 FinalMask 裁定正常生成（`dialer.go:122-123` 为真实承载点）。
+- 解禁条件（写入矩阵备注）：待 h2 分支判断落地，或人类另行批准 MASQUE 的 quicParams + udp mask 子集。
+
+#### 2.4.4 安全选项：仅 TLS（人类选 1）
+
+- masque 仅允许 `Security::Tls`（含 `SecurityOptions::Tls`）。`None` 与 `Reality` 均拒绝。
+- **拒绝理由须区分两层，不得混用文案**：
+  - `None`：`proxy/masque/client.go:66-68` 返回 `MASQUE requires "security": "tls"`，属 masque 层显式失败 → 错误码 `masque-none-security`。
+  - `Reality`：配置层先抛错 —— `infra/conf/transport_internet.go:117-120` 要求 reality 的 `ProtocolName` 为 `tcp`/`splithttp`/`grpc`，`masque` 不在其中，报 `REALITY only supports RAW, XHTTP and gRPC`，属传输安全段失败，**不是** masque 段 → 错误码 `masque-reality-unsupported`，不得复用 `masque requires tls` 文案（失真）。
+- `tlsSettings` 有 `sni` 时必须写 `serverName`。
+- MASQUE 强制 TLS，故 `allow_insecure = false` 时同样**不写** `allowInsecure` 键，与 §2.2 一致。
 
 ### 2.5 执行偏差登记：`b8018bf` 越界修改根 `.gitignore`
 
@@ -106,15 +143,23 @@ PC-07 现状 `config.rs:618` **无条件**写入 `"allowInsecure": options.allow
 - 每例断言生成 JSON 的**键集合**，不得只断言 `run -test` 通过：
   - 正向：`network == "hysteria"`（或 `"masque"`）时，`streamSettings` 只含 §2.1 白名单键，`wsSettings`/`splithttpSettings`/`httpupgradeSettings`/`grpcSettings` 均不存在。
   - 负向：`type=ws|xhttp|httpupgrade|grpc` 四例均返回 `non-native-transport`，错误含节点 ID。
-  - `allow_insecure`：`true` 被拒并带节点 ID 与字段名；`false` 时 `tlsSettings` 中无 `allowInsecure` 键。
+  - `allow_insecure`：`true` 被拒并带节点 ID 与字段名；`false` 时 `tlsSettings` 中无 `allowInsecure` 键（`assert!(tls.get("allowInsecure").is_none())`，不得写 `assert_eq!(…, false)`）。
+- **MASQUE 专项四例**（§2.4）：
+  - path 合法：`"/pc07/x"` → `masqueSettings.path == "/pc07/x"`，且 `masqueSettings` 不含其他键。
+  - path 非法：`"pc07"`（不以 `/` 开头）、`"/a#b"`（含 `#`）、超 2048 → 均返回 `masque-path` 且带节点 ID。
+  - path 为空：`masqueSettings` 中**无 `path` 键**（不是 `path: null`）。
+  - final_mask 非空（任一 `FinalMaskOption`，例 `TcpFragment`、`UdpNoise`）→ 返回 `masque-finalmask-unsupported` 且带节点 ID；`final_mask == None` 或空 vec → 产物中**无 `finalmask` 键**。
+  - security：`None` → `masque-none-security`；`Reality` → `masque-reality-unsupported`。**两例断言错误码不同**，不得混用文案。
+- **Hysteria2 `final_mask` 回归**：非空 `final_mask` 仍正常生成（`dialer.go:122-123` 是真实承载点），产物含 `finalmask` 键。此例用于证明 §2.4.3 的裁剪**只作用于 masque**，未误伤 hysteria。
 - 交付报告须区分「构造通过」与「字段已生效」，沿用 2026-11-24 WebSocket early data 裁定 §2.3 口径。
+- 矩阵交付时须能被逐格核对：每格必须给出六种标注之一（支持／拒绝／P0 裁剪／待 PC-04c／不适用／未验证），**MASQUE 的 finalmask 格必须是「P0 裁剪：内核支持，本版不开放」**，不得写「不支持」。
 
 ---
 
 ## 4. 未决与边界
 
-- masqueSettings.path（§2.4）待 PC-07 回答。
-- `b8018bf` 越界修改根 `.gitignore`（§2.5）待人类选甲/乙。
+- `b8018bf` 越界修改根 `.gitignore`（§2.5）待人类选甲/乙 —— **本轮未决，不阻断**。
+- MASQUE `finalmask` 的解禁（§2.4.3）：待 h2 分支判断（`dialer.go:150-152` `usesHTTP2`）落地，或人类单独批准 quicParams + udp mask 子集。**P0 不开放不等于永不开**。
 - `xmax`/`xmux` 其余字段、`pinnedPeerCertSha256`/`verifyPeerCertByName` 的真实映射、证书固定整体方案，均不在本次范围。
 - 若后续需要「不安全 TLS」能力，须走证书固定（pcs/vcn），不得在桥或 IR 侧恢复 `allowInsecure`。
 - PC-07 结卡仍等 PC-04c done，本条不改变该依赖。
@@ -123,5 +168,25 @@ PC-07 现状 `config.rs:618` **无条件**写入 `"allowInsecure": options.allow
 
 ## 5. 人类确认记录
 
-- **待确认**。2026-11-24 15:22 人类就 allowInsecure 出示确认对话框（2/2），已勾选「批准在生成阶段明确拒绝」，本文 §2.2 据此拟定；§2.1 传输边界与 §2.3 矩阵标注同批提交确认。
-- 确认后本节须补记：确认时刻、确认范围、是否有修改。**在补记之前本文仅为建议，不构成生效裁定。**
+- **2026-11-24 15:22**：人类就 `allowInsecure` 出示确认对话框，勾选「批准在生成阶段明确拒绝」。本文 §2.2 据此拟定并生效。
+- **2026-11-24 16:15**：人类就 MASQUE 三题拍板，答复原文「选 1，h2 分支判断先别做，P0 裁剪写进矩阵」。据此确定：
+  - §2.4.2 path：保留手工 IR 传递，允许非空 + 格式校验。
+  - §2.4.3 FinalMask：P0 一律不输出，矩阵标注为「P0 裁剪：内核支持，本版不开放」。
+  - §2.4.4 security：仅 TLS，None/Reality 拒绝且两码区分。
+  - **明确不做** h2 分支判断（`usesHTTP2`），故 tcp mask 可达性不判，整体裁剪。
+- **2026-11-24 16:15 同时确认**：§2.1 传输白名单构造、§2.2 allowInsecure 双档处置、§2.3 矩阵标注（含 `b8018bf` 登记）按原文生效。
+- 本文件自此刻起为**生效裁定**，不再是建议稿。审核方保留对 §2.5 `b8018bf` 两项处置方案的待定态度，但不影响其余条款生效。
+
+---
+
+## 6. 审核方纠错登记（自我披露）
+
+本节独立成章，便于后续引用时不被漏读。
+
+| 序号 | 我此前的错误 | 正确事实 | 影响 |
+| --- | --- | --- | --- |
+| E-1 | 称「masque 不读 `QuicParams`/`FinalMask`/`SocketSettings`」 | 只查了 `proxy/masque/`，漏了 `transport/internet/masque/`。`dialer.go:52-73` 读 `QuicParams`；`:84-92`、`:163-166` 读 `FinalMask`；`hub.go:92/122/168` 同理 | 若按错误结论裁「内核不读故可拒」，会把「P0 产品裁剪」误标成「内核限制」，矩阵失真 |
+| E-2 | 称「hysteria 不读 `FinalMask`」 | `transport/internet/hysteria/dialer.go:37` 存字段、`:122-123` 调 `c.finalMask.DialUDP` | 同上 |
+| E-3 | §2.4 曾判「`masqueSettings.path` 恒为 null」 | 只看了链接解析路径（`validate.rs:803-809`），忽略 IR 可经高级入口手工构造 | PC-07 已纠正；本文 §2.4.2 已改为「保留，允许非空 + 校验」 |
+
+纠错方法沉淀：查「内核是否消费某字段」时，必须同时看 `proxy/<proto>/`（业务层）与 `transport/internet/<proto>/`（传输层），只查一侧即会误判。E-1/E-2 均为只查业务层所致。
