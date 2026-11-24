@@ -72,3 +72,15 @@ G2 指纹 `CanonicalNodeKey`（core-ir node.rs:413）只有一个 `credential_id
 - 补充（来自 PC-04c 审核 R-2）：XMC 的 rsa_private_key 由桥派生，PC-07 生成配置时 RSA 字段留空，不得自行填写。
 
 （本节由 workbuddy 代为登记人类批准。）
+
+
+## 附：H-3 计量口径补充（2026-11-24 08:21，人类按审核方建议提交）
+
+- noise 单项 ≤2048 字节按**核心实际发出的最大字节数**计量，不按 protobuf/JSON 表示长度（依据：固定核心 676eaf6 transport/internet/finalmask/noise/conn.go:51-95）。属 H-3 原意澄清，不另开裁定。
+- ① segments 项：各段最大长度之和 ≤2048；BYTES 按解码后字节数，TIMESTAMP/COUNTER 各 4，NONCE 8，RANDOM/RANDOM_ASCII/RANDOM_DIGIT 按 max_size。
+- ② 非 segments 项：packet 按解码后字节数 ≤2048；rand 项 rand_max ≤2048。
+- ③ min_size/max_size/rand_min/rand_max ≥0 且 min≤max；packet 与 rand 不得同时出现；segments 不得为空列表。
+- ④ 超限或不合法在生成阶段明确拒绝，报告项序号与计算长度，不截断。
+- ⑤ 边界测试：2048 通过、2049 拒绝；max_size 极大但序列化很短的项必须拒绝；同一包 hex 与 base64 写法计量相同。
+
+（本节由 workbuddy 代为登记。）
