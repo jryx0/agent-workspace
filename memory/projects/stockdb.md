@@ -191,3 +191,13 @@
 - **修复**：仅 `web/sync.html` 的 `.nid .tip`——`top:calc(100% + 6px)` → `top:100%` 紧贴芯片，6px 外间隙移作内部 `padding-top:16px`（视觉间距不变、hover 路径连续），并加 `cursor:auto;user-select:text`。浮窗是 `.nid` 后代，鼠标在其上时 `.nid:hover` 持续成立，故可停留选中复制。失败卡片 `.slot .tip` 的间隙未动。
 - **部署与自检**：08:29 部署，备份 `sync.html.bak.20261124-selectable`（26929B），MD5 `7ef644a8…`→`53874d922b06a73d5cd13add986b3511`（26954B）。自检：`node --check` ✅、特征命中 4、页面 200/26954B、后台结构校验（tip 嵌套在 nid 内、hover 规则存在、间隙已消除、可选中）、临时文件清理。归档与提示词（★v7、修改点、MD5）已同步。
 - **边界**：仅改看板静态页，未动服务/数据/接口/token/nginx，未触发同步；口令未落盘/未回显/未入 Git。详见 `handoff/2026-11-24-stockdb悬浮窗可悬停复制-部署留痕-zhn-tbxg2iah-win.md`。
+
+### 12:35–12:55 官方确认"覆盖已验证 ID"+ 机器码守护根治漂移（T2）
+- **人类转述官方**：某 ID 已验证后，若 ID 变化可用已验证设备号覆盖。裁定：两个已验证 ID 都试、覆盖后立即同步验证；持久化采用"加 cron 同步前写回"；固定用第 1 个 `11084fcf-527e-4ee4-8205-b524bbd85284`，第 2 个 `b36f0724-87a0-4942-9c4e-ec05f5ad9286` 保存备查不启用。
+- **核查**：官网 `done` 的有 `11084fcf` 与 `b36f0724`；现行 `d267b7c8` 与残留 `979a0816` 均 `input`。真实 `.node_id` 只两处：`data/.node_id`（更新器读，root:600）与 `conf/data/.node_id`（残留，更新器不读）；容器内 `/stockdb/app/data` 是软链指 `data`。
+- **覆盖实测（官方方法有效）**：覆盖 `11084fcf` → 12:40 同步 `状态:有效`/`result=OK`；覆盖 `b36f0724` → 12:41 同步 `状态:有效`/`result=OK`。两 ID 都可用。
+- **决定性机制（新发现）**：更新器每轮同步**读 `data/.node_id` 后即删除**，下一轮若缺失则按机器码生成未验证新 ID → auth failed（第三次测试生成 `080ef5e7` 并失败）。故**手动覆盖只管一轮**。历史一天漂移 4 次即源于此。
+- **根治方案（已部署）**：新增 `scripts/nodeid-guard.sh`（MD5 `d41af4a2d72d35e917495d58916a5879`，755）+ `/etc/cron.d/stockdb-nodeid-guard`（root 每分钟），检测 `data/.node_id` 缺失/被改即写回 `GOOD=11084fcf`，记 `logs/nodeid-guard.log`。端到端验证：删除文件→12:53:01 守护自动写回→12:53:26 同步读到 `11084fcf`、`状态:有效`、`result=OK`、引擎第 1 次拉起；12:54:01 更新器删文件后守护再次补回，闭环成立。
+- **自检**：最新交易日 20261123（600519/000001/300750 一致）；看板 12:54:27 刷新、最新轮 `手动 ok/engine true/3 文件`、`integrity.ok=true`、授权横幅判定隐藏；两容器 healthy、`ctl/status`=200；临时文件清理。备份：`data/.node_id.bak.20261124-preoverride`、`conf/data/.node_id.bak.20261124-preoverride`。
+- **归档**：`~/.agent-docs/绿联NAS/261111｜重建｜stockdb docker 引擎与看板重建/` 新增 `脚本/nodeid-guard.sh`、`crontab` 追加守护说明，主提示词架构图/文件清单/权限表/重建步骤/修改点表/文件数(19→20)/MD5 已同步。
+- **边界**：本次为 NAS 运维（覆盖 ID + 加守护 + 触发同步），未改引擎/同步脚本本体/控制服务/token/nginx/看板 HTML；口令未落盘/未回显/未入 Git。**T2 异常**：`proxy-check` 连续两次报 **backup 远端不可达**（origin＝本地 `bee960e` 正常），已按 `[Agent报告]` 提醒人类，未绕过、未单独推 origin；留痕文件本地写+commit 完成后，推送环节停下等人类确认。详见 `handoff/2026-11-24-stockdb机器码守护根治漂移-zhn-tbxg2iah-win.md`。
