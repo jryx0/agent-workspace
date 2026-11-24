@@ -84,3 +84,14 @@ G2 指纹 `CanonicalNodeKey`（core-ir node.rs:413）只有一个 `credential_id
 - ⑤ 边界测试：2048 通过、2049 拒绝；max_size 极大但序列化很短的项必须拒绝；同一包 hex 与 base64 写法计量相同。
 
 （本节由 workbuddy 代为登记。）
+
+
+## 附：fragment 长度收窄（2026-11-24 08:28，人类按审核方建议提交）
+
+- 批准收窄，属 v2 §4 安全收窄，不扩大其他字段范围。
+- ① lengths 每一项（不只最后一项）要求 min ≥ 1 且 min ≤ max；min > max 明确拒绝，不对调；0、负数、跨 0 区间在生成阶段拒绝，报项序号与原值，不改写输入。
+- ② 依据：固定核心 676eaf6 fragment/conn.go:139-143（负长度切片越界 panic）、common/crypto 中 RandBetween（crypto.go:13-15，静默对调）。
+- ③ 边界测试：1 通过；0、-1、[-1,5]、[5,3] 拒绝；多段中任一段非法整体拒绝。
+- ④ 桥侧兜底由 PC-04c 承担（任务卡 v1.3 增量 §3.2），写入 PC-04c v2 申请；PC-07 不改桥。
+
+（本节由 workbuddy 代为登记。）
