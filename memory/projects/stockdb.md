@@ -180,3 +180,8 @@
 **部署与自检**：08:24 部署，控制服务备份 `engine-ctl-server.py.bak.20261124-nodeid`，看板备份 `sync.html.bak.20261124-nodeid`。旧控制服务 k8:23 kill、cron 08:24:01 保活自动拉起新版（手动补拉的一个实例因端口占用退出，无影响）。MD5：控制 `52ff86b6…`→`e39ea9bcc672515a72f186003573e8cc`，看板 `4fae00f6…`→`0af381523e99cd9b38f8c954640b66d5`。自检：Python AST ✅、`node --check` ✅、去重实测（首记 true/重复 false/变化 true）、`/ctl/nodeid` 首次记录 `2026-11-24 08:24:13 d267b7c8…`、`/ctl/status` 回归正常、页面 200/26885B、特征命中 10、时间戳到秒复核通过；本机无浏览器二进制，未做真实 hover 截图，用 DOM+接口链路模拟与函数单元验证替代。归档 `~/.agent-docs/绿联NAS/261111｜重建｜stockdb docker 引擎与看板重建/` 两个文件与提示词（架构图/修改点表/版本★v5/MD5）已同步；`node-history.json` 为运行时生成、不入归档。
 
 **边界**：未改数据、未触发同步、未动 token/nginx；口令未落盘/未回显/未入 Git。档位 T2 自检同上一轮（v2.8、tools-scan ✅、proxy ✅、挂起 prnmgt S1/S2/S3 未认领）。详见 `handoff/2026-11-24-stockdb机器码查看功能上线-zhn-tbxg2iah-win.md`。
+
+### 08:27 悬浮窗加宽不换行（人类追加要求，T2）
+- **改动**：仅 `web/sync.html` 的机器码悬浮窗——`.tip` 宽 `max(360px,100%)/min(92vw,520px)` → `max(520px,100%)/min(96vw,760px)`；去掉 `white-space:pre-wrap;word-break:break-all`（会换行），改为 `.tip .row{display:block;white-space:nowrap}`（每条历史独占一行且行内不换行），`.tt` 标题也 nowrap，容器加 `overflow-x:auto` 供窄屏横向滚动；渲染 `loadNodeId()` 的 join 由 `'\n'` 改为 `''`（改由 `.row` 块级分行）。控制服务、后端接口、数据均未动。
+- **部署与自检**：08:28 部署，备份 `sync.html.bak.20261124-widertip`（26885B），MD5 `0af38152…`→`7ef644a856ad9084d466d46a0938fcc0`（26929B）。自检：`node --check` ✅、CSS/渲染特征命中、页面 200/26929B、`/ctl/nodeid` 联动正常（current `d267b7c8…`、1 条历史）、临时文件清理。本机仍无浏览器二进制，未做真实 hover 截图。归档 `sync.html` + 提示词（版本★v6、修改点表、MD5）已同步。
+- **边界**：未改数据/服务/接口/token/nginx，未触发同步；口令未落盘/未回显/未入 Git。详见 `handoff/2026-11-24-stockdb悬浮窗加宽不换行-部署留痕-zhn-tbxg2iah-win.md`。
