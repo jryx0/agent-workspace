@@ -23,13 +23,17 @@
 
 ## 二、客户端参数（可分发，非私钥）
 
+> **2026-11-24 更正（密钥轮换）**：导出参数时私钥曾误回显到工具输出，按「私钥不进对话/文档」红线已现场轮换密钥对。**下列公钥为轮换后的最新值**；旧值 `svxlUusYqUxJesP13i30sC5AnHEvyW0TrB9YfuH9rBI` 已作废，勿再使用。轮换后重验：`Configuration OK.` + active + 443 监听 + 握手返回 Google 证书。
+
 - 地址：`23.94.211.70`
 - 端口：`443`
 - 协议：VLESS，flow `xtls-rprx-vision`
 - UUID：`ee857907-9635-4b7b-83be-e9698dadb522`
-- 安全：REALITY，serverName `dl.google.com`，publicKey `svxlUusYqUxJesP13i30sC5AnHEvyW0TrB9YfuH9rBI`，shortId `448ab44ea1af21c9`
+- 安全：REALITY，serverName `dl.google.com`，publicKey `ZrVpHWezFAZNldxpF0o3yVay7g8s3q93CgU5UNvsFhQ`（新），shortId `448ab44ea1af21c9`
 - 传输：tcp，加密 none
+- VLESS 链接：`vless://ee857907-9635-4b7b-83be-e9698dadb522@23.94.211.70:443?encryption=none&security=reality&sni=dl.google.com&fp=chrome&pbk=ZrVpHWezFAZNldxpF0o3yVay7g8s3q93CgU5UNvsFhQ&sid=448ab44ea1af21c9&type=tcp&flow=xtls-rprx-vision#RackNerd`
 - ⚠️ REALITY 私钥只在服务器 config.json 内，不在本文档/对话中留存。
+- 完整可分发参数已导出到 `docs://技术资料/261116｜部署｜Xray代理服务/261124｜客户端｜RackNerd新机配置参数导出.md`；运维要点见同目录 `261124｜运维｜RackNerd新机运维手册.md`（两份已登记飞书索引、密级 internal、未上传副本）。
 
 ## 三、关键坑与处置（供日后维护）
 
