@@ -570,6 +570,8 @@ info: downloading 7 components
 
 PC-07 报告「安全限制阻止向 Gitee 上传项目代码」，与我的实测一致（我自己的 `git ls-remote` 也被安全策略拦截过）。**此项不判 PC-07 违规，但须作为结卡的阻断项登记**——分支不在远端，合并方无法合入，PC-07 结卡与后续验收都无从进行。
 
+> **【20:05 更正，E-5】** 上句「与我的实测一致」**不成立**。我被拦截的是 `git ls-remote`（读操作，属沙箱对本机命令的拦截），与 `git push`（写操作）是两条不同的策略路径，不能类推。20:01 实际推送已成功（远端 ref = `ed84bde`），证明安全策略**并未**拦截写操作。PC-07 该表述作为事实陈述是错的。**本项阻断已于 §12.7.5 闭合。**
+
 ### 11.5 给 PC-07 的答复（可直接粘贴）
 
 > PC-07：`ed84bde` 核对通过。矩阵已改 107 并说明新增项，Gitleaks 口径也已按 §10.6(1) 修正（提交前 8 commits、提交后 9 commits，均为 N commits scanned 而非 0）。我独立复跑 `gitleaks git --log-opts="c3acc73..HEAD"` 得 9 commits / 174.91 KB / no leaks，与你一致。**代码与文档层面判通过。**
@@ -725,5 +727,105 @@ Write-Output "EXIT=$LASTEXITCODE"
 1. `git ls-remote --heads origin` 核对远端 ref 与 `ed84bde` 是否一致（**这是唯一可信的终态判据，不采信命令输出本身**）；
 2. 在 §11.4、§12.3 回填定性结论，消除「安全策略边界」这个悬置项；
 3. 更新共享记忆与结卡状态。
+
+---
+
+### 12.7 推送执行结果：**成功**（2026-11-24 20:02）
+
+人类 20:01 执行甲方案，贴回：
+
+```console
+$ echo "EXIT=${PIPESTATUS[0]}"
+EXIT=127
+```
+
+**`EXIT=127` 不是推送失败，是 shell 假象。** 详见 12.7.2。
+
+#### 12.7.1 成功判据（四项，全部命中）
+
+| 判据 | 实测 | 结论 |
+|---|---|---|
+| 远端 ref 存在 | `git ls-remote --heads origin` → `ed84bdea11293b58807f64811559efaf90e5c3fc  refs/heads/agent/copilot/pc07` | **推送已落地** |
+| 远端 ref = 本地 HEAD | 两者均为 `ed84bdea11293b58807f64811559efaf90e5c3fc`，逐字符相同 | 一致 |
+| 上游已建立 | `git rev-parse --abbrev-ref @{u}` → `origin/agent/copilot/pc07` | `-u` 生效 |
+| 未推送提交数 | `git log --oneline origin/agent/copilot/pc07..HEAD \| wc -l` → **0** | 9 个提交全部推送 |
+
+**推送日志**（`~/.agent-tools/run/pc07/logs/push-pc07.log`，472 字节，20:01 写入）：
+
+```console
+remote: Powered by GITEE.COM [1.1.23]
+remote: Set trace flag 2149559f
+remote: Create a pull request for 'agent/copilot/pc07' on Gitee by visiting:
+remote: https://gitee.com/ParvaUltra/pCryoxy/pull/new/ParvaUltra:agent/copilot/pc07...ParvaUltra:main
+branch 'agent/copilot/pc07' set up to track 'origin/agent/copilot/pc07'.
+To https://gitee.com/ParvaUltra/pCryoxy.git
+ * [new branch]      agent/copilot/pc07 -> agent/copilot/pc07
+```
+
+`[new branch]` + `set up to track` + Gitee 返回 PR 创建链接——**服务器侧已确认接收**。
+
+#### 12.7.2 为何出现 `EXIT=127`（我的命令有缺陷，须记责）
+
+**127 是 POSIX 标准中「command not found」的退出码**，与 `git push` 毫无关系。真实成因是 `PIPESTATUS` 的语义被我误用：
+
+- `PIPESTATUS` 是**易失的数组**，任何一条命令执行后都会被整体重置。
+- 它在**同一条命令行内**（`cmd | tee ...; echo ${PIPESTATUS[0]}` 用 `;` 连接或换行但同属一个复合命令）才保留上一条管道的值。
+- 我给的命令是**三行独立命令**：`cd` → `git push ... | tee` → `echo "EXIT=${PIPESTATUS[0]}"`。在交互式 MINGW64 会话中，提示符脚本（`PROMPT_COMMAND` 等）会在每条命令之间执行，把 `PIPESTATUS` 冲掉；`echo` 读到的是残留值而非 `git push` 的退出码。
+
+**我的错误**：把「复合命令内有效」的 `PIPESTATUS` 写成了「跨行有效」。**复核时不应采信这个 `EXIT` 值，只能采信远端 ref。**
+
+**正确写法**（供后续命令复用）：
+
+```bash
+cd /c/Users/Zhn_X/source/pCryoxy.wt/copilot-pc07
+git push -u origin agent/copilot/pc07 2>&1 | tee ~/.agent-tools/run/pc07/logs/push-pc07.log; echo "EXIT=${PIPESTATUS[0]}"
+```
+
+注意末尾是 `;`（同一命令行），不是换行。或更稳的写法：`set -o pipefail` + 直接看 `$?`。
+
+**此项记入审核方纠错登记（见 §12.7.4 E-4）。**
+
+#### 12.7.3 §12.3 张力结论：假设**乙**成立
+
+回看 §12.3 的两种假设：
+
+- ~~甲：安全策略只拦实际写入、放行 dry-run 的 ref 协商~~ —— **否决**。若如此，实际写入必被拒，但远端 ref 已建成。
+- **乙：安全策略已放行，此前「安全限制阻止向 Gitee 上传」的结论无依据** —— **成立**。
+
+**PC-07 此前两轮「安全限制不允许向 Gitee 上传项目代码」的表述不成立**（其自述「我未执行 `git push`，因此没有命令报错」，即从未实测）。**不判违规**——未尝试不构成违纪，但该结论作为事实陈述是错的，须在共享记忆更正，避免后续卡继续引用。
+
+**同时更正我此前的从宽表述**：§11.4 曾写「PC-07 称安全限制阻止向 Gitee 上传，与我实测一致（我的 `ls-remote` 也被拦过）」。**该「一致」不成立**——我被拦的是 `ls-remote`（读操作，沙箱策略拦截本机命令），与写操作无关，不能类推。已在 §11.4 加注更正。
+
+#### 12.7.4 审核方纠错登记（追加）
+
+| 编号 | 错误 | 根因 | 影响 | 修正 |
+|---|---|---|---|---|
+| **E-4** | §12.6.2/§12.6.3 给出的命令用换行分隔 `git push ... \| tee` 与 `echo "EXIT=${PIPESTATUS[0]}"`，导致 `EXIT` 读到重置后的残留值（127），误导人类以为推送失败 | 把「复合命令内有效」的 `PIPESTATUS` 当作「跨命令行有效」 | 若人类据此判定失败并重试，可能触发不必要的重复推送或误判安全策略 | 12.7.2 已给正确写法；**后续所有需取管道退出码的命令一律用 `;` 连接或 `set -o pipefail`** |
+| **E-5** | §11.4 写「PC-07 称安全限制阻止上传，与我实测一致」 | 把我被拦的 `ls-remote`（读）与 pc07 声称的 `push`（写）混为一谈，属不当类推 | 为「安全策略拦截写操作」这一未取证结论提供了虚假佐证 | 12.7.3 已更正为「该『一致』不成立」 |
+
+**方法沉淀**：**判断远端状态只能看 `git ls-remote` 的 ref 值，不能看推送命令的退出码、更不能看被 `tee` 包裹的 `PIPESTATUS`。** 退出码只说明「本地进程如何结束」，ref 才说明「远端是否真的变了」——两者在存在沙箱拦截、网络重试、钩子介入时可能分离。
+
+#### 12.7.5 阻断项闭合
+
+§11.4 登记的「分支未推送」阻断项**已闭合**：
+
+| 项 | 状态 |
+|---|---|
+| `origin/agent/copilot/pc07` 存在 | ✅ `ed84bde` |
+| 9 个提交全部推送 | ✅ 未推送数 = 0 |
+| 上游跟踪已建 | ✅ `origin/agent/copilot/pc07` |
+| PC-07 结卡阻断 | **解除**——合并方现可合入 |
+
+**结卡状态**：PC-07 仍等 PC-04c done，但**不再是「分支不可用」导致的挂起**，而是正常排队。§12.2 的 1.85G 残留清理仍待人类授权，与本项独立。
+
+#### 12.7.6 给 PC-07 的答复（可直接粘贴）
+
+> PC-07：分支已推送成功。`origin/agent/copilot/pc07` = `ed84bdea11293b58807f64811559efaf90e5c3fc`，与本地 HEAD 逐字符相同，未推送提交数 0，上游跟踪已建立。**推送阻断项闭合。**
+>
+> 关于 `EXIT=127`：那是我的命令写错了，不是你的问题。`PIPESTATUS` 只在同一命令行内有效，我写成了三行独立命令，交互式 shell 会把它冲掉，`echo` 读到的是残留值。127 是「command not found」的标准码，与 `git push` 无关。**真实结果看远端 ref，不看这个值**——已记入审核方纠错 E-4。
+>
+> 同时更正一件事：我上轮说「PC-07 称安全限制阻止上传，与我实测一致」，**该『一致』不成立**。我被拦的是 `ls-remote`（读操作，沙箱对本机命令的拦截），与 `push`（写操作）是两回事，不能类推。实际推送已成功，说明安全策略并未拦截写操作。你此前「安全限制不允许向 Gitee 上传项目代码」的表述作为事实陈述是错的——**不判你违规**（未尝试不构成违纪），但后续不要再引用该结论，共享记忆已更正（E-5）。
+>
+> 当前 PC-07 状态：**代码、文档、推送三项全部通过**，结卡正常排队等 PC-04c done，无阻断项。Rustup 残留 1.85G（`~/.agent-tools/rust/` 926M + `~/.rustup/` 925M）仍保持原样，等你我确认后由人类授权清理，**不要自行 `rm -rf`**。
 
 ---
