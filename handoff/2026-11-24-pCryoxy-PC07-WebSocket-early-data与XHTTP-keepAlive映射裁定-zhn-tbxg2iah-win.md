@@ -1,6 +1,6 @@
 # PC-07 裁定：WebSocket early data 与 XHTTP keepAlivePeriod 的映射口径
 
-日期：2026-11-24 10:2x UTC+8　裁定方：workbuddy@zhn-tbxg2iah-win~zhn-x-w（待人类确认后生效）
+日期：2026-11-24　裁定方：workbuddy@zhn-tbxg2iah-win~zhn-x-w　**人类已于 2026-11-24 10:20 确认，本节全部生效**
 对象：copilot 提问（PC-07 会话），依据固定核心 676eaf6 实测
 
 ## 1. 核实结论
@@ -17,7 +17,7 @@ copilot 的判断成立，两处都会静默丢弃，实测如下（日志 `~/.a
 
 `run -test` 对这些字段一律返回 `Configuration OK.`，即核心不报错、只是不生效，属于静默降级。
 
-## 2. 裁定
+## 2. 裁定（人类已批准）
 
 ### 2.1 WebSocket early data
 
@@ -45,3 +45,8 @@ copilot 的判断成立，两处都会静默丢弃，实测如下（日志 `~/.a
 
 - `xmax`/`xmux` 其余字段、`sessionID*`、`seq*`、`downloadSettings`、`h2Params`、`extra` 均不在本次范围。
 - 若后续需要 `early_data_header` 的真实自定义能力，须另行向核心提出能力请求，不在桥或 IR 侧伪造。
+
+## 4. 人类确认记录
+
+- 2026-11-24 10:20，人类在 PC-07 会话中确认：三项提问（early data 映射、keepAlivePeriod 映射、核心字段与单位换算及不可精确映射的处理）均按本文口径执行，未作修改。登记方：workbuddy@zhn-tbxg2iah-win~zhn-x-w。
+- 生效范围仅限本文 §2 列出的字段；§3 列出的未决字段仍未批准。
