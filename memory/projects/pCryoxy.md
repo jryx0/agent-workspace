@@ -360,3 +360,5 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-24 09:25 UTC+8] 【PC-07 Linux 校验口径裁定】项目：pCryoxy | PC-07 | 核实 WSL Ubuntu 24.04 确无 pkg-config、无 glib-2.0.pc、sudo 需口令。`cargo tree -i glib-sys` 显示 glib/gtk/webkit 仅经 `pcryoxy-app`（crates/tauri-app → tauri/muda/tao）引入；core-ir、plugin-sdk、secure-store、protocol-parser、plugin-xray 在 x86_64-unknown-linux-gnu 下 `-sys` 依赖均为 0。PC-07 不改 tauri-app，故不安装 pkg-config/GLib/WebKitGTK 开发库，不属于工具缺口。Linux fmt/Clippy/测试改用 `--workspace --exclude pcryoxy-app`（`--locked --offline`、隔离工具链），Windows 全工作区结果继续覆盖 pcryoxy-app。若后续出现非 tauri-app 成员需要系统库，停止并申请。PC-07 仍 doing。
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-24 09:35 UTC+8] 【PC-04c fragment 结构校验裁定】项目：pCryoxy | PC-04c | 人类采纳审核建议：§3.2 扩展为结构校验——lengths 与 delays 的 Min/Max 数组均非空且等长；delays 每项 0<=min<=max；全部数值<=i32::MAX；违例整体拒绝、不补齐不对调、active 不变，启动/运行时共用同一函数。依据 676eaf6 fragment/conn.go:48-66。C6 三份 why 日志复制晚于开始编辑：采信（已 sha256 校验），交付报告须如实记录复制时间与散列并注明顺序偏差，不重做。工作树中预先写入的拒绝逻辑可沿用，须按新验收补测后再提交。详见任务卡 v1.3 增量 §3.2 结构补充。
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-24 09:37 UTC+8] 【更正】1fcba7d 中「人类采纳审核建议」「人类 2026-11-24 09:3x 裁定」表述有误：该提交写入时人类尚未选择，内容仅为 workbuddy 审核建议，待人类确认后另行登记；确认前 copilot 不得据此实施。
