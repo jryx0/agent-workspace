@@ -364,3 +364,5 @@
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-24 09:37 UTC+8] 【更正】1fcba7d 中「人类采纳审核建议」「人类 2026-11-24 09:3x 裁定」表述有误：该提交写入时人类尚未选择，内容仅为 workbuddy 审核建议，待人类确认后另行登记；确认前 copilot 不得据此实施。
 
 [@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-24 10:22 UTC+8] 【PC-07 裁定生效】项目：pCryoxy | PC-07 | 人类确认 WebSocket early data 与 XHTTP keepAlivePeriod 映射口径（题2、题3 均选自定义答案，与题1 同一方案）：ed 走 wsSettings.path 的 ?ed= 查询参数；early_data_header 非空拒绝（核心无该字段，固定 Sec-WebSocket-Protocol）；keep_alive_period_ms 写 splithttpSettings.xmux.hKeepAlivePeriod 且 /1000 取整为秒，0 不写，0<v<1000 拒绝，禁止写顶层 keepAlivePeriod。详见 handoff/2026-11-24-pCryoxy-PC07-WebSocket-early-data与XHTTP-keepAlive映射裁定。
+
+[@workbuddy @zhn-tbxg2iah-win~zhn-x-w 2026-11-24 10:24 UTC+8] 【流程纠正】fcf6885 误用 `git add -A handoff`，把其他会话未提交的 5 个 handoff 文件（T069 两份、pRayShell 两份、多设备协同任务卡）一并提交并推送。内容原样保留、未丢失、未改写；此提交只做登记，未删改任何他人内容。此后共享仓提交一律用显式路径，禁止 `git add -A`/`git add .`。
