@@ -366,3 +366,92 @@ PC-07 现状 `config.rs:618` **无条件**写入 `"allowInsecure": options.allow
 - 第二轮核查结论见 §7；§7.6 附「给 PC-07 的修正提示词」，可直接粘贴。
 - `b8018bf` 处置见 §8，人类选甲，已于 `4066e0d` 落 main 并推送。
 - 已知限制：审核方本机无 cargo 离线缓存（`~/.cargo/registry/cache` 无 `prost`，`--offline` 解析失败），§7.5 无法独立复跑测试，仅核对 PC-07 留存日志（`~/.agent-tools/run/pc07/logs/native-*`、`local-interop-final.log`）。**这是本轮取证的唯一缺口，不代表采信日志内容。**
+
+---
+
+## 10. 第三轮核查：`75ac242` / `dfe6e0e`（2026-11-24 18:20）
+
+### 10.1 结论
+
+**四项必改全部修正到位，本轮判通过。** 另查出一处新偏差（矩阵测试数未随新增测试更新，`106` 应为 `107`），属文档笔误，不阻断通过，但须在下一提交修正，否则矩阵与实测不符。
+
+### 10.2 提交同一性
+
+| 项 | 值 |
+|---|---|
+| PC-07 报告提交 | `75ac2428bc63d3523bbeb2ad7424dcbc51c4c37d` |
+| 当前 HEAD | `dfe6e0ea799a126bf494f698fc56a2fd89edcd73` |
+| 关系 | `reflog` 实测 `rebase (start): checkout aa7e7bc` → `75ac242` 为 rebase 前提交，`dfe6e0e` 为 rebase 后重放 |
+| 差异 | `git diff 75ac242 dfe6e0e --stat` 仅 `.gitignore \| 1 -`，即 `b8018bf` 的 `**/target/` 行被 drop，**其余内容逐字节相同** |
+| `b8018bf` 状态 | 已 drop（`git merge-base --is-ancestor b8018bf HEAD` 返回非零） |
+
+**判定**：PC-07 严格执行了 §8.3 的 `git rebase --onto aa7e7bc b8018bf`，未用 revert。甲方案落地正确。
+
+### 10.3 四项偏差修正核对
+
+| 偏差 | 要求 | 实测 | 结论 |
+|---|---|---|---|
+| 1 矩阵理由句 | 区分 `TransportSettings` 与 `finalmask` 两条消费路径，禁写「内核不消费」 | `matrix.md:18-23` 已改为「不消费 `TransportSettings` 中的 tcp 传输块……`finalmask` 对象是真实承载点」，并列出 hysteria `dialer.go:327-376`/`masque dialer.go:43`（不消费传输块）与 `dialer.go:122-123`/`52-73,84-92,163-166`/`hub.go:92,122,168`（消费 finalmask） | **通过**，两路径表述清晰，未再出现禁止语 |
+| 2 P0 裁剪标注 | 字面写「P0 裁剪：内核支持，本版不开放」 | `grep -c "P0 裁剪"` = **4**（`:24`、`:116`、`:135`、`:149`），`:116` 含完整未开放子能力清单与解禁条件 | **通过** |
+| 3 错误码一致 | `masque-finalmask-unsupported` | `config.rs:467` 与测试 `:1854` 已统一；另新增 `:1857-1860` 断言 `error.to_string() == "node 9: unsupported field masque-finalmask-unsupported"`，把码名纳入对外契约回归 | **通过**（强于要求） |
+| 4 Hysteria2 回归测试 | 断言 `final_mask` 进入生成 JSON | `config.rs:1656-1673` 新增 `hysteria2_final_mask_is_preserved`，经 `build_node_outbound` 断言 `finalmask.tcp[0]["type"] == "fragment"` | **通过** |
+
+### 10.4 新增偏差（第五处，非阻断）
+
+`matrix.md:168`：
+
+> 测试为 **106** passed、0 failed、13 ignored
+
+实测 `correction-win-test.log` 汇总 16 个 target，`passed` 合计 **107**、`failed=0`、`ignored=13`。上一轮 `native-win-workspace-tests.log` 为 106，本轮 `dfe6e0e` 新增 `hysteria2_final_mask_is_preserved` 后应为 107。**矩阵未同步更新，与自身「本轮验证」段落声称的实测冲突。**
+
+为何必须改：矩阵是结卡与合并方复核的唯一口径来源，测试计数错误会让后续核查失去基准（例如新增测试被静默跳过时无法察觉）。要求下一提交把 `106` 改为 `107`，并说明新增的是 `hysteria2_final_mask_is_preserved`。
+
+### 10.5 独立取证
+
+| 项 | 我的实测 | 与 PC-07 报告 |
+|---|---|---|
+| `cargo fmt --all --check` | 日志 `exit=0` | 一致 |
+| `cargo clippy --workspace --all-targets --locked --offline -- -D warnings` | `correction-win-clippy-verified.log` 尾部 `Finished dev profile ... in 2.03s`，无 warning | 一致 |
+| `cargo test --workspace --locked --offline` | 107 passed / 0 failed / 13 ignored（逐 target 累加，16 行 `test result` 全 ok） | 一致（矩阵文本 106 有误） |
+| Gitleaks | **我独立跑 `gitleaks git --log-opts="c3acc73..HEAD"` → 8 commits scanned、174.56 KB、no leaks found** | 一致（但见 10.6） |
+
+### 10.6 两处方法问题（须纠正，不影响结论正确性）
+
+**（1）Gitleaks 范围口径不足。** PC-07 日志 `correction-gitleaks.log` 内容为 `0 commits scanned`、`scanned ~2753 bytes`——只扫了工作区未扫提交历史，覆盖不到任何提交。结论「no leaks」虽与我的独立复跑一致，但**其自身证据不成立**。要求：Gitleaks 必须带 `--log-opts` 指定提交区间，日志首行须显示 `N commits scanned` 且 `N` 等于待审提交数；`0 commits scanned` 视为未取证。
+
+**（2）Clippy 首次触发的 Rustup 自动安装未清理。** `correction-win-clippy.log` 首行：
+
+```
+info: syncing channel updates for 1.100.0-x86_64-pc-windows-msvc
+warn: the missing active toolchain `1.100.0-x86_64-pc-windows-msvc` has been auto-installed
+```
+
+即工具链路径误写触发 `~/.agent-tools/rust/` 下约 **926M** 自动安装。PC-07 已如实披露「误安装目录未删除」，**披露正确**。该目录属个人目录非项目产物，按安全规则我只登记不代为删除，待人类决定。
+
+### 10.7 本机复跑限制（沿用 §7.5）
+
+审核方本机 `target/` 目录出现 `os error 5`（文件 `zerovec`/`zerofrom` 指纹写入被拒），已尝试：PC-07 的 `CARGO_HOME`、`RUSTUP_AUTO_INSTALL=0`、独立 `CARGO_TARGET_DIR`（被安全策略拦截），**均失败**。故 §10.5 的 fmt/clippy/test 三项为核对 PC-07 留存日志，非我独立执行；**Gitleaks 一项为我的独立复跑**。这是本轮取证的唯一缺口。
+
+### 10.8 给 PC-07 的收尾提示词（可直接粘贴）
+
+> PC-07：`dfe6e0e`（原 `75ac242`）四项偏差已全部核对通过，`b8018bf` 已按甲方案正确 drop，本轮判通过。
+>
+> 剩两件事，一个提交即可：
+>
+> **1. 矩阵测试数改 107（必改）**
+> `crates/plugin-xray/tests/matrix.md:168` 的 `106 passed` 改为 `107 passed`，并在同段补一句「本轮新增 `hysteria2_final_mask_is_preserved`」。实测 `correction-win-test.log` 16 个 target 累加为 107 passed / 0 failed / 13 ignored，上一轮为 106，差值即该新增测试。矩阵与自身验证段冲突会被后续核查当作基准错误。
+>
+> **2. Gitleaks 范围补正（必改，重跑即可）**
+> `correction-gitleaks.log` 为 `0 commits scanned`、`2753 bytes`，只扫工作区未扫提交历史，该证据本身不成立。请带 `--log-opts` 重跑：`gitleaks git --log-opts="c3acc73..HEAD"`，日志首行须为 `8 commits scanned`（我已独立复跑，结果为 8 commits / 174.56 KB / no leaks，你的结论应与我一致）。此后所有 Gitleaks 日志若显示 `0 commits scanned` 一律视为未取证。
+>
+> **3. 推送（必做）**
+> `origin/agent/copilot/pc07` 仍不存在，8 个提交只在本地。安全策略若拦截，如实报告并说明卡点，不要反复重试；不要用 `--no-verify`。
+>
+> **不需改的**：native 强制时机、白名单构造、allowInsecure 双档、path 校验、两码区分、键集合断言、P0 裁剪标注（4 处）、错误码与 `to_string` 断言、`hysteria2_final_mask_is_preserved` 本身——全部通过，勿动。
+>
+> **约束**：只碰 `crates/plugin-xray/src|tests`；不动根 `.gitignore`（`**/target/` 已由 main `4066e0d` 承载，不得再加）；提交信息保持 `[PC-07]` 前缀；`~/.agent-tools/rust/` 926M 误安装保持原样，不删除不提交，由人类另行决定。
+
+### 10.9 状态
+
+- PC-07：**代码层面可判通过**，剩矩阵计数、Gitleaks 重跑、分支推送三项收尾；结卡仍等 PC-04c done。
+- 审核方：本轮核查完成，无新增未决项。
