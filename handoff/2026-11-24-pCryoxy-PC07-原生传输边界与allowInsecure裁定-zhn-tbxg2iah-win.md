@@ -80,6 +80,25 @@ PC-07 现状 `config.rs:618` **无条件**写入 `"allowInsecure": options.allow
 
 `reject_inapplicable_transport_parameters`（`validate.rs:803-809`）禁止非 XHttp/WebSocket/HttpUpgrade 传输携带 `path` 参数；masque 默认 `native`，故 `node.link.path_or_service_name` 恒为 `None`，`masqueSettings.path` 恒为 `null`，核心回落 `masque.DefaultPath`。**请 PC-07 确认 P0 是否有意如此**，或属漏映射。本项未纳入裁定，待回答后再定。
 
+### 2.5 执行偏差登记：`b8018bf` 越界修改根 `.gitignore`
+
+**事实**：PC-07 分支现有 6 个提交（此前记录为 5 个），新增第 6 个 `b8018bf`（`[PC-07] chore: ignore nested Rust build artifacts`，2026-11-24 14:58，父 `aa7e7bc`）在根 `.gitignore` 追加 `**/target/`。
+
+**与既有裁定的冲突**：`handoff/2026-11-24-pCryoxy-PC04c与PC07-提示词与PC07缺口认定-zhn-tbxg2iah-win.md` §5.2 **A-6 明确规定「PC-07 与 PC-04c 都不动根 `.gitignore`」**，该文件由合并方以独立 chore 提交（A-5）。`b8018bf` 直接违反 A-6。
+
+**后果评估**：
+
+- 内容本身与 A-5 拟提交的一致（同为 `**/target/`），不产生错误规则。
+- 但两卡同时改同一根文件的冲突风险因此实际发生：若合并方随后执行 A-5 的独立 chore，会遇到冲突或重复。
+- 提交信息标注 `[PC-07]`，等于把仓库级忽略规则记到了单卡名下，与 A-5「提交信息注明非某卡产物」相反。
+
+**处理建议（待人类决定，二选一）**：
+
+- **方案甲（建议）**：保留 `b8018bf` 的改动，撤回 A-5 的独立 chore，在合并该分支时把这条提交单独 cherry-pick 到 main 并改写提交信息为「仓库忽略规则补齐，非某卡产物」，PC-07 分支内不再保留该提交。
+- **方案乙**：要求 PC-07 `git revert b8018bf`（不 rebase，避免重写已审历史），恢复根 `.gitignore`，后续按 A-5 由合并方提交。
+
+无论选哪个，**本次裁定不因此阻断**：`b8018bf` 属 chore，与本轮传输/allowInsecure 代码无关，可独立处理。
+
 ---
 
 ## 3. 验收要求
@@ -95,6 +114,7 @@ PC-07 现状 `config.rs:618` **无条件**写入 `"allowInsecure": options.allow
 ## 4. 未决与边界
 
 - masqueSettings.path（§2.4）待 PC-07 回答。
+- `b8018bf` 越界修改根 `.gitignore`（§2.5）待人类选甲/乙。
 - `xmax`/`xmux` 其余字段、`pinnedPeerCertSha256`/`verifyPeerCertByName` 的真实映射、证书固定整体方案，均不在本次范围。
 - 若后续需要「不安全 TLS」能力，须走证书固定（pcs/vcn），不得在桥或 IR 侧恢复 `allowInsecure`。
 - PC-07 结卡仍等 PC-04c done，本条不改变该依赖。
