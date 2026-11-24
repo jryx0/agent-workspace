@@ -670,3 +670,60 @@ To https://gitee.com/ParvaUltra/pCryoxy.git
 - Rustup 残留：926M + 925M 待人类授权清理。
 - 结卡：仍等 PC-04c done，不变。
 - 本轮无新增审核方未决项。
+
+### 12.6 甲方案执行：推送命令（人类 19:59 拍板）
+
+人类 19:59 答复「就按甲来，把 git push 命令写给我」。以下命令已按本机实测参数填好，可直接复制执行。
+
+#### 12.6.1 精确参数（from 实测，勿改）
+
+| 项 | 值 |
+|---|---|
+| 工作树 | `C:\Users\Zhn_X\source\pCryoxy.wt\copilot-pc07` |
+| 本地分支 | `agent/copilot/pc07` |
+| HEAD | `ed84bdea11293b58807f64811559efaf90e5c3fc` |
+| remote | `origin` → `https://gitee.com/ParvaUltra/pCryoxy.git` |
+| 上游 | **无**（`%(upstream)` 为空，从未推送）；故须带 `-u` 建立跟踪 |
+| `pre-push` 钩子 | **不存在**（`~/.agent-tools/hooks/` 只有 `pre-commit`，项目本地也无），推送不会被钩子拦 |
+| 待推送提交 | 9 个（`837d620`…`ed84bde`） |
+
+#### 12.6.2 命令（Git Bash，推荐）
+
+```bash
+cd /c/Users/Zhn_X/source/pCryoxy.wt/copilot-pc07
+git push -u origin agent/copilot/pc07 2>&1 | tee ~/.agent-tools/run/pc07/logs/push-pc07.log
+echo "EXIT=${PIPESTATUS[0]}"
+```
+
+`tee` 会把原始输出同时落盘，**请把 `~/.agent-tools/run/pc07/logs/push-pc07.log` 全文贴回**（成功或拒绝原文都贴）。末尾 `EXIT=` 是真实退出码——`0` 为成功，非 `0` 为失败。
+
+#### 12.6.3 命令（PowerShell，若你走 PowerShell）
+
+```powershell
+Set-Location C:\Users\Zhn_X\source\pCryoxy.wt\copilot-pc07
+git push -u origin agent/copilot/pc07 2>&1 | Tee-Object -FilePath "$env:USERPROFILE\.agent-tools\run\pc07\logs\push-pc07.log"
+Write-Output "EXIT=$LASTEXITCODE"
+```
+
+#### 12.6.4 执行前须知（三条）
+
+1. **不要加 `--no-verify`**。经查无 `pre-push` 钩子，本就不需要，加了反而属违规操作。
+2. **不要 `git add` 任何东西**。工作树有未跟踪目录 `crates/secure-store/target/`（0 字节、1 个文件，PC-03 测试自建），`git push` 只推已有提交、不碰工作树，**该目录保持原样，不提交不删除**（A-6 不变）。
+3. **不要 `--force` / `--force-with-lease`**。远端无此分支，是纯新建，不存在覆盖风险；加 force 只会掩盖真实失败原因。
+
+#### 12.6.5 两种结果分别怎么处置
+
+| 结果 | 判定 | 下一步 |
+|---|---|---|
+| 成功（`EXIT=0`，输出含 `* [new branch] agent/copilot/pc07 -> agent/copilot/pc07` 或 `branch '...' set up to track ...`） | 即 §12.3 假设**乙**成立——安全策略已放行，此前两轮「安全限制」的结论无依据 | 我复核 `git ls-remote` 确认远端 ref 指向 `ed84bde`，闭合 §11.4 阻断项，PC-07 可进入结卡排队（仍等 PC-04c done） |
+| 失败（非 `0`，如 `remote: Permission denied`、`403`、策略拦截提示） | 即 §12.3 假设**甲**成立——安全策略只放行 dry-run 的 ref 协商、拦截实际写入 | 判定 PC-07 说明成立、不判违规；该阻断项转「人类侧基础设施待办」，PC-07 结卡**不因此挂起**，改由合并方在具备权限的环境拉取该分支或由人类在远端建分支后推送 |
+
+**两种结果都不影响代码结论**：§10、§11、§12.1 已判定的「代码与文档层面通过」不因推送成败改变。推送只影响「能否合入」，属交付链路问题，不是质量问题。
+
+#### 12.6.6 我拿到日志后会做什么
+
+1. `git ls-remote --heads origin` 核对远端 ref 与 `ed84bde` 是否一致（**这是唯一可信的终态判据，不采信命令输出本身**）；
+2. 在 §11.4、§12.3 回填定性结论，消除「安全策略边界」这个悬置项；
+3. 更新共享记忆与结卡状态。
+
+---
