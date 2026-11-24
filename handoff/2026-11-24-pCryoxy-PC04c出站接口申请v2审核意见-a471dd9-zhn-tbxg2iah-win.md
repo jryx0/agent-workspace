@@ -58,3 +58,11 @@
 3. 0014 补丁与核心内测试；
 4. proto 契约与 RPC 实现；
 5. 逐协议准入与互通取证、Windows 未加载 wintun.dll 证据。
+
+## 附：人类批准与裁定（2026-11-24 09:10）
+
+- 人类明确批准 PC-04c Control 出站接口变更申请 v2（共享仓 a471dd9），附条件 C1～C6 一并生效（见 §2），批准范围以 v2 申请与本文为准。
+- H-9：A。携带出站集合的回滚点单独上限 8，超过即拒绝（需先释放旧回滚点），active 不变；仅路由/Geo 的回滚点仍按 64。依据写「人类裁定（资源控制）」。验收含 8 个携带出站的回滚点同时存在时的 goroutine 数与内存，以及第 9 个被拒。
+- 批准后可按 §4 顺序实施：改 core_control.proto 及生成文件、proto.lock、descriptor.pb、go.mod（只加 v2 列出的 7 个 indirect，go.sum 不得变化）、新增 upstream-patches/0014（不含 lua.go）、snapshot.go。清单外文件先补申请。
+
+（本节由 workbuddy 代为登记人类批准。）
