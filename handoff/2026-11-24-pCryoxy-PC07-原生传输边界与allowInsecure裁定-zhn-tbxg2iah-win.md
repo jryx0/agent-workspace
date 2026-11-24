@@ -333,8 +333,36 @@ PC-07 现状 `config.rs:618` **无条件**写入 `"allowInsecure": options.allow
 
 ---
 
-## 8. 登记项
+## 8. `b8018bf` 处置：人类选甲（2026-11-24 17:21）
 
-- 第二轮核查结论见 §7；同章末附「给 PC-07 的修正提示词」，可直接粘贴。
-- 已知限制：审核方本机无 cargo 离线缓存（`~/.cargo/registry/cache` 无 `prost`，`--offline` 解析失败），本轮无法独立复跑测试，仅核对 PC-07 留存日志（`~/.agent-tools/run/pc07/logs/native-*`、`local-interop-final.log`）。**这是本轮取证的唯一缺口，不代表采信日志内容。**
-- `b8018bf` 处置（甲/乙）仍未决，不影响 §7 的四项修正。
+### 8.1 裁定
+
+人类 17:21 答复「b8018bf 甲」，即：**保留该提交的改动内容，撤回 A-5 的独立 chore，由合并方（workbuddy）在 main 上以正确提交信息承载该改动，PC-07 分支内不再保留该提交。**
+
+选择理由（登记人类口径）：内容本身正确（同为 `**/target/`），甲方案不重写已审历史，只需在合并时多一次 cherry-pick 等价操作。
+
+### 8.2 执行结果
+
+| 项 | 结果 |
+|---|---|
+| main 提交 | `4066e0d1d254efb638b60d740a342652ea55112c`，`chore: 仓库忽略规则补齐，非某卡产物` |
+| 提交作者 | `workbuddy <workbuddy@zhn-tbxg2iah-win>`，**不归属任何单卡**（符合 A-5） |
+| 改动 | 根 `.gitignore` 第 2 行追加 `**/target/`，`+1 -0`，无行尾空格（`cat -A` 复核为 `**/target/$`） |
+| 推送 | 已推 origin/main，本地与远程均为 `4066e0d`（`git ls-remote` 实测一致） |
+| 忽略生效验证 | `git check-ignore -v crates/secure-store/target/pc03-native-fixture.lock` → `.gitignore:2:**/target/` 命中；`crates/foo/target/x` 同样命中 |
+| 已跟踪文件安全 | `git ls-files \| grep "/target/"` = 0，加规则不漏已跟踪文件 |
+
+### 8.3 对 PC-07 的后续影响（须写入其修正提示词）
+
+- **PC-07 不再需要、也不得再保留 `b8018bf`**。合并 `agent/copilot/pc07` 时，**必须跳过（drop）该提交**，否则与 main 的 `4066e0d` 冲突并重复。
+- 若 PC-07 使用的合并方式会产生冲突，按以下顺序处理：先 `git rebase --onto aa7e7bc b8018bf agent/copilot/pc07`（把 `2ec1611`、`d4e4f03` 及后续重接到 `aa7e7bc` 之后），再由合并方合入 main。**不得用 revert**（甲方案不采用乙）。
+- PC-07 的工作树中 `crates/secure-store/target/` 目录保持原样，不提交不删除（A-6 不变）。
+- 因 main 已有 `4066e0d`，PC-07 后续 rebase 到最新 main 时该行会自然存在，**不需要也不得再次添加**。
+
+---
+
+## 9. 登记项
+
+- 第二轮核查结论见 §7；§7.6 附「给 PC-07 的修正提示词」，可直接粘贴。
+- `b8018bf` 处置见 §8，人类选甲，已于 `4066e0d` 落 main 并推送。
+- 已知限制：审核方本机无 cargo 离线缓存（`~/.cargo/registry/cache` 无 `prost`，`--offline` 解析失败），§7.5 无法独立复跑测试，仅核对 PC-07 留存日志（`~/.agent-tools/run/pc07/logs/native-*`、`local-interop-final.log`）。**这是本轮取证的唯一缺口，不代表采信日志内容。**
