@@ -277,3 +277,91 @@ d345f1e 树 = 7563563624133f77c0c184a5d114dcccadf6460a
 ```
 
 合并后 main 直接指向 `d345f1e`（或按团队惯例用 `--no-ff` 生成一次空合并以示入主干，但**内容与 fast-forward 完全相同**）。**注意：这与第 4 项的 `9a1ae26` 预检结果不同——那份预检是在 pc07 尚未合并 main 时做的，现已失效，不要引用。**
+
+---
+
+# 附录二：G-01 裁决落定（方案甲）与第 6 项合并
+
+- 时间：2026-11-25 11:33（人类裁决）、11:36（合并执行）
+- 人类原话：`G01确认甲，并做第6项`
+
+## F. G-01 裁决结果：方案甲
+
+人类选择**甲**：确认 P0 的桥不承担节点出站，PC-07 矩阵如实记录即可结卡，并补需求说明「节点出站由宿主直连核心，不经桥」。
+
+落库三处（提交 `8954eb0`）：
+
+### F1. `docs/01-需求总表.md` §2 新增裁定 G6
+
+> **G6**（人类 11-25 11:33 裁定，G-01 方案甲）**桥不承担节点出站**。`native/xray-bridge` 的 prepare 只接受 `freedom`、`proxy/dns`、`blackhole` 三种出站（`restricted_profile.go` 的 `profileOutbound*` 白名单，启动与全部 RPC 一致），VLESS/VMess/Trojan/Shadowsocks 等节点出站的创建、连接与生命周期**由宿主直连核心完成，不经桥**。桥的职责限于受限控制面：路由规则、系统出站、内核边界与热更新原子发布。此约束意味着「经桥 prepare 接受节点出站」**不构成**任何 P0 验收条件；相关能力若日后需要纳入桥，须另立扩展卡（参照 PC-04b 之于 PC-04）。
+
+### F2. `docs/01-需求总表.md` §3 的 G-01 条目结案
+
+原 A/B 两条选项**作废**，改为已裁定状态，并厘清一处历史含混：
+
+- `freedom`/`sniffing`/`finalmask`/`proxy/dns` 四项**已由 PC-04b 补回**（11-23 结卡），此部分**闭合**
+- 节点出站经桥**自始不在 P0 范围**，与上述四项是两件事——这是此前一直未被明确切开的地方，也是 PC-07 误把一个设计边界当成缺口的原因
+
+### F3. `crates/plugin-xray/tests/matrix.md` 标题定稿
+
+- 由「（桥出站范围待人类裁决）」改为纯 `# PC-07 支持矩阵`
+- 开头补「依据」段，引用 G-01 方案甲与裁定 G6，明确：**「桥 prepare」栏对节点协议记为拒绝是需求层既定边界，不是缺口、不是待补项**
+
+### F4. `docs/02-任务卡总表.md` PC-07 行同步
+
+「遗留 G-01……待人类裁决甲/乙/丙」→「**G-01 已裁定（人类 11-25 11:33，方案甲）**：桥不承担节点出站，矩阵「桥 prepare」栏记为拒绝属需求层既定边界」。
+
+验证：`cargo fmt --all --check` EXIT=0；staged gitleaks 2,470 bytes 无泄漏。
+
+## G. 第 6 项：合并 pc07 入 main 完成
+
+### G1. 合并方式：fast-forward（update-ref 直接推进）
+
+```console
+$ git merge-base --is-ancestor main agent/copilot/pc07 && echo YES
+YES
+$ git update-ref refs/heads/main 8954eb011df37a94ee5abef0a1bc5e587ced7b11 862c9d447dc2c217c5480f6037e2c96f67cb809a
+```
+
+因 `29124ad` 已含 main 全部内容，本次为**纯 fast-forward**，无需 merge commit——沿用第 4 项的经验，直接用 `update-ref` 原子推进，绕开易被 SIGTERM 掐断的工作树操作。
+
+### G2. 工作树同步：小批量 checkout-index
+
+`git read-tree HEAD` 重建索引后，20 个待同步文件以**每批 2 个**逐个补齐，全部 `EXIT=0`，无一次中断。
+
+### G3. 完整性验证
+
+```
+HEAD      = 8954eb011df37a94ee5abef0a1bc5e587ced7b11
+HEAD 树   = 2357c7d535c9746f8e191a3f445a7dea015f61eb
+索引树    = 2357c7d535c9746f8e191a3f445a7dea015f61eb    ← 一致
+git diff pc07 HEAD  → 无输出（零差异）
+git status --short  → 0
+```
+
+`main` 与 `agent/copilot/pc07` 内容完全一致，索引与 HEAD 一致，工作树干净。
+
+### G4. 合并后全工作区验收
+
+main = `8954eb0` 上实测：
+
+| 验证项 | 结果 |
+|---|---|
+| `cargo fmt --all --check` | **EXIT=0** |
+| `cargo clippy --workspace --all-targets -- -D warnings` | **EXIT=0**，零 warning（8.71s，复用缓存） |
+| `cargo test --workspace` | **EXIT=0，0 failed**；**107 passed / 13 ignored** |
+
+**107/13 与 PC-07 在 pc07 分支上的基线逐项一致**，说明本次合并未引入任何测试回归。
+
+## H. 建议顺序最终状态
+
+| 序 | 事项 | 状态 |
+|---|---|---|
+| 1 | PC-04c 推送 | ✅ `09899c0` |
+| 2 | 其他模型完成 `4f99f7c` 审核 | ✅ 不通过 → `09899c0` → 通过 |
+| 3 | 跨卡契约三项核对 | ✅ 全一致 |
+| 4 | 合并 pc04c 入 main | ✅ `862c9d4` |
+| 5 | PC-07 结卡 | ✅ `ad02f61`（已推送） |
+| 6 | **合并 pc07 入 main** | ✅ **`8954eb0`**（fast-forward） |
+
+**P0 十三张卡中，PC-04c 与 PC-07 均已完成并入 main。G-01 已结案。**
