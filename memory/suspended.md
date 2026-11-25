@@ -10,7 +10,6 @@
 
 | Project | Task ID | Title | Suspended At | Reason | Unblock Precondition | Branch / Worktree | Decision Source |
 |---|---|---|---|---|---|---|---|
-| `prnmgt` | `S1` (`T-059 / T-060 / T-061`) | 管理页交互收尾（前端） | 2026-11-12 | 前置依赖项与优先级排期调整 | 人类明确下达解挂指令 | 无活跃 worktree | `handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md` |
 | `prnmgt` | `S2` (`P0 二次真机调研`) | 二次真机调研 | 2026-11-12 | 需现场真机窗口配合 | 真机窗口就绪且人类解挂 | 无活跃 worktree | `handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md` |
 | `prnmgt` | `S3` (`v4 / #18`) | 需求/问题 #18 | 2026-11-12 | 延后排期 | 人类明确下达解挂指令 | 无活跃 worktree | `handoff/2026-11-13-多设备多Agent协同评估后续任务卡-zhn-tbxg2iah-win.md` |
 
@@ -18,4 +17,4 @@
 
 | Project | Task ID | Title | Unblocked At | Approved By | Resume Baseline |
 |---|---|---|---|---|---|
-| *(none yet)* | - | - | - | - | - |
+| `prnmgt` | `S1` (`T-059 / T-060 / T-061`) | 纸张采购箱/包/张细化（DDL + 后端 PUT + 前端三段式） | 2026-11-20 | 人类明确「S1 解挂」 | 已全部 `done` 并于 2026-11-20 上线 `2b624a8d`（主干 `f365a05`，详见 `memory/projects/prnmgt.md`） |
