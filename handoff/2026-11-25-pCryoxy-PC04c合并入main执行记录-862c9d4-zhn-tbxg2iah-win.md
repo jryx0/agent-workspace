@@ -113,13 +113,37 @@ done
 
 **`native/xray-bridge/go.sum` 缺 `xtls/xray-core` 条目**，导致仓库内裸 `go build` 无法直接通过，必须按 `replay-linux.sh` 方式构建。此为**基线缺陷**（`4066e0d` 已复现），不影响合并正确性，但值得后续单独修（补 `go.sum` 该行，或把构建方式固定为脚本入口并在 README 注明）。
 
-## 6. 下一步
+## 6. 合并后全工作区验收
+
+| 验证项 | 命令 | 结果 |
+|---|---|---|
+| Rust 格式 | `cargo fmt --all --check` | **EXIT=0**，零输出 |
+| Rust Lint | `cargo clippy --workspace --all-targets -- -D warnings` | **EXIT=0**，零 warning（耗时 40m30s，首编译） |
+| Rust 测试 | `cargo test --workspace` | **EXIT=0，0 failed**；61 passed / 4 ignored |
+| 桥侧编译 | 复现固定核心后 `go build ./...` | **EXIT=0** |
+| 桥侧测试 | `go test ./...` | **ok 1.626s** |
+| 核心 PC-04 回归 | 见 §4 | **9 用例全 PASS** |
+
+Rust 测试分项：15（core-ir）+ 9 + 20 + 17 = 61 passed，17 那组含 4 ignored（互通夹具与专用测试，与 PC-07 分卡时「107 passed / 13 ignored」口径同源，此处为 main 合入 PC-04c 后的子集）。
+
+`cargo clippy` 首次失败系 `target/debug/build/vswhom/.../fingerprint/lib-vswhom` 报 `os error 5 拒绝访问`——由前次被 SIGTERM 终止的 cargo 进程遗留句柄所致；确认无残留进程后重跑即通过，**非代码缺陷**。
+
+## 7. 下一步
 
 | 序 | 事项 | 状态 |
 |---|---|---|
 | 1 | PC-04c 推送 | ✅ `09899c0` |
 | 2 | 其他模型完成 `4f99f7c` 审核 | ✅ 不通过 → `09899c0` → 通过 |
 | 3 | 跨卡契约三项核对 | ✅ 全一致 |
-| 4 | **合并 pc04c 入 main** | ✅ **`862c9d4`** |
+| 4 | **合并 pc04c 入 main** | ✅ **`862c9d4`**，全验收通过 |
 | 5 | PC-07 结卡 | ⏭ 待执行 |
 | 6 | 合并 pc07 入 main | 待 5 |
+
+## 8. PC-07 合并预检（为第 6 步预备）
+
+- `git merge-base main pc07` = `c3acc73`（与 pc04c 同一基点）
+- pc07 改动 18 个文件，main 侧新增 22 个文件，**交集 0**（`comm -12` 验证，按 `-z` 处理中文路径）
+- 合并预检 `git merge-tree --write-tree main pc07` = `9a1ae26b6b750a8468675eb55d9edb9b475eaf9f`，**零冲突**
+- `git diff main pc07` 中出现的「删除 `outbound_control_test.go`、删除 `0014-*.patch`」等，纯粹是 pc07 基点早于 pc04c 合并所致，**不是内容回退**
+
+**PC-07 结卡待办**：`crates/plugin-xray/tests/matrix.md` 标题仍为「PC-07 支持矩阵（预验，未结卡）」，且第 86–93、146–155 行等多处单元格填「待 PC-04c」。PC-04c 已并入 main，这些占位需重新判定：能借桥取证的要补证据，仍缺夹具的须改写为「缺夹具」而非「待 PC-04c」。
