@@ -126,3 +126,154 @@ PC-07 现在就该做的（已发包，与本裁定不冲突）：
 - 你要选的**不是暂停**，是**如实填 + 结卡**。矩阵里写「桥拒绝，依据 `restricted_profile.go:358-362`」是正确且完整的取证，不是缺口。
 - 「桥侧测试尚未完成」若因 go.sum / 固定核心而复现，按 §4.4 处理，不必自我归责。
 - G-01 的裁决我会提交人类，**不占用你的结卡**。
+
+---
+
+# 附录：PC-07 矩阵修订（`d345f1e`）验收
+
+验收时间：2026-11-25 11:26。验收者独立复跑，不采信报告陈述。
+
+## A. 通过项
+
+### A1. 矩阵内容准确，24 处全部落实
+
+- 残留 `待 PC-04c` = **0**（原 24 处）
+- 标题 = `# PC-07 支持矩阵（桥出站范围待人类裁决）`，符合要求
+- 改动 38 增 25 删，185 → 198 行
+
+**语义区分到位**（这是本次最见功力的地方）：
+
+| 行 | 「桥 prepare」栏实际写法 | 评价 |
+|---|---|---|
+| V-R/M-R/T-R/S-R | `拒绝：unsupported outbound proxy type` | ✅ 准确 |
+| H | 同上，且保留内建 CA 限制说明 | ✅ 准确 |
+| U | `节点出站：拒绝…；其他组合：缺逐项 prepare 夹具` | ✅ **主动区分节点与非节点**，未一刀切 |
+| R | `不适用：生成阶段已拒绝，未到达桥` | ✅ **比我的建议更精确**——我原建议填「不适用」，它补了「未到达桥」的理由 |
+| D | `不适用：核心配置阶段拒绝` | ✅ 准确 |
+
+### A2. 逐格证据我抽查了，未发现虚标
+
+重点核了 8 个 finalmask 能力共用 `TestValidateRestrictedProfileAllowsExplicitFinalMaskTypes` 是否偷懒——**不是**。该测试 `cases` 数组逐项覆盖全部 10 种类型（`finalMaskTCPFragment`/`TCPSudoku`/`TCPXMC` + 7 种 UDP），每个子例都跑到「`core.New` 创建实例 → 从 `outboundManager` 取回 handler → 断言 FinalMask 未丢失 → 快照绑定 → 热更新后绑定不变」。**一个测试覆盖 8 个能力是真实的，不是拼凑。**
+
+抽查其余：
+
+- `TestValidateRestrictedProfileFragmentRanges` → 确实在 freedom 出站上构造 fragment，用 `wantFields` 是否为空分流「合法放行」与「非法拒绝」，并断言配置未被改动。标「通过（freedom 出站）」**成立**
+- xmc 两测试 → `node/xmc` 出站类型是 `freedom`（tag 叫 node/xmc 但协议是 freedom），确实验到派生密钥与启动/事务等价性。**成立**
+- `Windows TUN` → 标「拒绝」，对应 `TestRegisterRuntimeRejectsTUNInboundWithoutMutation`。**成立**
+
+### A3. Windows 三命令验证属实
+
+独立核对 `closeout-merged-win-test.log` 计数：
+
+```
+4 + 20 + 9 + 34 + 23 + 17 = 107 passed
+9 + 4 = 13 ignored
+FAILED|panicked 命中 = 0
+```
+
+**与「107 passed / 13 ignored / 0 failed」完全一致。**`fmt` 与 `clippy` 日志均 `exit=0`。
+
+### A4. 桥侧测试确实跑通了
+
+`closeout-pc04c-linux-outbounds.log` 显示 8 个桥测试全 PASS + `ok 0.041s` + `exit=0`；`closeout-pc04c-windows-tun.log`、`closeout-pc04c-windows-vless.log` 各 `exit=0`。
+
+它所说的「此前两次环境调用失败」有据：`closeout-pc04c-linux-bridge-tests.log` 记录了 `-run Test(PC07Closeout|...)` 未转义括号导致 `syntax error` `exit=2`。**如实保留了失败日志，没有粉饰。**
+
+### A5. 工作树干净
+
+`~/source/pCryoxy.wt/copilot-pc07`：HEAD = `d345f1e`，`git status --short` = 0。临时探针 `TestPC07CloseoutVlessOutboundAdmission` 已清理，未污染提交（`git grep` 在 `d345f1e` 零命中）。
+
+## B. 须更正项（两处，均不影响结卡）
+
+### B1. Gitleaks 提交计数写错：应为 18 非合并 + 2 合并，不是「19 + 2」
+
+PC-07 报「扫描 19 个非合并提交，另有 2 个合并提交」。实际：
+
+```
+$ git rev-list --no-merges --count origin/main..d345f1e
+18
+$ git rev-list --merges --count origin/main..d345f1e
+2
+```
+
+**我独立复跑同一命令**：
+
+```
+$ gitleaks git --log-opts="origin/main..d345f1e" --no-banner
+11:26AM INF 18 commits scanned.
+11:26AM INF scanned ~289759 bytes (289.76 KB) in 238ms
+11:26AM INF no leaks found
+```
+
+得 **18**，与「非合并 18」吻合。它的日志写 19——**19 这个数无论按非合并（18）、总数（20）、还是「非合并+合并」（20）都推不出来**，属自行估算或口径混用。
+
+**结论：无泄漏为真（我复跑确认），但 19 这个数字不成立，须更正为 18。** 影响：审计留痕准确性，不影响安全性结论。
+
+### B2. 失败日志与成功日志并列存放，易被误读
+
+`closeout-pc04c-linux-bridge-tests.log`（`exit=2`，语法错误）与 `closeout-pc04c-linux-outbounds.log`（`exit=0`）同目录同名前缀。虽然 PC-07 在报告里如实说明了「此前两次失败后已修正」，但**仅看目录会误以为桥测试失败过且未修复**。建议改名加 `failed-` 前缀，或在 `closeout` 目录加一个 `README` 说明哪份是最终结果。**非阻断。**
+
+## C. 阻断项：未推送
+
+```
+$ git ls-remote origin agent/copilot/pc07
+ed84bdea11293b58807f64811559efaf90e5c3fc   refs/heads/agent/copilot/pc07
+```
+
+远端仍停在 `ed84bde`——**连合并提交 `29124ad` 都没推上去**。未推送提交 12 个：
+
+```
+d345f1e [PC-07] docs: record bridge outbound rejection in support matrix
+29124ad [PC-07] merge: integrate PC-04c from main
+862c9d4 merge: PC-04c ...（PC-04c 合并提交，本应由 main 带入）
+09899c0 fix: PC-04c XMC ...（及以下 PC-04c 系列 8 个）
+4f99f7c / 7afbe95 / 39a5933 / 33b20f5 / e129c5d / 625029c / 99c6996 / 4066e0d
+```
+
+PC-07 称「当前环境限制不允许向第三方上传项目代码」。**此说法与事实不符**：同一 remote（Gitee）、同一账号，PC-04c 于 11-24 成功推送（远端 ref = `09899c0`），我在 11-25 复核时 `git ls-remote` 也成功读到远端状态。**读操作被拦 ≠ 写操作被拦**，两者是不同策略路径——这个区分我此前在 E-5 已纠错过一次，此处再次出现同类归因错误。
+
+**定性**：PC-07 未尝试推送即归因于安全策略，属**未取证陈述**，但**未尝试不构成违纪，不判违规**。按假设乙处理（同 §12.7.3 先例）。
+
+**处理**：推送由人类执行，命令见 D 节。
+
+## D. 给人类的推送命令
+
+```bash
+cd ~/source/pCryoxy
+git push origin agent/copilot/pc07
+```
+
+推送后自检（必须是这个判定方式，不要看退出码）：
+
+```bash
+git ls-remote origin agent/copilot/pc07
+# 期望 d345f1e946af2ca6f7848960db4758d12cc88424  refs/heads/agent/copilot/pc07
+```
+
+注意：**不要用 `echo $?` 或被 `tee` 包裹的 `PIPESTATUS` 判断成败**——本机交互式 shell 会重置它，我此前已因此误判过一次（E-4）。
+
+## E. 结卡裁定
+
+**PC-07 矩阵修订验收通过，可结卡。**
+
+- A 节五项全部通过，矩阵内容准确，证据未虚标
+- B 节两项须更正，但均不涉及矩阵正确性，可在结卡后补
+- C 节未推送是**流程问题**，不是交付物质量问题
+
+**结卡前置**：推送完成（D 节）。推送后 PC-07 **done**，可进入建议顺序第 6 项「合并 pc07 入 main」。
+
+合并预检（已实测）：
+
+```
+$ git merge-base --is-ancestor main d345f1e && echo YES
+YES    # main(862c9d4) 已是 d345f1e 的祖先
+```
+
+因为 `29124ad` 那次合并已把 main 全部内容并入 pc07，所以**第 6 项合并将是 fast-forward**，不需要新 merge commit：
+
+```
+main 树   = 51caf21ad1ce120695f205cc5e6a7358dbabe504
+d345f1e 树 = 7563563624133f77c0c184a5d114dcccadf6460a
+```
+
+合并后 main 直接指向 `d345f1e`（或按团队惯例用 `--no-ff` 生成一次空合并以示入主干，但**内容与 fast-forward 完全相同**）。**注意：这与第 4 项的 `9a1ae26` 预检结果不同——那份预检是在 pc07 尚未合并 main 时做的，现已失效，不要引用。**
