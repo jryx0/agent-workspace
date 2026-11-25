@@ -1,90 +1,34 @@
-# 接入提示词：安装并使用 zhn-docs-kb
+# Agent Onboarding Prompt: `zhn-docs-kb` & `zhn-docs-std`
 
-> **用途**：给**另一个 agent**（另一台设备、另一个平台、另一个账号）用的可复制提示词。
-> **适用版本**：v0.8.0（2026-11-13 裁决落地版）。
-> **用法**：把下面「一」的代码块整段发给目标 agent；把 `<AGENT_NAME>`、`<DEVICE_NAME>` 换成实际值。
-> **不要**把本文件内容抄进目标 agent 的全局规则——全局规则只放一行指针（见「二」）。
+> 适用版本：`zhn-docs-kb` v1.0.0 / `zhn-docs-std` v2.0.0（对齐 `global/rules.md` v3.0）。
+> 完整安装与多账号细则见同目录 `references/install.md`。
 
----
-
-## 一、标准提示词（有技能机制的 agent）
+## 1. Copy-Paste Prompt (Agents With Skill Support)
 
 ```text
-【任务】在本机安装共享技能 zhn-docs-kb 并回报结果。只做这件事，不要顺手改其他文件、不要提交共享仓。
-
-【这是什么】多 Agent 协同共享文档知识库的规范：文档放哪（~/.agent-docs 是本机唯一原件，
-网盘只放对外交付副本，飞书只放可在线阅读的只读预览副本 + 多维表格索引，冷备由 NAS 独占）、
-怎么命名（委派 zhn-docs-std）、怎么建索引、怎么批量上传、多设备怎么按「读前查表、按需拉取」感知变更、
-删除怎么用墓碑标记而不物理删除。
-权威原件在 ~/.agent-shared/skills/official-doc/zhn-docs-kb/，随共享仓 Git 同步。
-你在本机装的是「单向副本」，永远不要编辑副本。
+【任务】在本机安装共享技能 zhn-docs-kb 与 zhn-docs-std 并回报结果。只做这件事，不顺手改其他文件、不提交共享仓。
 
 【步骤】
-1. 更新共享仓（Windows 用 Git Bash：/c/Users/<user>/.agent-shared；Linux/macOS：$HOME/.agent-shared）
-   cd ~/.agent-shared && git pull --rebase
-2. 一键安装（装到本机已探测到的 agent 技能目录）
-   bash ~/.agent-shared/env/install-skill.sh --all
-3. 校验，必须全部 [OK]
-   bash ~/.agent-shared/env/install-skill.sh --check
-4. 若第 2 步报「未探测到任何 agent 技能目录」，改成指定目录安装：
-   bash ~/.agent-shared/env/install-skill.sh --all --dest <你实际加载技能的目录>
-   不确定装哪，就先跑 bash ~/.agent-shared/env/install-skill.sh --list 看现状再问我。
-5. 若你的 agent 没有技能目录机制，停止安装，改为执行「二」的一行指针方案，不要复制正文。
+1. 更新共享仓：cd ~/.agent-shared && git pull --rebase origin main
+2. 一键安装：bash ~/.agent-shared/env/install-skill.sh --all
+3. 漂移校验：bash ~/.agent-shared/env/install-skill.sh --check（须全部 [OK]）
+   - 若未探测到技能目录，用 --dest <实际目录> 指定；无技能机制则停止安装，仅在规则文件加一行指向 ~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md。
 
-【回报格式】（照抄这四行，缺一项算没做完）
-- 安装位置：<绝对路径>
-- 技能版本：<SKILL.md 里 version 的值>
-- 校验结果：全部 [OK] / 有 [STALE] / 有 [DRIFT] / 有 [MISS]
-- 能否复述：用一句话说出「文档该放哪、要不要同时登记索引、删除怎么标记」
+【回报四行】
+- 安装位置：<路径>
+- 技能版本：zhn-docs-kb=<version> / zhn-docs-std=<version>
+- 校验结果：全部 [OK] / [STALE] / [DRIFT] / [MISS]
+- 一句话复述：原件放哪、谁负责跨设备同步、飞书与网盘分别做什么、删除怎么处理
 
 【红线】
-- 不修改、不手抄技能正文到任何规则文件（单一原件原则）；只改权威原件，改完我来提交。
-- [STALE] 表示原件已升级、副本落后 → 重装即可；[DRIFT] 表示副本被本地改过或来源不明 → 报告我，不要手改副本"修好"。
-- 不覆盖无安装标记的同名目录（脚本会拒绝）；确需覆盖加 --force，备份会被放到 ~/.agent-tools/backups/skills/。
-- 不把任何 Token、密钥、账号信息写进技能、索引、Git；凭证按设备 + agent 软件由人类单独分发，禁止跨设备复制。
-- 不主动同步、不建后台轮询或事件订阅；只在要读本地文档时才查索引。不物理删除云侧或本地文件（用墓碑 + .trash/）。
-- 不在你所在环境里新建第二套工作区（例如为了装工具而开 WSL 的第二个 ~）；本期不启用 WSL 通道。
-- 不在 Windows 原生安装 bdpan Skill；不替人类扫码授权；不改 global/ 下规范正文。
-
-【多账号提醒】你如果有多个账号/多个版本（个人版、企业版、团队版），技能目录通常是机器级共享的，
-不需要每个账号各装一份；但记忆、登录态、连接器凭证往往按账号隔离，不要跨账号复制凭证文件。
-装完请确认「切换账号后技能是否还在」，并把结论告诉我。
+- 禁止编辑技能副本、禁止抄正文进全局规则、禁止复制任何密钥/Token/~/.lark-cli/config.json、禁止全局安装 npm/pip、禁止改 global/ 规范正文。
 ```
 
----
+## 2. Quick Troubleshooting
 
-## 二、没有技能机制的 agent：一行指针
-
-不要复制正文，在该项目规则文件（如 `AGENTS.md`、`.trae/rules`、项目 `README` 的规则段）加一行：
-
-```text
-涉及文档存放/命名/索引/备份/同步时，读 ~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md 并按其约束执行。
-```
-
-长文本按需加载，指针常驻、正文不进规则文件。
-
----
-
-## 三、人类侧验收清单
-
-1. `bash ~/.agent-shared/env/install-skill.sh --list` 显示目标目录为「最新」。
-2. 目标 agent 能报出版本号，且能复述「文档放 `~/.agent-docs`、要同时登记索引、只在读前查表、删除用墓碑」。
-3. 让它新建一份文档，检查：文件名符合 `YYMMDD｜类型｜主题`、索引有对应记录、没有双活副本、没有主动上传或广播。
-4. 多账号场景：退出登录换另一个账号，确认技能仍在（技能目录是机器级的，理应不受影响）。
-5. 升级链路：改权威原件 → commit + git sync → 各设备 `git pull --rebase` → 重装 → `--check` 全 `[OK]`。
-6. 拉取式链路（需先取得飞书凭证后才可测）：A 设备按人类指令改文件并登记索引 → B 设备读前查表发现有更新 → 从飞书下载并校验 sha256；删除用例确认只产生墓碑与 `.trash/`，无物理删除。
-
-> 第 1～5 条尚未在其他设备/账号实测。第 6 条的飞书能力已由**官方 CLI** 补齐（`lark-cli --profile parva`，见 SKILL.md 第 8A 节），索引表已建成（`base_token=KouDbtqSyamyHtsJZuKcNvNXnee` / `table_id=tblJRefSlsHuCwJn`）；**新设备须自行 `lark-cli config init` + device flow 授权，禁止复制 `~/.lark-cli/config.json`**，因此第 6 条在本机之外仍未实测。
-
----
-
-## 四、常见报错对照
-
-| 现象 | 含义 | 处理 |
+| Output | Meaning | Action |
 |---|---|---|
-| `[MISS] ... 未安装` | 该目录下没有副本 | 正常，跑安装 |
-| `[STALE] ... 落后于原件` | 原件已升级 | 重装该技能 |
-| `[DRIFT] ... 被本地修改` | 副本被手改，或来源不明 | 报告人类，不盲目覆盖 |
-| `[SKIP] 已存在且无安装标记` | 可能是人工维护的同名技能 | 确认后再 `--force` |
-| `未探测到任何 agent 技能目录` | 目录不在探测表内 | 用 `--dest` 指定 |
-| 技能装了但 agent 不认 | 平台未重扫技能目录 | 重启会话；仍不认则改指针方案 |
+| `[MISS]` | 未安装 | 运行 `install-skill.sh --all` |
+| `[STALE]` | 原件已升级，副本落后 | 重新运行安装覆盖 |
+| `[DRIFT]` | 副本被手改或来源不明 | 报告人类，勿盲目覆盖 |
+| `[SKIP]` | 存在无标记同名目录 | 人类确认后加 `--force`（自动备份至 `~/.agent-tools/backups/skills/`） |

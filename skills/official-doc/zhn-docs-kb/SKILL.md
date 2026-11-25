@@ -1,565 +1,97 @@
 ---
 name: zhn-docs-kb
-description: "多 Agent 协同共享文档知识库的分层存储、命名、索引、对外交付、批量上传与拉取式多设备同步规范。同步范围仅 ~/.agent-shared（走 Git）与 ~/.agent-docs（本机唯一原件；网盘仅对外交付副本，飞书仅可在线阅读的只读预览副本 + 多维表格索引；异地冷备由 NAS 独占）。当需要存放/检索/交付/分享 Agent 产出文档、建立统一文件索引、判断文件落到哪个后端、批量上传文件夹到百度网盘、按人类指令登记新增/修改/删除（墓碑）、读前查表按需拉取、处理冲突，或在新设备/新 Agent 上安装本技能时使用本技能。关键词：知识库、文档知识库、多agent协同、文件分流、统一索引、docs://、pan://、feishu://、kb://、百度网盘 MCP、baidu-netdisk/mcp、批量上传、manifest、断点续传、拉取式同步、读前查表、变更感知、版本戳、墓碑、tombstone、删除标记、冲突处理、密级、文件命名、一键安装、install-skill、接入提示词、多账号、个人版企业版、飞书多维表格、md 导入、对外交付、飞书 CLI、lark-cli、profile parva、索引表坐标、base_token、table_id、drive +upload、drive +download、drive +push、drive +status、base +record-list、base +record-batch-create。文件命名细节一律委派 zhn-docs-std，本技能不重复其规则。"
+description: "多 Agent 文档知识库的分层存储、分流判断、飞书单向预览+多维表格索引、百度网盘对外交付与墓碑删除规范。跨设备原件同步由统一同步工具负责，命名委派 zhn-docs-std。按需加载 references/ 细则。"
 agent_created: true
-version: 0.10.0
+version: 1.0.0
 metadata:
-  scope: "~/.agent-shared; ~/.agent-docs; 飞书云空间（只读预览副本，经官方 CLI）+ 多维表格（唯一权威索引，已建成）; 百度网盘（仅对外交付）; NAS（冷备，本期不经本技能）"
   source: "~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md"
   install: "bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb"
 ---
 
-# zhn-docs-kb — 多 Agent 协同共享文档知识库
+# zhn-docs-kb — 多 Agent 文档知识库操作规范 (v1.0.0)
 
-## 0. 状态与范围（先读这段）
+> 上位规范：`~/.agent-shared/global/rules.md` (v3.0, `[spec/layout.md#S2.3]`, `[spec/backup.md#S5.2]`, `R1-R5`)。
+> 命名强制委派：`zhn-docs-std` (v2.0.0)；外部端点/索引表坐标见 `env/kb-endpoints.md`（本文件不含实例坐标或秘密）。
+> **按需扩展文档**（仅涉及对应场景时再读）：
+> - 飞书 `lark-cli` 安装、命令映射、全量同步与踩坑 → `references/feishu-cli.md`
+> - 百度网盘对外交付、批量文件夹上传与 manifest → `references/netdisk.md`
+> - 技能分发、多账号边界与新 Agent 接入提示 → `references/install.md`
 
-- 依据：`docs://技术资料/261112｜文档｜飞书百度网盘混合存储方案审核.md`（含 09:45、09:53 补充修订与 2026-11-13 第十二节裁决落地）。上位约束为 `rules.md` v2.7，冲突时以上位规范为准。
-- **同步范围仅两个目录**（人类 2026-11-12 指定）：
-  - `~/.agent-shared`：只走 Git 双远端，**不上网盘/飞书**（含密钥与记忆，防泄露与双活）。
-  - `~/.agent-docs`：**本机唯一原件**；飞书为只读预览副本 + 索引，百度网盘为对外交付副本，NAS 为异地冷备。
-- **人类 2026-11-13 裁决（本版落地，覆盖早期草案中的可选方案）**：
-  1. 飞书层仅同步「可在线阅读的文件」（ppt/doc/pdf/文本/图片），不做在线协作编辑、不承载原件；**多维表格属于可在线阅读文件**，定为索引与变更公告板。
-  2. 其他设备/agent 的新增、修改、删除**均为人类指令、均有效**；变化需被其他 agent 感知。
-  3. 网盘角色限定「**对外交付 + 异地冷备**」；本期冷备由 NAS 链路独占，Skill 不做第二份冷备、不设周期备份。
-  4. 其他 agent **仅在需要读取本地文档时**才查飞书、有更新才同步；**不主动同步、不广播文件、不建常驻轮询/事件订阅**。
-  5. **删除的感知 = 本地标记（tombstone）**：本地与云侧均不物理删除；云侧删除交人类 UI。
-  6. **原件归属本地**：维持 `~/.agent-docs` 为唯一原件层，不改 `rules.md` 二-3、不作架构迁移。
-  7. 索引权威位置 = **飞书多维表格**；本地 `~/.agent-docs/kb/` 降为离线回退，禁止双写。
-  8. WSL 通道选「**暂不启用**」；`rules.md` v2.6 B2 已把 WSL 条文改为「工作区不进 WSL」，与 8.7 执行边界一致，无需改规范。
-  9. **2026-11-18 落地（v0.9.0）**：原豆包账号租户调用多维表格 API 恒返 `21001`（平台侧账号策略问题，上游 `larksuite/cli` #2815/#2902 仍 open），已改用人类自建企业租户「潘恩塔 P1499QMSJ」+ 新应用 `cli_aa77a9fe69385c13`。**飞书通道定为官方 CLI（`lark-cli --profile parva`），不再走 MCP**：MCP 默认工具集本就不含云空间上传/下载，CLI 的 `drive +upload/+download/+import/+push/+status` 一次补齐。索引表已建成并完成写读冒烟，坐标见 4.4。
-  10. **2026-11-18 全量同步已跑通（v0.10.0）**：`~/.agent-docs` 现网 60 个文件中，**40 个进入飞书**（33 个 `.md` 导入为 docx + 7 个 html/jpg/txt 原格式上传），0 失败；索引表 40 条全 `active`；文件名/目录树与本地一致；抽检下载回文件 sha256 与原件逐字节一致。**未上飞书 20 个**：`261111｜账号｜账号信息整理.html`（secret，排除清单已列）、19 个脚本/配置/二进制（`.sh/.py/.ps1/.conf/.yml/Dockerfile/crontab/.sha256/.tar.gz`，不可在线阅读）——后者是否入库待人类裁决，见 13 节与 handoff。
-- **内容范围**：多 Agent 工作产出文档 + 人类指定文档。超大视频与大型二进制**不纳入**，由人类自行备份。
-- **外部后端实测状态**：飞书侧已端到端实测通过（建表建列、读写记录、真实凭证签发、`.md` 导入 docx、html/jpg/txt 上传、下载回校验 sha256、目录树镜像、`docs +fetch` 读正文）；网盘上传速度、限流、授权目录范围仍为 TBD（第 12 节）。实测前网盘侧仅允许本地分层判断、命名与只读检索，不自动上传、不自动生成分享链接。
-- **已获人类批准**：2026-11-12 10:16 第 8 节按平台选通道；2026-11-13 上述八项裁决。
-- **规范边界**：本技能不改 `global/` 下规范正文（`rules.md` 与 `spec/`，最小红线④）。与 `spec/layout.md` 二-3「第三方实时同步工具／多设备实时一致」的差异，作为**人类裁决的受控例外**登记在 2026-11-13 handoff 与 `memory/org.md`；规范分卷修订须人类单独批准。
+---
 
-## 1. 分层与 URI
+## K1. 存储分层与唯一原件（方案 A，已与 `spec/layout.md#S2.3` 对齐）
 
-| 层 | 位置 | URI | 角色 | 原件归属 |
+| 层 | 位置 | URI | 角色与通道 | 原件归属 |
 |---|---|---|---|---|
-| 共享仓层 | `~/.agent-shared` | Git 路径 | 规范/技能/记忆/配置，双远端同步 | 原件 |
-| 活跃文档层 | `~/.agent-docs` | `docs://<相对路径>` | Agent 产出文档与人类指定文档 | **原件唯一（本地）** |
-| 交付层 | 百度网盘（官方 MCP） | `pan://<相对路径>` | **仅对外交付**；批量文件夹上传；默认不生成分享链接 | 仅副本 |
-| 在线预览层 | 飞书云空间 | `feishu://<file_token 或路径>` | **只读预览**：ppt/doc/docx/pdf/rtf/txt/图片等可在线阅读文件；`.md` 导入为 docx 后可读 | 仅副本（禁止在线编辑） |
-| 索引层 | **飞书多维表格（唯一权威）**；`~/.agent-docs/kb/` 仅离线回退 | `kb://` | 统一检索入口 + 变更公告板 + 版本戳 + 墓碑 | 索引而非文件 |
-| 冷备层 | NAS `Z:\` | `nas://<相对路径>` | **异地冷备，由 NAS 自带云同步工具独占**；本期不经本技能 | 冷备副本 |
-| 大文件层（本期不启用） | NAS `Z:\` | `nas://` | 超大视频等，人类自行备份 | 原件 |
+| 共享仓层 | `~/.agent-shared` | Git 路径 | 规范/技能/记忆/配置，Git 双远端，**绝不上云盘/飞书** | 原件 |
+| 活跃文档层 | `~/.agent-docs` | `docs://<相对路径>` | 重要文档原件（≤100MB）；**跨设备原件同步由统一第三方同步工具负责**（如 WPS 企业盘，详见 `env/kb-endpoints.md`） | **唯一原件** |
+| 在线预览层 | 飞书云空间 | `feishu://<token>` | **单向只读预览副本**（经 `lark-cli --profile parva`）；`.md` 导入为 `docx` 在线可读，其他可预览格式原格式上传 | 仅派生副本 |
+| 索引层 | 飞书多维表格 | `kb://` | 统一元数据检索索引 + 版本戳 + 墓碑（`~/.agent-docs/kb/` 仅离线回退，禁双写） | 索引 |
+| 对外交付层 | 百度网盘（MCP） | `pan://<相对路径>` | **仅对外交付副本**（`purpose=delivery`），默认不生成分享链接 | 仅副本 |
+| 异地冷备层 | NAS `Z:\` / `/mnt/nas` | `nas://<相对路径>` | 超大文件(>100MB)/归档 + **异地冷备（NAS 链路独占，本技能不写冷备）** | 冷备/大文件原件 |
 
-- 索引权威位置已由人类 2026-11-13 定为飞书多维表格；本地 `kb/` 只在离线时回退读取，**禁止两边双写**。
-- **索引表已建成（2026-11-18）**：`base_token=KouDbtqSyamyHtsJZuKcNvNXnee`、`table_id=tblJRefSlsHuCwJn`、表名「索引主表」、33 列、时区 `Asia/Shanghai`；访问通道与命令见 4.4。
-- **飞书一律走官方 CLI**（`lark-cli --profile parva`），不走 MCP：读写多维表格用 `base` 域，上传/下载/导入用 `drive` 域（8.8）。
-- 网盘「异地冷备」由 NAS 链路承担，Skill 只写交付层，避免同一文件双写与版本戳冲突。
+**核心架构红线**：
+- `~/.agent-docs` 是唯一原件；跨设备同步靠统一同步工具，**不再把飞书当作 `.md` 原件双向/回覆盖通道**（彻底避免 `.md` → `docx` 格式变换导致 sha256 不一致与覆盖原件风险）。
+- 禁止在飞书在线编辑预览副本，禁止用云端副本反向覆盖 `~/.agent-docs` 原件。
+- 知识库外的人类指定文件夹：原件留原位置，网盘交付仅登记批次记录，不迁入 `~/.agent-docs`。
 
-## 2. 单一原件原则
+---
 
-- 每个文件有且仅有一个原件位置；其他位置只能是副本/缓存，索引中 `copy_of` 必填。
-- **原件只存在于本地 `~/.agent-docs` 层**。每台设备按第 7 节拉取校验后各持一份工作原件；云端（飞书/网盘/NAS）任何时刻都**不是原件**，不得用云端副本回流覆盖本地原件。
-- 修改只改原件，再按需重新生成副本；禁止在副本上单独修改形成双活。
-- 人类指定的知识库外文件夹：原件仍在原位置，网盘上传只登记批次记录，不把它迁入 `~/.agent-docs`。
-- **删除不改本原则**：删除以墓碑（`status=deleted`）表达，见 7.3；墓碑记录 append-only，物理清理由人类在客户端 UI 完成。
+## K2. 文件分流顺序（按序命中第一条）
 
-## 3. 命名约束（强制委派 zhn-docs-std）
+1. **密级 `secret`**（或命中同目录 `secret-exclude.txt`）→ 仅留本机安全位置，**禁上飞书/网盘、禁分享**，终止并提示人类。
+2. 属于 `~/.agent-shared` → 仅 Git 双远端，不上云。
+3. 超大视频 / 大型二进制（>100MB）→ 走 NAS（`[spec/backup.md#S5.2]`），不入知识库。
+4. Agent 产出文档 / 人类指定文档 → 落盘 `~/.agent-docs`（命名调用 `zhn-docs-std`），同步工具自动完成跨设备原件同步。
+5. **需在线阅读 / 纳入统一检索** → 单向推送到飞书只读预览副本 + 登记多维表格索引（见 `K4` 与 `references/feishu-cli.md`）。不可在线阅读的脚本/配置类文件（`.sh/.py/.ps1/.yml/Dockerfile` 等）默认不上飞书，除非人类明确指令。
+6. **需对外交付** → 上传百度网盘交付副本（`purpose=delivery`，单文件或批量均见 `references/netdisk.md`），默认不建分享链接。
 
-- 进入 `~/.agent-docs` 的**主文件/索引文件**一律 `YYMMDD｜类型｜主题.扩展名`；批量 ≥2 文件按 zhn-docs-std v1.3.0 §5（批次目录 + 主文件 + 唯一关联子目录，关联文件保持原名）。
-- 命名、类型段归纳、≥4 字确认、撞名核对全部调用 `zhn-docs-std`；本技能不自行发明标签、不替用户确认。
-- 上传网盘/飞书的副本**沿用原件文件名与相对路径**，不在云端另起命名体系。
-- 引用知识库文件用第 1 节 URI，不写本机绝对路径。
+---
 
-## 4. 索引
+## K3. 命名与引用
 
-- **权威索引 = 飞书多维表格**（人类 2026-11-13 裁决）；`~/.agent-docs/kb/` 仅作离线回退，禁止双写。
-- 文件级字段：`doc_id`、`文件名`、`yymmdd`、`类型段`、`主题`、`批次目录`、`相对路径`、`后端`、`后端路径或 file_id`、`size`、`sha256`、`mime`、`密级`、`copy_of`、`status`、`origin_device`、`origin_agent`、`created_at`、`updated_at`、`share_state`、`tags`、`purpose`（delivery|preview|index）。
-- 版本戳字段（第 7 节使用）：`version_sha256`、`origin_updated_at`、`updated_by`、`backend_ref`（飞书 file_token + 后端修改时间；网盘 fs_id + server_mtime + 上传时 sha256）。
-- **墓碑字段（删除登记，append-only）**：`deleted_at`、`deleted_by`、`deleted_origin_device`、`deleted_sha256`、`指令批次`。
-- `doc_id` 由 `sha256 + 后端 + 后端路径` 派生，幂等；`status ∈ active / pending / pending_orphan / missing / deleted`。
-- 批次级字段见第 6 节；文件级明细只进 manifest，不灌进多维表格。
-- 分享链接默认不写入索引；**提取码永不落索引、Git、共享记忆、handoff**。
+- 进入 `~/.agent-docs` 的主文件、批次目录、整理操作一律委派 `zhn-docs-std` v2.0.0；调用时若已查多维表格/同目录，向其提供既用类型标签以便复用。
+- 上传飞书/网盘的副本沿用原件文件名与相对路径；跨文档引用一律用 `docs://`、`feishu://`、`pan://`、`nas://`、`kb://`，禁写本机绝对路径。
 
-### 4.1 写入流程（两阶段，可恢复）
+---
 
-1. 本地：命名 → 流式 sha256 → 索引查重 → 写 `status=pending`。
-2. 上传 → 用 `file_meta`/`file_list` 回读核对大小与路径 → 置 `active`，同时写版本戳。
-3. 失败：置 `pending_orphan` 并报告人类；不自动重传、不自动删除。
-4. 重复写入：sha256 相同则去重复用；同名不同 sha256 走 zhn-docs-std 撞名流程，等待人类确认。
+## K4. 索引、写入与墓碑删除
 
-### 4.2 检索与取回
+坐标（`base_token`、`table_id`、`folder_token`）与枚举定义统一见 `env/kb-endpoints.md`。
 
-- 先查多维表格索引再按后端取回；网盘侧可用 `file_keyword_search` / `file_semantics_search` 辅助定位，但不替代索引。
-- **取回前必须做 7.2 的读前查表校验**：仅在确实要读该本地文档时才查；有更新才从飞书下载，校验 sha256 后使用。
-- **本期取回走飞书 CLI，不走网盘**，按副本类型分两条路（2026-11-18 实测）：
-  - **原格式副本（html/jpg/txt/pdf 等，云端 `type=file`）**：`lark-cli --profile parva drive +download --file-token <token> --output <本地路径> --overwrite`，下完立刻 sha256 校验，必须与索引 `sha256` 一致；同类批量回取可用 `drive +pull`。
-  - **`.md` 副本（云端 `type=docx` 在线文档）**：`drive +pull/+status` **只处理 `type=file`，不覆盖在线文档**，故须用 `docs +fetch --doc <token> --doc-format markdown --scope full` 取回正文再落盘为 `.md`；**这条路不保证 sha256 与原件一致**（飞书 docx 规范化会调整空行、列表符号、标题层级），校验改为「标题大纲 + 关键段落存在」的语义校验，并在索引 `backend_ref` 注明 `type=docx`、在 `share_state` 之外不动 `sha256` 字段。
-  - **不得用 docx 回取结果覆盖本地 `.md` 原件**：md 副本只作在线预览，原件仍在本地（第 2 节）。
-- Windows 原生网盘 MCP 无下载/转存/读正文能力，网盘侧恢复仍由人类在客户端手动完成；8.7 裁决「暂不启用 WSL」，不为取回引入 WSL 通道。
-- 缓存到本会话临时目录，按 sha256 复用，用毕清理。
+- **核心字段**：`doc_id`（`sha256[:12]@<backend>:<ref>`）、`文件名`、`相对路径`、`后端`、`后端路径或 file_id`、`size`、`sha256`、`mime`、`密级`、`copy_of`、`status`（`active|pending|pending_orphan|missing|deleted`）、`purpose`（`preview|delivery|index`）、`channel`（`cli|mcp|skill`）、`version_sha256`、`origin_updated_at`、`updated_by`、`backend_ref`，及 append-only 墓碑字段（`deleted_at`、`deleted_by`、`deleted_origin_device`、`deleted_sha256`、`指令批次`）。
+- **两阶段写入**：
+  1. 命名 → 计算流式 `sha256` → 索引查重（同 sha256 复用；同名异 sha256 走撞名确认）→ 写 `status=pending`；
+  2. 执行上传/导入（飞书 `.md` 用 `drive +import --type docx`，其他可预览格式用 `drive +upload`）→ 回读核对 → 置 `active` 并写版本戳与 `backend_ref`；失败置 `pending_orphan` 并报告人类，禁自动重删重传。
+- **取回边界**：本地已有同步原件优先直接读 `~/.agent-docs`；确需从飞书临时取回只读参考时，`type=file` 用 `drive +download` 并校验 `sha256`，`.md` 对应 `type=docx` 用 `docs +fetch` 做只读语义核对，**严禁覆盖本地 `.md` 原件**。
+- **删除与墓碑（严守 `rules.md#R3`）**：
+  - 禁止自动执行 `drive +delete`、`+push --delete-remote` 或物理删除同步目录文件；
+  - 收到人类删除指令时：多维表格将记录置 `status=deleted` 并 append-only 写墓碑字段；本地同步目录与飞书云空间物理删除一律交人类在客户端 UI 完成（非同步临时区可移入 `.trash/` 保留 30 天）；同名新文件不得自动“复活”覆盖墓碑。
 
-### 4.3 对账
+---
 
-- 只读比对索引/manifest 与后端列表，输出孤儿与缺失清单交人类；不自动修复、不自动删除。
+## K5. 密级与安全红线
 
-### 4.4 索引表坐标与访问方式（2026-11-18 已落地）
+- **四级密级**：`public` / `internal` / `confidential` / `secret`；**未标注一律按 `internal` 保守处理**。
+  - `secret`：禁上云、禁分享；
+  - `confidential`：仅可进飞书只读预览，**禁生成分享链接、禁上网盘**；
+  - `internal` / `public`：可按人类指令上传网盘对外交付。
+- **分享**：默认关闭；仅人类当次明确指令生成，优先 7 天短有效期；**提取码永不写入索引、Git、记忆或 handoff**。
+- **凭证隔离**：`app_secret` 放本机 `config/`（`0600`、禁 Git），飞书登录态留本机 `~/.lark-cli/config.json`，网盘 Token 仅写本机 `~/.workbuddy/mcp.json`；**跨设备/跨 Agent 软件严禁复制或分发凭证与登录态**（`[spec/accounts.md#S3.8g]`）。
 
-| 项 | 值 |
-|---|---|
-| Base 名 / 表名 | `agent-docs 索引` / `索引主表`（表 ID 之外不要改名，改名会打断命令与文档中的引用） |
-| `base_token` | `KouDbtqSyamyHtsJZuKcNvNXnee` |
-| `table_id` | `tblJRefSlsHuCwJn` |
-| 链接 | `https://hcnr1wipkvsc.feishu.cn/base/KouDbtqSyamyHtsJZuKcNvNXnee` |
-| 云空间根文件夹（`agent-docs`） | `folder_token=OU68fE99Tlr1SidQgMCcKmCYnog`，链接 `https://hcnr1wipkvsc.feishu.cn/drive/folder/OU68fE99Tlr1SidQgMCcKmCYnog`；其下按本地一级目录镜像（`MySkill/工作/技术资料/模型使用/绿联NAS/股票研究`） |
-| 所在租户 | 「潘恩塔」P1499QMSJ，应用 `cli_aa77a9fe69385c13`（应用名 `agent-docs`） |
-| 时区 | `Asia/Shanghai` |
-| 列数 | 33（`doc_id` 为第一列主字段） |
+---
 
-- **调用一律带 `--profile parva`**，缺省会落到旧豆包档案并报 `21001`。
-- 字段类型分布：text 22 / select 6 / datetime 4 / number 1；单选/多选值写入时用**数组**（如 `"后端":["feishu"]`）。
-- 已建枚举：`后端`=docs/feishu/pan/nas；`密级`=public/internal/confidential/secret；`status`=active/pending/pending_orphan/missing/deleted；`purpose`=delivery/preview/index；`channel`=mcp/skill；`tags` 多选。
-- 常用命令（全部 `--as user`，仅诊断时可 `--as bot`）：
+## K6. 多 Agent 协同
 
-```bash
-# 读全表（列式返回：data.data 为行数组，列顺序见 data.field_id_list / data.fields）
-lark-cli --profile parva base +record-list --base-token KouDbtqSyamyHtsJZuKcNvNXnee --table-id tblJRefSlsHuCwJn --as user
+- 批量同步/交付任务认领统一追加至 **`memory/projects/<项目名>.md` 任务登记节**（遵循 `rules.md#S3.5c`，防撞键 `项目 + 任务ID` / `batch_id`），不得双人并发写同一批次；共享仓提交只 `git add` 自己改动。
+- 禁止主动后台同步、禁止建轮询/事件订阅自动化、禁止在 Windows 原生安装 `bdpan` Skill、本期不启用 WSL 通道。
 
-# 写记录（注意：没有 +record-create，用 batch-create 或 upsert）
-lark-cli --profile parva base +record-batch-create --base-token <token> --table-id <tid> \
-  --json '{"create_records":[{"doc_id":"...","文件名":"...","后端":["feishu"],"status":["active"]}]}' --as user
+---
 
-# 建/改字段（数组，支持 @file 避免转义）
-lark-cli --profile parva base +field-create --base-token <token> --table-id <tid> --json @fields.json --as user
-```
+## K7. 禁止事项速查
 
-- **坑位（已实测，2026-11-18）**：
-  - `+record-create` 不存在；`+record-delete` 属 high-risk-write 须 `--yes`，且**只接受 `--record-id`（单条）**，没有 `--record-ids`，批量删须逐条循环。
-  - `doc_id` 主字段在返回数组第 0 列，可据此校验列序；`+base-create` 的 `--fields` 只接受单表首表 schema。
-  - datetime 字段**写入用 13 位毫秒时间戳**，读回自动格式化为 `2026-11-18T11:49:40.000+08:00`；写字符串会校验失败。
-  - `--jq` 不支持 ndjson 输出（会报错），需读 CLI 落盘的 `*.ndjson` / `*.manifest.json` 再解析；`manifest.json.columns` 是取列名与类型的最快途径。
-  - select 字段读写都用数组，如 `"后端":["feishu"]`、`"status":["active"]`。
-
-### 4.5 全量同步的可复现流程（2026-11-18 实测，40 文件 0 失败）
-
-1. **必须先切 cwd**：CLI 对 `--file` 有**内置路径白名单**，传绝对路径（尤其 `~` 展开成 `C:\Users\...` 混合斜杠）会报 `unsafe file path: ... is outside the built-in allowlist`。正确做法：`cwd=~/.agent-docs` + `--file` 用**相对路径且正斜杠**（如 `技术资料/261112｜文档｜xxx.md`）。
-2. **建目录树**：先 `drive files list --folder-token <父>` 取同名项，存在则复用 token，不存在才 `drive +create-folder --name <名> --folder-token <父>`；把 `相对目录 → folder_token` 全量缓存落 manifest（顶层 6 个：`MySkill/工作/技术资料/模型使用/绿联NAS/股票研究`）。**不要盲建**：同名目录会被重复创建。
-3. **分流上传**：`.md` → `drive +import --file <rel> --type docx --folder-token <ft>`（生成在线文档，返回 `token`）；html/jpg/txt/pdf → `drive +upload --file <rel> --folder-token <ft>`（返回 `file_token`）。
-4. **断点续传**：以「相对路径 → {token, kind}」记 `done.json`，重跑自动跳过已完成项；单个失败不中断整批，最后汇总 `failed`。
-5. **写索引**：每 20 条一批 `base +record-batch-create --json @batch.json`；`doc_id` 用 `sha256[:12]@feishu:<token>`，`backend_ref` 写 `feishu:<token>;type=<docx|file>`，`密级` 按第 9 节判定（本次 33 条 internal / 7 条 confidential）。
-6. **事后校验三件套**：① 逐级 `files list` 与本地目录对比（本次 14 个目录 0 缺失）；② 抽 1–2 个 `type=file` 副本 `+download` 回比对 sha256（本次 `sync.html` 逐字节一致）；③ 抽 1–2 个 docx 用 `docs +fetch --scope outline|full` 核对标题层级与正文非空壳。
-7. **实测性能**：`.md` 导入约 **8s/个**（含异步任务轮询），`upload` <2s/个；40 文件 / 1.7MB 全量含建目录约 **7–8 分钟**，串行单线程，无限流触发。
-
-## 5. 分流判断（按顺序取第一个命中项）
-
-1. 密级 secret → 仅本机指定安全位置，禁止外云与分享，流程终止并提示；批量排除见同目录 `secret-exclude.txt`。
-2. 属于 `~/.agent-shared` 的文本/配置 → 仅 Git，不上云。
-3. 超大视频、大型二进制 → 不纳入知识库，提示人类自行备份。
-4. Agent 产出文档 / 人类指定文档 → `~/.agent-docs`（`docs://`），命名按第 3 节。
-5. **需对外交付** → 百度网盘副本（`pan://`，`purpose=delivery`），默认不生成分享链接；**冷备不走此路径**（NAS 独占）。
-6. **需在线阅读** → 飞书只读预览副本：`ppt/doc/docx/pdf/rtf/txt/图片/xls/csv/html` 等原格式上传即可预览；**`.md/.markdown/.mark` 一律走导入转换**（`medias/upload_all` → `import_tasks` → 轮询）生成飞书 docx，或先转 PDF/txt；`html` 不承诺在线预览；>20MB 走分片。禁止在飞书侧在线编辑副本。
-7. 人类指定文件夹批量上传 → 进入第 6 节，不按单文件大小分流。
-8. 变更（新增/修改/删除）→ 一律按第 7 节写后登记多维表格；**不广播文件、不主动同步**。
-
-## 6. 批量文件夹上传（单文件不大、数量大、总大小可超 100MB）
-
-> **本期定位**：批量上传**只服务「对外交付」**（`purpose=delivery`）。异地冷备由 NAS 链路独占，Skill 不上传冷备副本、不设周期备份、不设自动频率。
-
-### 6.1 上传前必须输出并等待人类确认
-
-- 源路径、文件数、总大小、预计请求数、目标根路径（对外交付根，**待人类指定**，建议 `/apps/bdpan/delivery/`）、模式（逐文件/打包分卷）、排除清单、是否生成分享链接、`purpose=delivery`。
-- 排除：secret（账号/密钥/Token/证件）、隐藏与临时文件、符号链接不跟随、`~/.agent-shared/**`；完整模式清单见同目录 `secret-exclude.txt`（人类确认后生效）。
-- 未获确认不得开始上传。
-
-### 6.2 两种模式（默认逐文件）
-
-- **逐文件模式（默认）**：保留目录结构逐文件上传。串行或并发 1；每 20 个文件暂停一次并汇报进度；失败记入失败清单，继续或中止由人类选择。
-- **打包分卷模式**：文件数 >500（本版定为建议阈值）、或无需网盘端逐文件预览/分享时推荐。本地打包（必要时分卷），网盘端只存包与 manifest，减少请求数与限流暴露。
-
-### 6.3 manifest（两种模式都必须生成）
-
-- 每条记录：`相对路径`、`size`、`sha256`、`状态`（pending/success/failed/skipped）、`网盘路径`、`错误信息`。
-- 重入幂等：已 success 且本地 sha256 未变 → skipped；只在失败或内容变化时重传。
-- manifest 存放：知识库内文件夹随批次目录保存；知识库外文件夹保存在本会话工作区，路径写入批次记录。
-
-### 6.4 批次记录
-
-- 字段：`batch_id`、`purpose`、源路径、模式、文件数、总大小、目标根路径、manifest 路径、状态、失败清单、起止时间、执行 agent/设备。
-- 总大小 >100MB 只影响分批与打包策略，不触发改道 NAS。
-
-## 7. 拉取式多设备同步与变更感知（人类 2026-11-13 裁决）
-
-### 7.0 模型（覆盖 v0.7.0 的「会话开始刷新＋写后广播」）
-
-> **变更源唯一**：人类指令 → 某个执行方（设备/agent）改本地原件 → **写后只登记多维表格索引/版本戳（元数据）** → 其他 agent **仅在需要读取该本地文档时**查表 → 有更新才从飞书下载覆盖本地 → 校验 `sha256` → 使用。
->
-> **不主动同步**：不广播文件、不会话开始刷新、不后台轮询、不飞书事件订阅、不建常驻自动化（7.6）。「写后登记」是元数据登记，不是文件同步，必须保留，否则读前无从判断有无更新。
-
-- 变更类型含**新增、修改、删除**，均由人类指令触发、均有效；变化通过索引版本戳与墓碑被感知。
-- 变更都有效 **≠ 可以并发写**：乐观锁、单 owner、批次锁见 7.5，不因本裁决放宽。
-
-### 7.1 写后登记（必须）
-
-- 上传/更新副本或本地原件变动时，同批更新多维表格的版本戳与 manifest；未登记视为「未发布」，其他设备不负责发现。
-- 登记内容：`version_sha256`、`origin_updated_at`、`updated_by`、`origin_device`、`backend_ref`、`purpose`。
-- **删除登记**：置 `status=deleted` 并写墓碑字段（见第 4 节），**不物理删除云侧副本**（`rules.md` 三-5⑥：云同步目录内的删除交人类 UI）；飞书副本的清理由人类在 UI 或按保留策略完成。
-
-### 7.2 读前查表（必须，且仅在此刻查）
-
-- 仅当 agent 确实要读取某份本地文档时，才查多维表格与飞书文件元数据，对比本地版本戳：一致则直接用本地；不一致才下载覆盖并校验 sha256。
-- 命中 `status=deleted`：**不下载、不使用本地旧文件**，按 7.3 把本地同样标记为墓碑并报告人类。
-- 索引无记录或后端元数据取不到：标 `unknown`，报告人类，不当作已同步。
-- 元数据优先，sha256 只在元数据变化后重算；避免每次全量下载校验。
-
-### 7.3 删除与墓碑（人类 2026-11-13 裁决「本地标记」）
-
-- 写方按人类指令删除时：**本地不物理删除**，先移入 `~/.agent-docs/.trash/<YYMMDD>-<doc_id>/`（建议保留 30 天可恢复），并登记墓碑。
-- 读方查表命中墓碑：把本地对应文件同样移入 `.trash/` 或写 `.deleted` 标记，**不下载、不使用、不物理删除**。
-- 墓碑记录 **append-only**，与组织记忆同一纪律；物理清理由人类在客户端 UI 定期执行，禁止 agent 反复删除重试。
-- 新文件与已删除记录同名：走 `zhn-docs-std` 撞名流程，不覆盖墓碑、不自动「复活」。
-
-### 7.4 状态判定与动作
-
-| 状态 | 含义 | 动作 |
-|---|---|---|
-| clean | 本地/索引/后端一致 | 直接使用 |
-| remote_newer | 多维表格或飞书元数据更新 | 按需从飞书下载 → sha256 校验 → 覆盖本地 |
-| local_newer | 本地改了未登记 | 提示需登记/上传，不自动覆盖他人 |
-| conflict | 双方都改 | 停止，保留双方，交人类；不自动合并 Office/二进制 |
-| deleted（墓碑） | 索引标记已删除 | 不下载、不使用本地旧文件、本地标记墓碑、报告人类 |
-| copy_newer_than_origin | 飞书副本被直接改动（本期不应发生） | 告警，交人类；**禁止自动用副本覆盖本地原件** |
-| unknown | 仅 mtime/size 变化、无法校验内容，或索引缺失 | 标疑似变化，不当作已同步 |
-
-### 7.5 写冲突预防（不因「变更都有效」放宽）
-
-- 乐观锁：上传前先读后端版本，若不等于自己基于的版本则停止并报告。
-- 同一文件单 owner；批量任务锁 `batch_id` 与源路径；认领与锁记录写 `memory/org.md`。
-- 更新判据用 `version_sha256` / `origin_updated_at` / `backend_ref`，**不靠文件修改时间**；冲突交人类，不自动合并。
-
-### 7.6 常驻机制门槛（本期不启用）
-
-- 本期**只做「读前查表」一次校验**：不后台轮询、不启用 `drive.file.edit_v1` 事件订阅、不建自动化。
-- 若将来人类要求「一改即各设备自动同步」，属于把飞书升级为原件的架构迁移，须单独裁决并修订 `rules.md` 二-3；默认不启用。
-- 飞书副本被直接在线编辑时索引不会自动知道——这是零常驻服务的固有限制，必须向人类明示，不得承诺实时同步。
-
-### 7.7 前置能力（2026-11-18 已闭合）
-
-- **B3 已解决**：飞书官方 CLI（`lark-cli` v1.0.100）同时提供「读多维表格」（`base +record-list`）与「云空间上传/下载/导入/镜像」（`drive +upload/+download/+import/+push/+pull/+status`），原先「所选 MCP 是否暴露这些工具」的未知项不再阻塞。**结论：飞书通道走 CLI，不装 MCP、不写 `mcp.json`、不引入 WSL。**
-- **仍属前置（未做）**：各设备/各 agent 软件的凭证须人类按 `rules.md` 三-8⑥⑦ 单独分发——每台设备自行完成 `lark-cli config init` + device flow 授权，**禁止复制 `~/.lark-cli/config.json` 到别的设备或 agent 软件**；`app_secret` 各设备各放一份 `~/.agent-shared/config/`（0600、禁 Git）。
-- 环境要求：本技能采用**官方 Release 二进制非全局安装**（见 8.8），不依赖 npm 全局前缀；Node 仅在用 `npx` 方式时才需要。
-
-## 8. 网盘通道路由与接入约束（人类 2026-11-12 10:16 批准）
-
-### 8.1 按平台选通道
-
-| 平台 | 默认通道 | 说明 |
-|---|---|---|
-| **Windows 原生** | 官方 MCP（`baidu-netdisk/mcp`） | stdio 上传 + SSE 管理检索；官方 Skill 当前不支持 Windows 原生 |
-| **macOS / Linux / Windows WSL** | 官方 Skill（`BaiduNetdiskAIBot/bdpan-storage`） | 能力更全（含下载/转存/读正文），需人类本人扫码授权 |
-| **Windows 原生（未来）** | 官方 Skill 支持 Windows 原生后**改用 Skill** | 见 8.5 迁移预留 |
-
-- **本期网盘定位（人类 2026-11-13 裁决）**：网盘只承担「对外交付」，Windows 原生 MCP 的上传/管理/检索已满足；**下载/转存/读正文非本期必需**，取回统一走飞书（4.2）。异地冷备由 NAS 链路独占，Skill 不上传冷备副本。
-- 通道只是传输实现，`pan://` URI、索引、manifest、批次记录、版本戳、命名规则**不随通道改变**。
-- 索引/manifest 增加 `channel`（mcp|skill）与 `channel_version` 字段，便于跨设备对账与排障。
-- **本机实测（2026-11-12 10:23）**：`zhn-tbxg2iah-win` 的 WSL2 可用，默认分发 Ubuntu-24.04、默认版本 2（人类提供 `wsl --status` 输出）。因此本机可采用**双通道**（见 8.7），下载/转存/读正文不必交给其他设备。
-
-### 8.2 能力矩阵（不得伪造能力）
-
-| 能力 | MCP 通道 | Skill 通道 |
-|---|---|---|
-| 上传本地文件 | ✅（仅 stdio） | ✅ |
-| 列表/元信息/搜索/复制/移动/重命名/建目录/容量 | ✅（SSE） | ✅ |
-| 语义搜索 | ✅ | 以官方为准 |
-| 创建分享链接 | ✅ | ✅（1/7/30 天/永久） |
-| 下载 / 转存 / 读取正文 | ❌ | ✅ |
-| 事件订阅 | ❌ | ❌ |
-
-- Windows 原生设备需要下载/转存/读正文时：**默认由人类在网盘客户端手动完成**；确需 Agent 执行，由人类指定一台支持 Skill 的设备承接（走 org.md 认领 + handoff），不自动跨设备调度。**本期 8.7 裁决「暂不启用 WSL」，不在本机启用该通道**；本期取回统一走飞书（4.2），网盘下载非必需。
-
-### 8.3 MCP 通道约束
-
-- SSE：`https://mcp-pan.baidu.com/sse?access_token=…`；上传仅 stdio（Python SDK + `uv run netdisk.py`，官方含 Windows 配置示例）。
-- `file_upload_stdio` 的 `remote_path` 必须以 `/` 开头；本技能要求显式指定目标根路径，不用默认的 `/来自：mcp_server`。
-- 授权目录范围**未声明 `/apps/bdpan` 沙箱**（那是 Skill 的限制），首次使用前用 `file_list` 只读探测并记录，不假定能访问全盘。
-- Access Token 只写本机 `~/.workbuddy/mcp.json`（SSE 在 URL query、stdio 走 `BAIDU_NETDISK_ACCESS_TOKEN`），**禁止入 Git、共享仓、日志、handoff、索引**。
-- 安装遵守 rules.md 四-1：先 `tools-scan.sh --check`；`uv` 放 `~/.agent-tools/bin/`；SDK 源码放 `~/.source-repos/`；禁止全局/用户级安装。
-- 新增/修改 MCP Server 后需人类在连接器管理页点「信任」才生效。
-
-### 8.4 Skill 通道约束
-
-- 仅在官方支持的系统使用（当前 macOS / Linux / Windows WSL）；**Windows 原生不得安装或绕行**。
-- 操作范围仅 `/apps/bdpan/`；删除、移动、重命名、覆盖需人类明确确认；公测 BETA，重要操作人工复核。
-- Token 配置文件 Agent 禁读、禁输出、禁转发；授权码经 stdin；更新需人类明确指令。
-- **本期不启用**（8.7 裁决③）：不在本机 WSL 内安装 bdpan Skill、不扫码授权、不做 WSL 侧冒烟；若将来需要网盘取回能力，须人类重新授权并按 8.7 边界执行。
-
-### 8.5 Windows 原生迁移预留（MCP → Skill）
-
-- **触发条件**：官方 README/CHANGELOG 声明支持 Windows 原生，且人类同意评估；平时不自动轮询官方发布。
-- **切换流程**：① 只读核对官方支持声明与版本；② 在本机做 Skill 冒烟（上传→列表→搜索→下载→转存，分享需人类批准）；③ 暂停网盘写入并对账（索引/manifest vs 后端）；④ 人类确认后切换默认通道，更新 `channel` 字段与本节表格；⑤ 保留 MCP 配置作为回退，不删除。
-- **回退**：Skill 冒烟或运行不达标即继续用 MCP，记录原因，不强行迁移。
-
-### 8.6 每平台首次使用必做冒烟
-
-- 小文件上传 → 列表 → 元信息 → 搜索；Skill 通道加测下载/转存；分享仅经人类批准后测试。
-- 记录速度、失败率、限流、授权目录范围，结果写入当次任务报告并回填第 12 节。
-
-### 8.7 本机 WSL 通道：本期不启用（`zhn-tbxg2iah-win`）
-
-> **规范冲突已消解**：`rules.md` v2.6 变更记录 B2 已把 WSL 条文改为「工作区不进 WSL；WSL 内运行 agent 须人类登记、OS 段 `wl`」，现行 `global/spec/toolchain.md` 四-1 §1 只禁止在 WSL 内建立或使用 `~/.agent-shared`/`~/.agent-tools`/`~/.agent-docs`/`~/source` 的第二份副本——与本节执行边界一致。v0.5.0／v0.6.0 记录的「规范明令不使用 WSL」是**历史状态**，不再是现行冲突。
-
-- **人类 2026-11-13 裁决：选 ③ 暂不启用**。理由：拉取式取回走飞书（4.2），网盘的下载/转存/读正文本期非必需；Windows 原生 MCP 的上传/管理/检索已足够，避免维护 WSL 登记、扫码授权与公测 Skill 的成本，且无需改动规范正文。
-- **本期禁止**：不在 WSL 内安装 bdpan Skill、不执行 `bash install.sh` / `bash login.sh`、不扫码、不做 WSL 侧冒烟、不为此登记 `wl` 账号标识。
-- **仍然有效的红线**：WSL 不得承载工作区、不得在其中 clone `~/.agent-shared`、不得配置第二套 git 身份；当前会话 `wsl.exe` 仍在沙箱程序黑名单内，Agent 不得直接执行或绕过。
-- **将来若要启用**：须人类当次明确授权 → 按 `spec/accounts.md` 三-8 ② 登记 `wl` OS 段账号标识 → 由人类在终端完成 WSL 内安装／登录／冒烟并回传结果 → 按 8.6 记录实测数据并回填第 12 节；8.5 的 Windows 原生 Skill 迁移预留保持不变。
-
-## 8A. 飞书通道：官方 CLI（本期唯一实现，2026-11-18 落地）
-
-> 取代 v0.8.0 及之前的「飞书 OpenAPI MCP」设想。理由：MCP 默认工具集不含云空间上传/下载，而 CLI 的 `drive`/`base`/`docx`/`markdown` 域已覆盖全部需求，且**无需 `mcp.json`、无需点「信任」、无需 WSL**。
-
-### 8A.1 安装（非全局，唯一合规路径）
-
-```bash
-# 1. 取官方 Release（勿用 npm 全局安装）
-curl -sL -o lark-cli.zip https://github.com/larksuite/cli/releases/download/v1.0.100/lark-cli-1.0.100-windows-amd64.zip
-sha256sum lark-cli.zip   # 期望 93118ca1992b4e5f1a40c14301f6fbde703d5e9160a9113099e409b4bd1c1d8d
-# 2. 解压到工具区（PATH 已含）
-unzip -o lark-cli.zip lark-cli.exe -d ~/.agent-tools/bin/
-~/.agent-tools/bin/lark-cli.exe --version
-```
-
-- 登记：`env/toolchain.md` §五 追加一行（来源/版本/sha256/非全局路径）。
-- **禁止**：`npm install -g @larksuite/cli`、`npx @larksuite/cli install`（内部会全局装 npm 包 + `npx skills add -g` 写用户级 skills）。需要领域指南用 CLI 自带的 `lark-cli skills list|read`（内嵌 26 个 Skills），不额外装。
-
-### 8A.2 绑定与授权
-
-```bash
-# 绑定应用（secret 走 stdin，不进 shell history；secret 存 ~/.agent-shared/config/，0600）
-lark-cli config init --app-id cli_aa77a9fe69385c13 --brand feishu --name parva \
-  --app-secret-stdin < ~/.agent-shared/config/feishu-app-secret-parva.txt
-
-# 授权（Agent 场景：先 --no-wait 拿链接，人类浏览器确认后再 --device-code 续轮询）
-lark-cli --profile parva auth login --no-wait --json --scope "bitable:app drive:drive docx:document docs:document:import base:app:create base:table:read base:table:create base:table:update base:table:delete base:record:retrieve base:record:create base:record:update base:record:delete base:field:read"
-lark-cli auth qrcode "<verification_url>" --output qr.png      # 必须展示二维码
-lark-cli --profile parva auth login --device-code "<code>"     # 人类确认后再跑
-```
-
-- **多档案**：`--name parva` / `--profile parva`；旧档案保留，勿 `config remove` 覆盖。
-- **令牌 scope 在授权时固定**：新增 scope 必须先在开发者后台开通 + **发布版本**，再重新 device flow；只改本地配置不会让老令牌获得新权限。
-- 授权账号必须在应用「可用范围」内，否则授权页报「你没有 XX 的使用权限」——先切对租户身份，或把可用范围改为全体成员后发版。
-
-### 8A.3 能力映射（全部已实测可用）
-
-| 需求 | 命令 |
-|---|---|
-| 上传单文件（>20MB 自动分片） | `drive +upload --file <path> --folder-token <token>` |
-| 下载（取回副本） | `drive +download --file-token <token> --output <path> --overwrite` |
-| `.md` 导入为飞书 docx | `drive +import --file <x.md> --type docx --folder-token <token>` |
-| 批量上传目录 | `drive +push --local-dir <dir> --folder-token <token> --if-exists smart` |
-| 批量回取目录 | `drive +pull --folder-token <token> --local-dir <dir>` |
-| 目录级比对（内容哈希） | `drive +status --folder-token <token> --local-dir <dir> [--quick]` |
-| 检索云文档 | `drive +search --doc-types bitable\|docx\|sheet` |
-| 列目录（取 folder_token、判重名） | `drive files list --folder-token <t>` |
-| 移动副本（放错目录时纠正） | `drive +move --file-token <t> --type file --folder-token <目标>` |
-| 读 docx 副本正文（`.md` 导入后回读） | `docs +fetch --doc <token> --doc-format markdown --scope full\|outline` |
-| 导出为本地文件 | `drive +export` + `drive +task_result` 轮询 |
-| 读索引表 | `base +record-list --base-token <bt> --table-id <tid>` |
-| 写索引/墓碑 | `base +record-batch-create` / `+record-upsert` |
-| 建/改字段 | `base +field-create --json @fields.json` |
-
-### 8A.4 红线与已知坑
-
-- `drive +delete`、`+push --delete-remote` 属高危（需 `--yes`）：**本技能不自动执行删除**，删除仍走 7.3 墓碑，云侧物理删除交人类 UI。
-- 批量上传仍须 6.1 的上传前确认；`--if-exists` 默认 `skip`，不得为省事改成 `overwrite`。
-- 授权报 `21001 blocked by data security policy` 基本只发生在**豆包账号租户**（平台侧问题，上游 issue #2815/#2902）；换到自己当超管的企业租户即消失，不要在旧租户反复换 scope 试错。
-- `auth scopes` 需要额外的元权限（`admin:app.info:readonly` 等），不要为它再开权限；查授权结果用 `auth status` 的 `scope` 字段。
-- App Secret 一旦在对话/日志中明文出现即视为泄露，须在开发者后台重置并同步更新本机 `config/` 文件。
-- **`--file` 路径白名单**：必须 `cwd=~/.agent-docs` 传相对路径；绝对路径一律被拒（`unsafe file path ... outside the built-in allowlist`）。见 4.5 第 1 条。
-- **`+push` 不能替代 `.md` 导入**：`+push/+pull/+status` 只处理 `type=file`，`.md` 经 `+import` 变成在线 docx 后被这三条命令跳过，所以「本地目录 → 飞书」的 md 部分只能走 4.5 的逐文件 `+import`；反之 `+pull` 也拉不回 docx，回取走 4.2 的第二条路径。不要用 `+push` 把 `.md` 当普通文件传上去将就——那样线上不可预览，违反裁决 1。
-
-## 9. 安全红线
-
-- 密级四级：`public / internal / confidential / secret`（本版不新增等级）。**未标注一律按 `internal` 保守处理**，宁可少上云。
-- 分级处置：`secret` 禁止上云、禁止分享，仅本机指定安全位置；`confidential` 只进飞书云空间、**不生成分享链接**；`internal` / `public` 可按需上传网盘用于对外交付。
-- 分享：默认关闭；仅人类当次明确指令才生成，优先短有效期（建议 7 天）；链接只在当次回复给人类，**提取码永不落索引、Git、共享记忆、handoff**。
-- 凭证：飞书 `app_id/app_secret`、网盘 Access Token 按 `rules.md` 三-8⑥⑦ 与 `spec/secrets.md` 管理——每台设备 + 每个 agent 软件由人类单独手动分发，**禁止跨设备复制同一份 token**；`app_secret` 放各设备 `~/.agent-shared/config/`（0600、禁 Git），**飞书登录态留在本机 `~/.lark-cli/config.json`（禁止复制到其他设备或 agent 软件）**，网盘 Token 只写本机 `~/.workbuddy/mcp.json`；禁读、禁输出、禁转发、禁入 Git/日志/handoff/索引。
-- 云同步目录内的删除、移动、冲突处理由人类在客户端 UI 完成；网盘侧 `file_del`/`file_move`/`file_rename` 需人类明确确认。本技能删除一律走 7.3 墓碑，不物理删除。
-- `~/.agent-shared` 内容（尤其 `config/`、密钥、记忆）永不上网盘或飞书。
-
-## 10. 多 Agent 协同
-
-- 任务认领：`memory/org.md` 追加 `[doing]`（任务ID / owner / worktree / 锁定文件），完成后 `[done]`；涉他任务留 handoff。
-- 同一文件同一时间只允许一个 owner 写；索引与 manifest 写入幂等，不覆盖他人记录。
-- 同一批量任务同一时间只允许一个 agent 执行，认领时锁定 `batch_id` 与源路径。
-- 不改他人未提交改动；共享仓提交只 `git add` 自己产出的路径，禁止 `git add -A`。
-
-## 11. 限流与退避
-
-- 网络/限流失败：指数退避（1s→2s→4s→8s→16s，至多 5 次），记录错误码与触发阈值。
-- 批量串行并加间隔，不并发打满配额；连续失败即停并报告，不更换未授权通道绕过。
-- 记录上传速度、失败率、跳过数，写入当次任务报告（实测数据不入长期记忆）。
-
-## 12. 待实测参数与已定口径（实测后由人类确认再填）
-
-| 参数 | 值 |
-|---|---|
-| MCP stdio 上传速度、单文件大小上限、批量限流阈值 | TBD |
-| MCP 授权目录范围、get_quota 容量、分享有效期可选值 | TBD |
-| Skill 通道（macOS/Linux/WSL）下载/转存速度与限流 | **本期不启用**（8.7 裁决③） |
-| 本机 WSL Ubuntu-24.04 内 Skill 安装、授权与冒烟 | **本期不启用**（8.7 裁决③；`wsl.exe` 沙箱黑名单仍生效） |
-| 批量逐文件 vs 打包分卷阈值 | **已定**：默认逐文件，>500 文件建议打包分卷 |
-| Windows 原生 Skill 支持状态与迁移评估 | 预留，触发条件见 8.5 |
-| 飞书层是否保留 | **保留**：只读预览副本 + 多维表格索引；不做在线协作编辑、不启用事件订阅 |
-| 索引权威位置 | **飞书多维表格（唯一权威）**；本地 `kb/` 仅离线回退，禁止双写 |
-| 网盘角色 | **对外交付**（冷备由 NAS 独占）；对外交付根路径 **待人类指定**（建议 `/apps/bdpan/delivery/`） |
-| 备份根路径与频率 | **不设**：取消 Skill 侧周期备份，按人类当次指令触发、不建自动化 |
-| 删除感知 | **本地标记（tombstone）**，见 7.3；本地 `.trash/` 建议保留 30 天 |
-| 密级与分享 | 四级沿用；未标注按 internal；分享默认关闭、优先 7 天；见第 9 节 |
-| secret 排除清单 | 见同目录 `secret-exclude.txt`，由人类确认后生效 |
-| `.txt` / `.md` 预览策略 | `.txt` 原格式上传可预览；`.md` 一律导入为飞书 docx 或先转 PDF/txt |
-| 飞书 MCP 是否暴露「读多维表格 + 下载文件」 | **已闭合（v0.9.0）**：飞书改走官方 CLI（`lark-cli --profile parva`）——读表 `base +record-list`、下载 `drive +download`、上传 `drive +upload`、导入 `drive +import`；**不装 MCP、不写 `mcp.json`** |
-| 飞书租户与应用 | **已定（2026-11-18）**：租户「潘恩塔」P1499QMSJ；应用 `agent-docs` = `cli_aa77a9fe69385c13`（版本 1.0.1）；CLI 档案 `parva`；用户身份 张皓 |
-| 索引表坐标 | **已建成**：`base_token=KouDbtqSyamyHtsJZuKcNvNXnee`、`table_id=tblJRefSlsHuCwJn`、33 列、`doc_id` 主字段、`Asia/Shanghai`；写读冒烟已通过（见 4.4） |
-| 飞书 CLI 安装 | **v1.0.100**，工具区 `~/.agent-tools/bin/lark-cli.exe`，非全局安装，sha256 `93118ca1992b4e5f1a40c14301f6fbde703d5e9160a9113099e409b4bd1c1d8d` |
-| 飞书全量同步实测 | **40 文件 / 1.7MB 全部成功、0 失败**（33 md→docx + 7 原格式）；md 导入约 8s/个、upload <2s/个，含建目录整批约 8 分钟，串行无线程池，未触发限流 |
-| 飞书副本回取一致性 | `type=file` 下载回与原件 **sha256 逐字节一致**（已验 `sync.html`、`AiDo9*.jpg`）；`.md` 走 docx 回取**仅语义一致**，不保证 sha256（见 4.2） |
-| 飞书目录树镜像 | 14 个目录与本地完全对应，0 缺失；同名目录复用 token、不重复创建 |
-| 索引写入实测 | 40 条分 2 批写入 0 失败，全 `active`；datetime 毫秒戳、select 用数组；`backend_ref` 记 `type=docx\|file` |
-| 脚本/配置类是否入飞书 | **待人类裁决**：19 个 `.sh/.py/.ps1/.conf/.yml/Dockerfile/crontab/.sha256/.tar.gz` 未上传（不可在线阅读）；`261111｜账号｜账号信息整理.html` 按 secret 永久排除 |
-| 对外分享链接是否免登录即可预览 | 官方未明示，**冒烟实测** |
-| ≥100MB 素材、>20MB 分片、测速窗口 | 待人类准备（审核报告第五节 D 组） |
-
-## 13. 禁止事项
-
-- 不伪造上传/检索/分享/同步结果；未实测能力一律标注 TBD。
-- 不承诺实时双向同步，不自动合并冲突，不用副本自动覆盖原件，不把飞书升级为原件。
-- **不主动同步**：不广播文件、不会话开始刷新、不后台轮询、不事件订阅、不建常驻自动化。
-- 不把 `~/.agent-shared` 内容（尤其 config/密钥/记忆）上传网盘或飞书。
-- 不擅自把文档原件迁出 `~/.agent-docs`，不建立双活副本，不在飞书侧在线编辑副本。
-- **不物理删除**：云侧删除交人类 UI，本地删除走墓碑 + `.trash/`；不自动清理墓碑。
-- **不用 Skill 做冷备**：冷备由 NAS 链路独占，禁止与 NAS 对同一文件双写。
-- 不在 Windows 原生安装 bdpan Skill；**本期不启用 WSL 通道**；不读取/输出任何 Token；不把 Token 写入 Git 或文档。
-- **不用 `npm install -g @larksuite/cli`、`npx @larksuite/cli install`、`npx skills add -g`**（均含全局/用户级安装）；飞书 CLI 只走官方 Release 二进制放工具区（8A.1）。
-- **不自动执行 `drive +delete` / `+push --delete-remote`**（高危写）；删除一律走 7.3 墓碑，云侧物理删除交人类。
-- 不把 `~/.lark-cli/config.json`（含登录态）复制到其他设备或 agent 软件；不把飞书通道改回 MCP。
-- 不自动公开分享、不替人类扫码授权；批量上传未确认不得开始。
-- **不改 `global/` 下规范正文**（`rules.md` 与 `spec/`）；规范分卷修订须人类单独批准。
-
-## 14. 共享与同步
-
-- 权威原件：`~/.agent-shared/skills/official-doc/zhn-docs-kb/`（含 `SKILL.md`、`INSTALL-PROMPT.md`、`secret-exclude.txt`），随共享仓 Git 同步 origin/backup 双远端。
-- 平台副本：`~/.workbuddy/skills/zhn-docs-kb/`，由权威原件单向复制（整目录树）；修改只改权威原件再复制，用树哈希／`--check` 比对一致。
-- 其他设备/agent：见第 15 节一键安装，不再手工复制。
-- 安装约定与不在 `global/` 补登目录树的理由，登记在 2026-11-13 handoff 与 `memory/org.md`；`env/install-skill.sh` 与 `skills/` 的目录树补登须人类另行批准。
-
-## 15. 安装与分发（其他 Agent / 新设备）
-
-**唯一权威原件**：`~/.agent-shared/skills/official-doc/zhn-docs-kb/`。任何位置出现的副本都是**单向复制**，禁止手改副本（改了 `--check` 会报 `[DRIFT]`，且下次安装会被备份覆盖）。
-
-### 15.1 一键安装（标准三步）
-
-```bash
-cd ~/.agent-shared && git pull --rebase            # 1. 取最新原件
-bash ~/.agent-shared/env/install-skill.sh --all    # 2. 装到本机已探测到的 agent 技能目录
-bash ~/.agent-shared/env/install-skill.sh --check  # 3. 校验，应全部 [OK]
-```
-
-`--all` 只装 `skills/*/*/SKILL.md` 存在的技能（当前：`zhn-docs-kb`、`zhn-docs-std`）。脚本幂等：原件与副本树哈希一致时只补写标记、不重写文件。
-
-### 15.2 常用变体
-
-```bash
-bash ~/.agent-shared/env/install-skill.sh --list                        # 看清单与安装状态（只读）
-bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb                  # 只装一个
-bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb --dest ~/.claude/skills   # 装到指定目录
-bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb --check          # 漂移检测（exit 1 = 落后/被改/缺失）
-bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb --force          # 覆盖无标记的同名目录（先备份到 ~/.agent-tools/backups/skills/）
-bash ~/.agent-shared/env/install-skill.sh zhn-docs-kb --uninstall --dest ~/.claude/skills   # 卸载需显式目录
-```
-
-### 15.3 目标目录探测顺序
-
-按序探测，**存在才用**；`AGENT_SKILLS_DIR` 或 `--dest` 一旦指定就**只用它**、不叠加：
-
-| 序 | 目录 | 状态 |
-|---|---|---|
-| 0 | `$AGENT_SKILLS_DIR`（环境变量） | 通用入口，任何 agent 都可用 |
-| 1 | `~/.workbuddy/skills/` | ✅ 本机已验证 |
-| 2 | `~/.claude/skills/` | 约定路径（Agent Skills 目录规范），本机未装该 agent，未实测 |
-| 3 | `~/.codex/skills/` | 约定路径，未实测 |
-| 4 | `~/.trae/skills/` | 约定路径，未实测 |
-| 5 | `~/.cursor/skills/` | 约定路径，未实测 |
-| 6 | `~/.gemini/skills/` | 约定路径，未实测 |
-| 7 | `~/.qwen/skills/` | 约定路径，未实测 |
-
-**未实测的目录不要当成结论**：若某 agent 实际不读该目录，用 `--dest` 指向它真实加载的位置；装完让该 agent 复述技能名与 `version`，能复述才算成功。
-
-### 15.4 没有技能机制的 agent（如 trae）
-
-不要复制正文进去（违反单一原件），在它的项目规则文件里加**一行指针**即可：
-
-```text
-涉及文档知识库/文档存放/命名/备份/同步时，读 ~/.agent-shared/skills/official-doc/zhn-docs-kb/SKILL.md 并按其中约束执行。
-```
-
-长文本按需加载，指针常驻、正文不进项目规则文件。
-
-### 15.5 安装标记与对账
-
-每份副本写入 `.zhn-installed.json`：`source` / `source_commit` / `source_hash` / `installed_at` / `installer`。用途：
-
-- `--check` 据此区分 **`[STALE]` 副本落后于原件**（原件已升级，需重装）与 **`[DRIFT]` 副本被本地改过或来源不明**（需人工判断，勿盲目覆盖）。
-- 其他 agent 判断"我这版是不是旧的"，跑 `--check` 即可，不用比对文件内容。
-- 覆盖前的备份写到 `~/.agent-tools/backups/skills/<技能名>.<时间>/`，**不留在技能根目录**（留在 `skills/` 下会被 agent 当成新技能扫描）。
-
-### 15.6 升级流程
-
-改**权威原件** → 提交并 `git sync` → 各设备 `git pull --rebase` → `install-skill.sh <技能名>` → `--check` 全 `[OK]`。副本永远不手工编辑。
-
-### 15.7 不做的事
-
-- 不把技能正文复制到各 agent 的全局指令 / 项目规则文件（单一原件）。
-- 不把技能放进 `~/.agent-docs` 或网盘（文本资产走 Git）。
-- 不覆盖无安装标记的同名目录（可能人工维护），必须 `--force` 且保留备份。
-- 不在 `~/.agent-shared` 内建 venv / node_modules；安装脚本本身不装任何依赖（纯 bash + coreutils）。
-- 不承诺"装完即生效"：平台是否重新扫描技能目录由各 agent 自己决定，必要时重启会话。
-
-### 15.8 多账号 / 多版本共存（个人版 + 企业版）
-
-**结论：技能只装一次，两个账号都能用，不冲突。** 冲突不在技能文件，在凭证与记忆。
-
-先分清三层资产，别混：
-
-| 资产 | 位置 | 是否随账号变 |
-|---|---|---|
-| 技能（本技能及其副本） | 各 agent 的技能根目录，如 `~/.workbuddy/skills/` | **否**，绑定操作系统用户，机器级共享 |
-| 身份与记忆 | `~/.workbuddy/user-<userId>-<后缀>/`（本机实测：`user-28f31f12…-personal`、`user-a817c1b8…-g3ycua53lwqo`） | **是**，一个账号一套 |
-| 连接器 / MCP 配置 | `~/.workbuddy/connectors/`、`~/.workbuddy/mcp.json` | **否**，机器级共享 → 两个账号看到同一批连接器与凭证 |
-| 规范与共享记忆 | `~/.agent-shared/` | 否，与平台账号无关（走 Git） |
-| 文档原件 | `~/.agent-docs/` | 否 |
-
-四个真实风险与应对：
-
-1. **企业版启动会做技能迁移扫描**。本机存在 `~/.workbuddy/skills/.enterprise-skill-migration.json`（本次 `migrated: 0`）。若企业管理策略禁用用户级技能，本地技能可能被停用——表现为"技能突然消失"。**先查策略，不要急着重装**，重装也会被再次停用。
-2. **同名技能可能来自云端市场**（`~/.workbuddy/skill-cloud-sync/`）。云端下发的同名技能会与本地副本争用同一目录。本技能名 `zhn-docs-kb` 唯一，风险低；**改名前先查是否与市场技能撞名**，改了要同步改安装目录与索引引用。
-3. **连接器与凭证是机器级共享**：两个账号共用同一批授权。**人类 2026-11-12 11:44 已裁决：接受机器级共享，不另做隔离**；协同规范 **v2.2 三-8 ⑥⑦** 已把共用边界定为「**同一台设备 + 同一个 agent 软件**」——该范围内多账号共用一份 `config/` 与机器级连接器授权，**跨设备／跨 agent 软件禁止复制或分发**。若同一设备同一 agent 下出现不同主体账号（个人 vs 公司分属不同法人），等于把个人授权暴露给公司账号、反之亦然，须人类单独裁决；不接受时再分设备、分系统用户，或只在其中一个账号下启用连接器。
-4. **记忆按账号隔离**：同一台机器两个账号有两套身份/记忆文件，禁止跨账号复制会话记忆与 `user-<id>-*` 目录。读取同一份设备级 `config/` **不属于跨账号复制**（v2.2 三-8 ⑥⑦），但不得把凭证复制进另一账号目录或另一台设备。
-
-其他 agent 同理：判断方法看它的配置根是否带账号 id。**技能目录一般只跟操作系统用户绑定，不跟平台账号绑定**；带账号 id 的多半是记忆/登录态。多 profile 的 agent（`--profile`、`CODEX_HOME` 之类）要单独确认技能目录是否随 profile 变，变了就得每个 profile 各装一次。
-
-切换账号后的验证：跑 `install-skill.sh --check`，再让 agent 复述技能版本；两项都正常即无影响。
-
-### 15.9 给其他 Agent 的接入提示词
-
-可直接复制的提示词与验收清单在 `INSTALL-PROMPT.md`（与本文件同目录，随安装一并复制）。分两种：
-
-- **有技能机制的 agent**：整段提示词发给它，它自己 `git pull` → 安装 → 校验 → 回报四行结果（安装位置 / 版本 / 校验结果 / 能否复述）。
-- **无技能机制的 agent（如 trae）**：只加一行指针，不复制正文。
-
-提示词是**一次性入口**，不是规范副本；它只指向 `SKILL.md`，任何约束冲突以 `SKILL.md` 与 `rules.md` 为准。
-
-## 16. 变更记录
-
-- **2026-11-18 v0.10.0** —— 飞书全量同步落地（原 v0.9.0 遗留的 Step 3/4/5 上半段完成）。① **实跑 40 个文件全部成功、0 失败**：33 个 `.md` 经 `drive +import --type docx` 转为可在线预览的 docx，7 个 html/jpg/txt 原格式 `+upload`；目录树 14 个目录与本地一致，0 缺失；抽检 `+download` 回文件 sha256 逐字节一致；② 索引表写入 40 条（33 internal / 7 confidential）全 `active`；③ 新增 **4.5 节**「全量同步可复现流程」（cwd 相对路径、ensure_dir 复用、断点续传、分批写索引、三件套校验、实测性能）；④ **4.2 取回按副本类型分叉**——`type=file` 走 `+download` 且必须 sha256 一致，`.md` 的 docx 副本只能 `docs +fetch` 回读且**仅语义校验**，`+pull/+status` 不覆盖在线文档；⑤ 8A.3 补 `files list`／`+move`／`docs +fetch`／`+export`；8A.4 补路径白名单与「`+push` 不能替代 md 导入」两条硬坑；⑥ 4.4 补云空间根 folder token 与 5 条实测坑（`--record-id` 单条、毫秒时间戳、`--jq` 不支持 ndjson 等）；⑦ 12 节补 5 行实测数据。**未做**：Step 5 负向用例（撞名/并发写/索引缺失/分享过期/secret 拦截 5 项）、脚本类 19 个文件是否入库待人类裁决；未改 `global/` 规范正文。
-- **2026-11-18 v0.9.0** —— 飞书通道落地收官。① **索引表建成**：租户「潘恩塔 P1499QMSJ」新应用 `cli_aa77a9fe69385c13`，「agent-docs 索引」33 列（`doc_id` 主字段、单选/多选枚举预置、墓碑 5 列）已建并通过写读冒烟；② **飞书通道由 MCP 改为官方 CLI**（`lark-cli --profile parva`，非全局安装 v1.0.100），新增 **8A 节**（安装/绑定/授权/能力映射/红线）与 **4.4 节**（坐标与命令备忘）；③ 7.7 由「前置能力未闭合」改为「B3 已闭合」；④ 4.2 取回改为 `drive +download`、批量回取 `+pull`、比对 `+status`；⑤ 1 节、12 节、13 节同步补坐标、已定口径与禁止项（禁全局安装、禁自动 `drive +delete`、禁复制 `config.json`、禁改回 MCP）；⑥ 记录豆包账号租户 `21001` 属平台侧问题（上游 issue #2815/#2902），换自建企业租户即解。**未做**：Step 3/4/5 端到端冒烟（索引写入真实文档、按需拉取、5 个负向用例）仍待执行；未改 `global/` 规范正文。
-- **2026-11-13 v0.8.0** —— 人类三批裁决（飞书只读预览 + 多维表格索引；变更均有效；网盘=对外交付+异地冷备；拉取式不主动同步；删除=本地标记；原件归属本地）并按「按建议落地」指令整体升版。核心改动：0 节写入八项裁决与规范边界；1 节分层表拆出交付层／在线预览层／冷备层；2 节明确原件只在本地；4 节索引改飞书多维表格为唯一权威、补 `purpose` 与墓碑字段、`status` 增 `deleted`；4.2 取回改走飞书；5 节分流改为「对外交付／在线阅读」并重定 `.md` 导入策略；6 节批量上传限定 `purpose=delivery`、阈值 500 定稿、排除清单外置 `secret-exclude.txt`；**7 节整体重写为拉取式模型**（写后登记元数据、读前查表按需下载、7.3 墓碑与 `.trash/`、六态扩为七态、7.6 本期不建常驻机制）；8.1／8.2／8.4 补本期网盘定位；**8.7 改写为「本期不启用 WSL」**并说明 v2.6 B2 后规范冲突已消解；9 节补密级处置、分享与凭证分发边界；12 节 TBD 表改为「已定口径 + 剩余待测」；13／14 节补禁止项与三文件副本树；新增同目录 `secret-exclude.txt`、同步更新 `INSTALL-PROMPT.md` 与审核报告第十二节。**未改** `global/` 下规范正文，与 `spec/layout.md` 二-3 的字面差异按受控例外登记在 handoff／org.md。
-- **2026-11-12 v0.7.0** —— 新增 15.8「多账号 / 多版本共存」（技能=机器级、身份记忆=账号级、连接器=机器级共享；四条风险：企业版技能迁移策略、云端同名技能、凭证跨账号越界、记忆禁止跨账号复制）与 15.9「接入提示词」；新增同目录 `INSTALL-PROMPT.md`（可复制提示词 + 人类验收清单 + 报错对照表）。
-- **2026-11-12 v0.6.0** —— 新增第 15 节「安装与分发」（一键安装脚本、各 agent 目标目录、无技能机制 agent 的降级用法、漂移检测与卸载、升级流程）；8.7 增补 `rules.md`「不使用 WSL」冲突警示与三条裁决路径，未获批准前不得执行；description 补安装关键词，`metadata.install` 改为安装命令。
-- 变更记录：**2026-11-12 v0.5.0** —— 人类提供 `wsl --status` 实测：本机 WSL2 + Ubuntu-24.04 可用。新增 8.7 本机双通道（Windows 原生 MCP 上传管理检索 + WSL Skill 下载转存读正文）、/mnt/c 互操作与性能约束、凭证隔离、wsl.exe 沙箱黑名单执行边界；设备档案同步更正「不使用 WSL」旧记录。
-- 变更记录：**2026-11-12 v0.4.0** —— 人类批准第 7 节同步默认策略；第 8 节改为按平台通道路由（Windows 原生=MCP，macOS/Linux/WSL=官方 Skill），新增能力矩阵、`channel`/`channel_version` 字段、跨设备下载承接规则、8.5 Windows 原生 MCP→Skill 迁移预留（触发条件、切换流程、回退）、8.6 每平台首次冒烟要求。
-- 变更记录：**2026-11-12 v0.3.0** —— 新增第 7 节多设备同步与变更感知（三种得知途径、写后登记、读前校验、会话开始刷新、六态状态机、飞书副本编辑发现与回流、乐观锁、轮询与事件订阅启用门槛）；索引补版本戳字段。
-- 变更记录：**2026-11-12 v0.2.0** —— 采纳人类四点补充：范围收窄为 agent-shared(Git)+agent-docs(原件)、内容限 Agent 产出与指定文档、超大视频排除；百度网盘改用官方 MCP（SSE 管理检索 + stdio 上传，Windows 原生可用，标注无下载/转存）；新增批量文件夹上传规则。
-- 变更记录：**2026-11-12 v0.1.0** —— 初版草案。
+- 禁伪造未实测能力（网盘限流/配额等未测项标 `TBD`）；
+- 禁把飞书当原件或用 docx 覆盖本地 `.md`；
+- 禁全局安装 `@larksuite/cli`（`npm install -g` / `npx @larksuite/cli install` / `npx skills add -g` 均违 `R2`）；
+- 禁自动执行云端物理删除或改回飞书 MCP；
+- 禁改 `global/` 规范正文（`R4`）或手改已安装的技能副本（须改权威原件再跑 `install-skill.sh`）。

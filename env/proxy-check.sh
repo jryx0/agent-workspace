@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# env/proxy-check.sh — 代理与双远端可用性只读核对（配套 〇 / 五-1 / 八 启动自检）
+# env/proxy-check.sh — 代理与双远端可用性只读核对（配套 S5.1 / S8.5，由 env/git-sync.sh 自动调用）
 #
 # 用法：bash ~/.agent-shared/env/proxy-check.sh [--quiet]
 #   --quiet  仅输出提醒项与结论，省略明细

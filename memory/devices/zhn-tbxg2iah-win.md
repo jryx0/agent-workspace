@@ -37,3 +37,5 @@
 - 提交身份：worktree 内用 `git -c` 一次性指定；`~/source/prnmgt` 主仓库署名已恢复为 张皓 <hao.zhang@gmail.com>，`~/.agent-shared` 仍为 zhn <997524210@qq.com>。
 
 [@workbuddy @zhn-tbxg2iah-win 2026-11-09 08:46 UTC+8] 【Git 代理配置修正（v1.8.9）】修前：全局 `http.proxy=socks5h://127.0.0.1:10808` + `http.https://github.com.proxy=socks5://127.0.0.1:10808`，Gitee 被误带代理、代理软件一关 origin 与 backup 同时失败；改前全量备份 `~/.agent-tools/run/git-global-config-backup-20261109-0840.txt`。修后：`git config --global --unset http.proxy`，**仅保留** GitHub 专用 `socks5://127.0.0.1:10808`；Gitee origin 直连、GitHub backup 经 v2rayN/xray 10808。Windows 系统代理 `ProxyEnable=0`（不影响 git 显式配置）；会话级 `HTTP_PROXY`/`HTTPS_PROXY` 由平台动态分配（本会话 60050，昨日 57893/62212），**禁止写入 git 全局配置**。自检入口：`bash ~/.agent-shared/env/proxy-check.sh`（只读，异常退出码 1 并打印 `[REMIND][需人类处理]`），`git sync` 推送前必跑；本次修复后退出码 0、双远端与本地一致。
+
+[@antigravity @zhn-tbxg2iah-win~zhn-x-w 2026-11-25 14:54 UTC+8] 【设备补充】新增登记 Agent `antigravity` 专属端口段：`9400-9499`（沿用本机 9200/9300 递增约定；`trae=9200-9299`、`workbuddy=9300-9399`、`antigravity=9400-9499`）。

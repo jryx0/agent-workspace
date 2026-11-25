@@ -1,86 +1,44 @@
-# 挂起任务登记模板（配套 global/rules.md 三-4，字段对齐 v1.8.11）
+# Handoff Summary & Suspended Task Templates (`env/handoff-suspended-template.md`, v3.0)
 
-> **定位**：本文件是「挂起任务」的字段模板与示例，**不是规范正文**。唯一权威是 `~/.agent-shared/global/rules.md` 三-4；冲突时以规范为准。
-> **升版说明**：v1.8.11 起快照字段由 7 项增至 **8 项**（新增首列 `项目`），防撞匹配键改为「项目 + 任务ID」；本文件随人类批准的字段变更同步，其余规范升版无需改本文件（〇⑤ 单一原件）。
-> **适用**：任务因外部条件／人类裁决暂时禁止开工时使用；挂起 ≠ 完成、≠ 放弃、≠ 待办。
-> **不改项目门禁**：项目 `tasks.md` 状态枚举被 `check.mjs` 锁死为 `todo / doing / blocked / done`，**禁止新增 `suspended` 状态值**；卡面一律保持 `todo`，挂起约束由共享仓层提供。
+> 配套规范：`global/rules.md#S3.4`。
+> **核心变化（v3.0）**：挂起任务统一维护在单一权威文件 `memory/suspended.md`，**不再在每份 handoff 中重复抄录挂起快照**；主 handoff 文件保持 ≤ 2 KB 摘要，超长日志/核查过程放 `handoff/notes/`。
 
 ---
 
-## 一、双落点（两个都要写，职责不同）
-
-| 落点 | 写什么 | 管什么 | 写入方式 |
-|---|---|---|---|
-| `memory/projects/<项目名>.md` 任务登记节 | `【挂起】` / `【解挂】` 事件行 | 定责、时间线 | **append-only 追加**，禁止改写旧行，带规范署名 |
-| **最新一份 handoff** 的 `## 挂起任务（当前全量快照）` | 当前**所有项目**的未解挂项（带 `项目` 列） | 开工防撞 | 每写一份新 handoff 都继承未解挂项；解挂项标「已解挂」，**不改旧 handoff** |
-
-> 快照不是「本次新增挂起项」，而是**当前全量、且跨项目全量**。新会话按三-1 默认只读最新一份 handoff（涉及多项目时按项目各补读一份），快照必须自足；每份 handoff 文件头按三-4 写 `项目: <项目名>` 标签。
-
----
-
-## 二、快照小节模板（可直接复制进 handoff，放在「当前状态」之后）
+## 1. Handoff Summary Template (`handoff/YYYY-MM-DD-<project>-<slug>-<device>.md`, <= 2KB)
 
 ```markdown
-## 挂起任务（当前全量快照 · 未解挂项一律禁止认领／开工）
+---
+project: <项目名 或 global>
+date: YYYY-MM-DD
+author: <agent>@<device>~<account>
+status: done | handoff | blocked
+---
 
-| 项目 | 任务ID | 挂起于／裁决出处 | 原因 | 解挂前置（可验证条件） | 现场 | 解挂后动作 | 解挂权 |
-|---|---|---|---|---|---|---|---|
-| <项目名> | <任务ID> | <日期时间 + 哪份 handoff／哪次人类指令> | <一句话> | <可判定条件，禁止「等通知」> | <三选一，见下> | <重新认领／续跑> | 人类 |
+# <任务简标题>
 
-**挂起快照口径**：本表是当前所有项目的未解挂项，由上一份 handoff 滚动继承；防撞按「项目 + 任务ID」匹配；解挂须写新 handoff 标注「已解挂 → …」，不改旧文件。
+## 1. Summary & Outcome
+- 做了什么（1-3 条核心结果）
+- 关键提交 / 产物链接（commit hash、`docs://` 或 `handoff/notes/...`）
+
+## 2. Open Items / Next Steps
+- [ ] 待办 1（注明前置条件或责任方）
+
+## 3. Risks & Notes
+- 若有详细排查记录/多轮审核，放 `handoff/notes/YYYY-MM-DD-<slug>.md` 并在此引用。
 ```
 
-**字段约束**
-
-- **项目**（v1.8.11 必填）：写 `prnmgt` / `stockdb` 等 `repos.md` 登记的项目名；跨项目全局事项写 `全局`。**防撞匹配键 = 项目 + 任务ID**，不同项目复用 `T-0xx` 编号不会撞车；禁止把 A 项目挂起项当 B 项目的禁区。
-- **解挂前置**：必须可验证，写「产出 `docs/xxx.md` + 人类裁定 #N + 新 ADR 批准」这类，不写「等厂家通知」「等后续安排」。
-- **现场**三选一：
-  1. `保留 worktree + 分支`（须写路径与基座 commit，其他会话禁用该目录）；
-  2. **`remove worktree`、成果留在分支**（**默认**，符合三-6；写清分支名）；
-  3. `全部清理，仅留 tmp/ 与文档`。
-  - 凭据一律经环境变量传入，不落盘、不回显、不入 Git。
-- **解挂后动作**：现场未保留 → 回 `todo` **重新认领**；现场保留 → 回 `doing` **续跑**。
-- **解挂权**：只有人类（第十节）；agent 只能上报「建议挂起／前置已满足」。
-
 ---
 
-## 三、共享记忆事件行格式（append-only）
+## 2. Suspend / Unblock Workflow (`memory/suspended.md`)
 
-```
-[@<agent名> @<设备名> YYYY-MM-DD HH:mm UTC+8] 【挂起】项目：<项目名> | <任务ID> | <原因> | 裁决出处：<哪份 handoff／哪次人类指令> | 解挂前置：<可验证条件> | 现场：<worktree/分支/tmp 去向> | 状态：suspended
-[@<agent名> @<设备名> YYYY-MM-DD HH:mm UTC+8] 【解挂】项目：<项目名> | <任务ID> | 前置满足证据：<文件／提交号／人类指令> | 处置：回 todo 重新认领 / 回 doing 续跑 | 状态：todo|doing
-```
+### A. 人类裁决挂起（Suspend）
+1. 在 `memory/projects/<project>.md` 末尾追加一行（append-only）：
+   `[@<agent> @<device>~<account> YYYY-MM-DD HH:mm UTC+8 【挂起】<TaskID> <标题>；原因：<原因>；解挂前置：<条件>；现场：<分支/worktree状态>；出处：<裁决来源>]`
+2. 在 `memory/suspended.md` 的 `Active Suspended Tasks` 表格追加对应行；
+3. 项目内 `tasks.md` 保持 `todo` 不改状态枚举；worktree 默认移除并将成果保留在分支（`[spec/worktree.md#S3.6e]`）。
 
-> 时间用**实际时刻**，禁止预填；修正信息追加更正记录，不改原文（三-1）。
-
----
-
-## 四、示例（2026-11-11 prnmgt 回填，仅演示写法）
-
-| 项目 | 任务ID | 挂起于／裁决出处 | 原因 | 解挂前置（可验证条件） | 现场 | 解挂后动作 | 解挂权 |
-|---|---|---|---|---|---|---|---|
-| prnmgt | T-059 / T-060 / T-061 | 2026-11-07 15:0x 人类 D-4（v4 重编方案） | v3 三卡暂停，合并为一次 ALTER + 一次部署 | P0 二次调研结论 + `OPEN-DECISIONS.md` #18 / 方案 §8 D-5~D-10 人类裁定 + 新 ADR 批准 | 无 worktree；卡面 `todo`；`docs/paper/exec-prompt-2026-11-07.md` 停用 | 重编卡面后**重新认领** | 人类 |
-| prnmgt | P0 二次真机调研 | 2026-11-11 人类确认（trae 共享记忆） | 富士后台无单双面统计已实锤，厂家后台升级中 | 升级完成 + 复跑富士／京瓷三台探测 + 更新 `docs/paper/field-survey-2026-11-07.md` 结论 | `tmp/trae/p0-scan/` 脚本与 `tmp/trae/field-survey/anon-probe/` 快照保留；凭据经环境变量；worktree 已 remove、成果在文档 | **续跑**，不重开卡 | 人类 |
-
-> 注：P0 **首轮**调研已于 2026-11-09 13:1x 交付，挂起的是「厂家升级后的复跑」——同名的两个阶段必须在「原因」栏写清，避免被误读为整项未完成。
-
----
-
-## 五、解挂流程（顺序不可颠倒）
-
-1. 人类确认解挂前置**逐条**满足，并给出证据（文件、提交号或指令）。
-2. 在共享记忆追加 `【解挂】` 事件行，写明证据与处置（回 `todo` 还是 `doing`）。
-3. 写**新 handoff**：从上一份快照继承其余未解挂项，把已解挂项标「已解挂 → 待办／重新认领」并移入「待办」节。
-4. 若处置为「重新认领」，执行方仍须按三-5 ⑤ 自行查登记节并追加认领行；**解挂不等于自动派工**。
-5. 立即 commit + `git sync`（推送前跑 `env/proxy-check.sh`）。
-
----
-
-## 六、易错点
-
-- 把挂起卡在项目 `tasks.md` 里改成 `suspended` → `check.mjs` 抓不到字段，门禁失效。
-- 只在旧 handoff 写一次、新 handoff 不继承 → 90 天压缩后旧文件进只读归档，挂起项从上下文消失（三-2 第 4 步已加归档保护）。
-- 解挂时改旧 handoff 或删旧行 → 违反 append-only 与「禁止同名覆盖」。
-- 把「待人类裁决的事项」（违规副本清理、生产故障、MCP 未启动）混进挂起表 → **它们不是任务卡**，应放 handoff 的「待办／待人类裁决」节，不计入快照。
-- 跨项目挂起表不写 `项目` 列（v1.8.11）→ 两个项目复用 `T-0xx` 编号会撞车，且解挂责任归属读不出来；「待裁决」节同样要按项目标注。
-- 挂起时保留 worktree 却不登记路径与基座 → 其他会话可能误复用（三-5 ⑦）。
+### B. 人类裁决解挂（Unblock，解挂权仅人类）
+1. 在 `memory/projects/<project>.md` 末尾追加一行（append-only）：
+   `[@<agent> @<device>~<account> YYYY-MM-DD HH:mm UTC+8 【解挂】<TaskID> <标题>；人类批准时间：<时间>；恢复基线：<分支/commit>]`
+2. 将该行从 `memory/suspended.md` 的 `Active Suspended Tasks` 移至底部 `Unblocked History`。

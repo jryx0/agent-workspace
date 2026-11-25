@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# tools-scan.sh — 本机工具链扫描（规范 四-4，v1.8.3）
+# tools-scan.sh — 本机工具链扫描（规范 S4.4 / v3.0）
 #
 # 用法：
 #   ./tools-scan.sh              输出 markdown 表格到 stdout（供人看/临时核对）
 #   ./tools-scan.sh --write      全量扫描并写入 memory/devices/tools-<设备名>.md，刷新 stamp
-#   ./tools-scan.sh --check      只核对基线，不写文件（自检第 8 步用）；有缺项/低版本时退出码 1
+#   ./tools-scan.sh --check      只核对基线，不写文件（S8.1 / startup-check.sh 用）；有缺项/低版本时退出码 1
 #
-# 设计原则（四-4）：
+# 设计原则（S4.4）：
 #   1. 探测优先：已装且满足基线即"复用"，禁止重复下载
 #   2. 首次扫描一次：--write 生成设备清单 + stamp，之后 30 天内不再全量扫描
 #   3. 新装/升级/卸载后必须 --write 刷新，并在 env/toolchain.md 变更日志 append 一行
@@ -21,7 +21,7 @@ RUN_DIR="${HOME}/.agent-tools/run"
 STAMP="${RUN_DIR}/tools-scan.stamp"
 MODE="${1:-table}"
 
-# 项目级 CLI 白名单探测（四-4 ⑦）：这些工具只允许装在项目 node_modules 内，
+# 项目级 CLI 白名单探测（S4.4g）：这些工具只允许装在项目 node_modules 内，
 # 出现在 npm 全局列表 = 不合规，须卸载并项目本地化
 PROJECT_CLIS=(wrangler vite tsc eslint prettier turbo)
 GLOBAL_CLI_WARN=0
@@ -33,12 +33,12 @@ scan_global_clis() {
   for c in "${PROJECT_CLIS[@]}"; do
     ver="$(echo "$out" | grep -E "^[├└]── ${c}@" | head -1 | sed "s/.*${c}@//")"
     [ -z "$ver" ] && continue
-    echo "⚠️ 全局安装的项目级 CLI：${c}@${ver}（不合规，四-4 ⑦）——应卸载并声明为项目 devDependency，用 npx 调用"
+    echo "⚠️ 全局安装的项目级 CLI：${c}@${ver}（不合规，S4.4g）——应卸载并声明为项目 devDependency，用 npx 调用"
     GLOBAL_CLI_WARN=$((GLOBAL_CLI_WARN+1))
   done
 }
 
-# 设备名：<hostname>-<os>，全小写（规范 二-0.5）
+# 设备名：<hostname>-<os>，全小写（规范 S2.0b）
 DEVICE="${AGENT_DEVICE:-$(hostname 2>/dev/null | tr '[:upper:]' '[:lower:]' | tr -d ' ')}-win"
 
 # 探测项：命令名|用途|基线（用于 --check 的最低版本，空=只查存在）

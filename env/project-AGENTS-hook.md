@@ -1,39 +1,26 @@
-# 规范注入端模板（配套 global/rules.md 〇 章，v2.7 配套；A 段为 v2.6 L1 文本）
+# Project Rules Hook Template (`env/project-AGENTS-hook.md`, v3.0)
 
-> 用途：把「去哪里读规范」的**短指针**放进两类注入端。按 〇 ⑤「单一原件」，**禁止把规范条款正文复制到这里或全局指令里**；规范正文只在 `global/rules.md` 及其分卷 `global/spec/` 维护。
-> 本文件是模板，不是配置本身。实际生效内容以 WorkBuddy 设置界面 / 各项目 AGENTS.md 为准。
+> **单一原件原则（`global/spec/governance.md#S9.2a`）**：
+> - 平台全局指令（L1）唯一原件在 `env/execution-enforcement.md#L1`，**本文件不再重复粘贴 L1 文本**。
+> - 本文件只维护 `~/source/<项目>/AGENTS.md`（或 `CODEBUDDY.md`）首部挂接块与验收提示词。
 
-## A 段 · 平台全局指令模板（设置 → 个性化 →「给 WorkBuddy 的指令」，≤1500 字符）
+## 1. Project `AGENTS.md` / `CODEBUDDY.md` Header Block
 
-人类已于 2026-11-05 09:15 首次粘贴，11-09 / 11-11 两次更新（第三次粘贴为 v2.0 分级版）；**v2.5/v2.6 的粘贴状态截至 2026-11-13 无验收证据 → 未验证**；**v2.7 未改最小红线集与 L1，无需重贴**。以下 A 段为 **v2.6 全文（1,304 字符）**，与 `env/execution-enforcement.md` 二-L1 逐字同源（改动须两处同步，〇⑦ ⑤）；如 UI 中内容有调整，以 UI 为准。
+粘贴到每个 `~/source/<项目>/AGENTS.md`（及并存的 `CODEBUDDY.md`）**最顶部**：
 
-```
-【开工前·档位判定（第一个输出就要声明）】按 ~/.agent-shared/global/rules.md 〇⑦ 判定本次会话档位并说明依据；拿不准按 T2，禁止为省事降级。
-- T0 纯对话/只读：不写文件、不装依赖、不碰共享仓 → 不读规范全文、不出自检简报；一旦涉及写操作先读规范。
-- T1 本机单会话：只写当前工作区/项目本地文件，且同时满足「不写 ~/.agent-shared、不写 ~/.agent-tools、不装/升级依赖、不认领任务卡、不部署/不推远端」→ 不读 handoff / org.md / 挂起快照，不跑 10 步自检与代理核对；只遵守下面最小红线集。
-- T2 协作（默认）：涉及 ~/source 项目、写共享仓或共享工具区、安装依赖、认领任务卡、部署、git sync，或我明确说「开工前按规范自检」→ 全量执行，不得降级。
-【接入协同·账号标识】新设备/新账号/新 agent 首次接入，第一个输出就要提示我按三段式 <账号主体>-<设备简称>-<OS段> 生成标识（前两段我指定，OS 字母表见三-8 ②；虚机须我声明、OS 段加 v 前缀且虚机单独登记设备简标）；未确认前不得自取、不得用于署名/认领/部署。已登记则沿用。
-【最小红线集（任何档位都不可豁免）】① 密钥永不入 Git；② 禁把依赖装进全局或用户级位置（按安装位置判定，不按命令写法：pip install 不带 --user 落入 %APPDATA%\Python...\site-packages、npm install -g、pip install --user 全算违规）；需要装依赖即转 T2；③ 不并行修改我正在配置的目录/工具/服务，云同步目录里的删除交我 UI 操作；④ 不改 global/ 下规范正文（rules.md 与 spec/）；⑤ 不碰他人未提交改动、不代提交、不强 rebase。
-【按场景加载】T2 读 rules.md 第八节自检，再读最新一份 handoff（多项目各补读）+ org.md 最近 200 行；动手前对照 〇 章「章节分流」表读 global/spec/ 对应分卷全文（装依赖→toolchain、部署→deploy、账号/凭据→accounts、密钥→secrets、目录→layout），没读不得执行该类操作；装依赖前先跑 tools-scan.sh --check 复用已装项；改共享仓后 10 分钟内 commit + git sync，推送前跑 proxy-check.sh。
-【T2 第一个输出必须是自检简报】在任何写文件、改配置、装依赖、Git 写操作之前，先简报：规范版本号、第八节 10 步自检结果、tools-scan --check 结果、任务认领状态、当前挂起项（读最新 handoff「挂起任务」快照，按项目+任务ID，suspended 一律不得认领/开工）、代理与双远端状态。未出简报就动手＝违规；简报后即可继续，不必等我确认。未读规范、未跑 --check、或代理异常未提醒，视为注入失败：停止写操作并报告我。
-```
-
-注意：全局指令**只在会话开始时注入**，改完必须新开任务才生效；当前会话不会重新加载。
-
-## B 段 · 项目 AGENTS.md / CODEBUDDY.md 挂接块（放在「开工前必读顺序」首项）
-
-```
-0. **全局规范**：`~/.agent-shared/global/rules.md`（多设备多 Agent 协同总规范）——先读并执行「八、Agent 启动自检」，再读本项目下列文件；上下文中已含该规范全文或全局指令指针时视为已注入，无需重复加载。见规范 〇 ②③。
+```markdown
+<!-- global-rules-hook v3.0 -->
+> **全局协同规范（最高优先级）**：本文件服从 `~/.agent-shared/global/rules.md` (v3.0)。
+> - 单项目纯本地代码/测试（不写 `~/.agent-shared` / `~/.agent-tools`、不装依赖、不改卡、不部署、不推远端）可走 **T1.5**：先查 `~/.agent-shared/memory/suspended.md` 与 `memory/projects/<项目名>.md` 确认未挂起且未被他人认领，遵守 `R1-R5`。
+> - 涉及写共享仓/工具区、装依赖、认领/改卡、部署或 `git sync` 必须升 **T2**：读 `global/rules.md` 与所需 `global/spec/*.md`，执行 `bash ~/.agent-shared/env/startup-check.sh --project <项目名>` 并在首个输出给出紧凑自检简报。
+> - **不可豁免红线 `R1-R5`**：密钥不入 Git；禁全局/用户级装依赖；不与人类并行改配置、同步区删除交人类 UI；不改 `global/` 规范正文；不碰他人未提交改动。
+<!-- /global-rules-hook -->
 ```
 
-挂接规则（〇 ②）：
-- `~/source/` 下每个项目都要挂；未挂接视为「接入未完成」，登记进 `memory/projects/<项目名>.md` 并提醒人类。
-- agent 不得擅自改写项目规则文件；改动走 三-6 worktree + `agent/*` 分支，待人类合并。
-- 项目自身规则与全局规范冲突时，以全局规范为准（协作纪律、Git 推送、密钥、工具链）。
+## 2. Hook Verification Prompt
 
-## C 段 · 首次注入验证（〇 ④）
-
-1. 新开一个任务，只发一句：`开工前按规范自检`
-2. 预期：agent 主动读 `~/.agent-shared/global/rules.md` → 跑 `bash ~/.agent-shared/env/tools-scan.sh --check` → 读最新 handoff 与 org.md 最近 200 行（**该显式自检指令按 〇⑦ 强制判 T2**，不受 T0 纯对话判定影响）
-3. 未做到即注入失败：检查指令是否保存、是否为**新任务**、路径是否写对
-4. 验证通过后，把结果按署名规范追加一条到 `memory/org.md`
+新开会话进入目标项目，发送：
+```text
+不写任何文件，先确认当前应走 T0 / T1.5 / T2 哪一档，并回报本项目是否挂接了 global/rules.md v3.0 以及 memory/suspended.md 中与本项目相关的挂起项。
+```
+通过标准：准确声明档位、识别 `global/rules.md` v3.0 挂接、准确列出 `memory/suspended.md` 中该项目的挂起任务。

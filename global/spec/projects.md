@@ -1,35 +1,24 @@
-> **来源**：`global/rules.md` 的分卷（v2.6 起拆出；**不单独编号**，随 `rules.md` 版本生效）
-> **原编号**：七（含 七-1）
-> **触发**：新增项目、判断项目边界、处置无 Git 仓库／非 `~/source` 项目时
-> **效力**：与 `rules.md` 同等，受最小红线④保护，修订流程见 `rules.md` 第十节；本文件是该章节的**唯一正文**（〇⑤）。
-> **引用写法**：`三-7〔spec/deploy.md〕` 表示该章节正文在所注分卷；未注路径的编号在 `rules.md` 常驻层。
+> **Source**: `global/rules.md` spec volume (v3.0, synced with `rules.md`)
+> **Section**: `S7` (`S7.1`, `S7.2`)
+> **Trigger**: 新增项目、判断项目边界、处理无 Git 仓库/非 `~/source` 项目、或跨项目编码与交付时
+> **Authority**: 与 `rules.md` 同等效力，受 `R4` 保护；修订见 `[spec/governance.md#S9]`。
 
-## 七、 项目代码
+## S7. Project Repositories
 
-- 本仓库（`~/.agent-shared`）**不同步任何项目代码**。
-- 所有项目代码仓库在 `env/repos.md` 登记，每条包含：
+- **S7a 代码不进共享仓**：`~/.agent-shared` 严禁存放或同步任何项目源代码。
+- **S7b 项目登记与路径**：所有项目在 `env/repos.md` 登记（`项目名 | Git 地址 | 默认分支 | 本地约定克隆路径 | 简述 | 记忆文件`）；标准 Git 项目统一 clone 到 `~/source/<项目>`，记忆写入 `memory/projects/<项目>.md`，Python venv 遵循 `[spec/toolchain.md#S4.5b]` 按 Agent 隔离。
 
-  ```
-  | 项目名 | Git 地址 | 默认分支 | 本地约定克隆路径 | 简述 | 记忆文件 |
-  ```
+### S7.1 Non-Git / Non-`~/source` Projects
+- **S7.1a 判定**：`env/repos.md` 中「Git 地址 = 无」或资产不在 `~/source/<项目>/` 的项目（如 NAS 容器服务、纯文档阶段项目），须在 `env/repos.md` 的「项目属性补充表」完整登记（所有项目均须填写该表）。
+- **S7.1b 豁免条款**：此类项目不适用 `S0.1c`（项目 `AGENTS.md` 挂接）、`S3.5d` 本地项目目录占用确认、`[spec/worktree.md#S3.6]` worktree、`S7b` clone 路径约定。**Agent 不得据此误报「接入未完成」，也不得创建 `~/source/<项目>/` 占位目录**。
+- **S7.1c 仍适用条款**：`S3.1` 项目独立记忆、`S3.4` 交接与挂起防撞、`S3.5c` 任务认领、`[spec/deploy.md#S3.7]` 部署权限（引擎启停/容器重启/升级均属部署）、`[spec/secrets.md#S6]` 密钥、`S8` 启动自检、`[spec/toolchain.md#S4.5]` 依赖复用。诊断任务默认只读。
+- **S7.1d 项目级凭据落点**：`wrangler` OAuth、云厂商 token、NAS SSH 等存于项目本地或平台凭据库时，不放入 `~/.agent-shared/config/`，也不计入 `keys-checklist.md` 存在性核对，但**必须在 `env/repos.md` 属性表注明落点与防入库措施**；登录输出类临时文件须加入项目 `.gitignore`，严禁提交（`R1`）。
 
-- agent 需要处理某项目时，按登记表 clone 到约定的本地路径（**统一为 `~/source/<项目名>`**），项目运行时依赖装进 `~/.agent-tools/venvs/<agent名>/`——**venv 按 agent 名隔离、不按项目**（四-5 ②〔spec/toolchain.md〕）。
-- 项目相关的记忆写在 `memory/projects/<项目名>.md`，并与登记表中"记忆文件"列对应。
+### S7.2 Cross-Project Coding & Delivery Baseline
+仅包含跨所有技术栈通用的硬底线；语言/框架级规范、目录结构与具体命令一律写在各项目 `AGENTS.md`（不与全局重复）：
 
-### 1. 无代码仓库 / 非 `~/source` 项目
-
-- **判定**：`repos.md` 中「Git 地址 = 无」或资产不在 `~/source/<项目名>/` 的项目，即属本类；**必须在「项目属性补充表」登记**，不得省略。
-- **明确不适用的条款**：〇② 项目 `AGENTS.md` 挂接（无工作区规则文件）、三-5 ③ 项目目录占用确认（无本地项目目录）、三-6〔spec/worktree.md〕 worktree 协作（无 Git 仓库；`~/.agent-shared` 本就禁用 worktree）、七节 clone 到 `~/source` 的约定。**agent 不得据此判定「接入未完成」，也不得为它创建 `~/source/<项目名>/` 占位目录**。
-- **仍然适用的条款**：三-1 项目记忆独立文件、三-4 交接与 `项目:` 标签、三-5 ⑤ 任务认领、三-7〔spec/deploy.md〕 部署权限（引擎启停 / 容器重启 / 升级一律属部署）、六 密钥、八 启动自检、四-5〔spec/toolchain.md〕 通用库分层。诊断类工作默认只读。
-- **项目属性补充表**（`env/repos.md` 第二节，必填字段）：`项目名 | 资产位置 | AGENTS 挂接 | 部署入口 | 凭据落点 | 不适用条款声明`。所有项目都登记，不只本类项目。
-- **项目级凭据落点**：wrangler OAuth、云厂商 token、NAS SSH 等落在**项目本地或平台凭据库**的，不进 `config/`、也不列入 `keys-checklist.md` 的 `config/` 存在性核对（避免自检第 1 步误报缺项）；但**必须在补充表「凭据落点」栏写明位置与是否入 Git**。凭据文件一律不得提交（六-1〔spec/secrets.md〕 gitleaks 兜底），项目根下的登录输出类文件须加入项目 `.gitignore`。
-
-<!-- anchors：以下每行「|」后的文本须在本文件正文（本注释之外）与 global/rules.md 原位摘要壳中各逐字出现一次；改任一侧须同步另一侧（〇⑤ 受控例外二、第十节）。
-七 | 本仓库（`~/.agent-shared`）**不同步任何项目代码**
-七 | 按登记表 clone 到约定的本地路径（**统一为 `~/source/<项目名>`**）
-七 | **venv 按 agent 名隔离、不按项目**
-七-1 | **必须在「项目属性补充表」登记**，不得省略
-七-1 | **agent 不得据此判定「接入未完成」，也不得为它创建 `~/source/<项目名>/` 占位目录**
-七-1 | 凭据文件一律不得提交
--->
-
+- **S7.2a 文件编码与行尾**：源码、脚本（尤其 `.sh`）、配置与 Markdown 统一使用 **UTF-8（无 BOM）+ LF (`\n`)**；仅 Windows 批处理（`.bat`/`.cmd`）允许 CRLF。标准项目仓库应维护 `.gitattributes` 锁定行尾，防止跨 Windows/Linux 产生 `\r` 报错或无效 diff。
+- **S7.2b 实测门禁（禁止目测过关）**：改动代码前确认基线可构建/可测试；提交或交接前必须运行项目 `AGENTS.md` 规定的 `build` / `test` / `lint`（含项目要求的跨平台目标检查），并在交接摘要或 commit 说明中附**实测命令与结果**；未实测通过不得宣称完成。
+- **S7.2c 依赖与锁文件同步**：增删改任何项目依赖（`package.json`、`Cargo.toml`、`go.mod`、`requirements.txt` 等）必须同步更新对应 lockfile（`pnpm-lock.yaml`/`package-lock.json`/`Cargo.lock`/`go.sum`）并过一致性校验（如 `go mod verify`、`cargo check --locked`），禁止提交半截依赖声明。
+- **S7.2d 最小改动与契约先审**：不顺手格式化或重构任务范围外的无关代码（防多 Agent 合并冲突与审查噪音）；涉及跨模块公共接口、数据结构、API 协议或数据库 Schema/DDL 变更时，**先提契约变更说明经人类或审核方确认后再改代码**。
+- **S7.2e 路径与配置零硬编码**：代码中严禁写死本机绝对路径（如 `C:\Users\...`）、内网固定 IP 或凭据（`R1`），统一通过环境变量、配置文件或相对路径注入，保证跨设备可复现。
