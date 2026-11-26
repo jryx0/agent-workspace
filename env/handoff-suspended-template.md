@@ -1,4 +1,4 @@
-# Handoff Summary & Suspended Task Templates (`env/handoff-suspended-template.md`, v3.0)
+# Handoff Summary & Suspended Task Templates (`env/handoff-suspended-template.md`, v3.0.1)
 
 > 配套规范：`global/rules.md#S3.4`。
 > **核心变化（v3.0）**：挂起任务统一维护在单一权威文件 `memory/suspended.md`，**不再在每份 handoff 中重复抄录挂起快照**；主 handoff 文件保持 ≤ 2 KB 摘要，超长日志/核查过程放 `handoff/notes/`。
@@ -11,7 +11,8 @@
 ---
 project: <项目名 或 global>
 date: YYYY-MM-DD
-author: <agent>@<device>~<account>
+author: <agent>@<device>~<account>[#<session>]
+model: <可选：人类可读模型名；跨模型交接或独立复审时填写>
 status: done | handoff | blocked
 ---
 

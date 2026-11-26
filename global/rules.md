@@ -1,4 +1,4 @@
-# Multi-Device Multi-Agent Collaboration Rules (v3.0, 2026-11-25)
+# Multi-Device Multi-Agent Collaboration Rules (v3.0.1, 2026-11-26)
 
 > 适用范围：跨设备（Windows / Linux / Android-Termux / 移动只读端）多 Agent 协同。
 > 唯一权威原件：`~/.agent-shared/global/rules.md` 及其分卷 `global/spec/*.md`（详见 `[spec/governance.md#S9]`）。
@@ -79,7 +79,7 @@
 ### S3.1 Memory Management
 - **S3.1a 唯一来源**：长期记忆只写 `~/.agent-shared/memory/`，不依赖各 IDE 内置私有记忆。
 - **S3.1b 严格 append-only**：`memory/org.md` 与 `memory/projects/*.md` 仅允许在末尾追加；禁止修改或删除历史条目（唯一例外为压缩窗口 `[spec/memory-compaction.md#S3.2]`）。须更正时追加更正行，禁止预填时间戳。
-- **S3.1c 署名格式**：`[@<agent> @<device>[~<account>][#<session>] YYYY-MM-DD HH:mm UTC+8 <内容>]`。`<agent>` 与 `<account>` 须已在 `env/agents.md` 登记，`<device>` 须已在 `memory/devices/_devices.md` 登记；未登记不得自取或署名。
+- **S3.1c 署名格式**：`[@<agent> @<device>[~<account>][#<session>] YYYY-MM-DD HH:mm UTC+8 <内容>]`。`<agent>` 与 `<account>` 须已在 `env/agents.md` 登记，`<device>` 须已在 `memory/devices/_devices.md` 登记；未登记不得自取或署名。同 Agent 多会话并发或跨会话交接时建议附 `#<session>` 区分；底层模型不进入唯一标识（署名/防撞键/目录名），跨模型交接或独立复审按 `S3.4a` 记入交接元数据或在记忆正文注明。
 - **S3.1d 上下文加载上限（防 Token 膨胀）**：
   - T2 默认仅读：`memory/suspended.md` + `memory/org.md` 最近 200 行 + 当前任务相关项目记忆 `memory/projects/<项目>.md` + 当前项目最近 1 份 `handoff/` 摘要（不扫描全目录、不全文加载 `memory/`）。
   - 涉及多项目时按项目各补读最近 1 份 `handoff/` 摘要；项目事实以 `memory/projects/<项目>.md` 与项目 `handoff` 为准（`org.md` 是跨项目混流，未提及不等于无记录）。
@@ -102,7 +102,7 @@
 ### S3.4 Task Handoff & Suspended Registry
 - **S3.4a 交接摘要化（≤2 KB 目标）**：
   - 路径与命名：`handoff/YYYY-MM-DD-<项目>-<任务简名>-<设备名>.md`（禁止同名覆盖，续写加序号 `-2`）。其中日期、`<项目>`、`<设备名>` 用 ASCII，**`<任务简名>` 优先用简明中文**（便于人类快速浏览识别）。
-  - 文件头必填 `project: <项目名>`（跨项目填 `global`）与执行者署名。
+  - 文件头必填 `project: <项目名>`（跨项目填 `global`）与执行者署名（`author`，同 Agent 跨会话交接建议带 `#<session>`）；可选填 `model: <人类可读模型名>`（跨模型交接、独立复审或中途切模型时建议标注，模型不进入唯一标识）。
   - 正文保持精炼（背景、状态、关键提交/结论、阻塞项、下一步，建议 ≤2 KB）。超过 4 KB 的多轮核查日志、详细设计裁定、命令流水应写入 `handoff/notes/` 或项目内 `docs/`，在主 handoff 摘要中放链接引用。
 - **S3.4b 挂起任务单一状态文件 (`memory/suspended.md`)**：
   - **不再要求每份 handoff 滚动抄录挂起表**。所有跨项目未解挂任务统一登记在 `memory/suspended.md`（防撞键 = `项目 + 任务ID`；字段与流程模板见 `env/handoff-suspended-template.md`）。
